@@ -1,24 +1,22 @@
-'''
+"""
 Calculates the reading ease score and grade level score of the content
 Input - data of which reading level has to be calculated
 Output - reading ease score and grade level score of the data
-'''
-
+"""
 from spacy.lang.en import English
 import pandas as pd
 
 
-class reading_level:
+class Readability:
 
 	def __init__(self, content):
 		self.content = content
 
-	## calculate syllables in the content
+	# Calculate syllables in the content
 	def syllable_count(self):
 
 		n_syllables = 0
-
-		## for every word in the content
+		# For every word in the content
 		for word in self.content.split():
 
 			word = word.lower()
@@ -32,21 +30,19 @@ class reading_level:
 				if word[index] in vowels and word[index - 1] not in vowels:
 					count += 1
 
-			## not considering "e" if its at the end of the word
+			# Not considering "e" if its at the end of the word
 			if word.endswith("e"):
 				count -= 1
 
-			##considering minimum 1 syllable
+			# Considering minimum 1 syllable
 			if count == 0:
 				count += 1
-
-			n_syllables = n_syllables + count  ## syllables count for complete content
-
-		print("Total syllables: %d" % n_syllables)
+			# Syllables count for complete content
+			n_syllables = n_syllables + count
 
 		return n_syllables
 
-	### calculating number of sentences with Spacy
+	# Calculating number of sentences with Spacy
 	def sentence_count(self):
 		nlp = English()
 		sentencizer = nlp.create_pipe("sentencizer")
@@ -58,7 +54,7 @@ class reading_level:
 
 		return n_sentences
 
-	## calculating number of words with Spacy
+	# Calculating number of words with Spacy
 	def word_count(self):
 		nlp = English()
 		doc = nlp(self.content)
@@ -69,14 +65,14 @@ class reading_level:
 
 		return n_words
 
-	##calculating reading ease score as per formula
+	# Calculating reading ease score as per formula
 	def get_reading_ease_score(self, n_words, n_sentences, n_syllables):
 		# Flesch reading ease formula
 		score = 206.835 - 1.015 * (n_words / n_sentences) - 84.6 * (n_syllables / n_words)
 		score = round(score, 2)
 		return score
 
-	##calculating grade level score as per formula
+	# Calculating grade level score as per formula
 	def get_grade_level_score(self, n_words, n_sentences, n_syllables):
 		# Flesch–Kincaid grade level formula
 		score = 0.39 * (n_words / n_sentences) + 11.8 * (n_syllables / n_words) - 15.59
@@ -84,7 +80,7 @@ class reading_level:
 		return score
 
 
-### Calculating reading level of the given content
+# Calculating reading level of the given content
 def get_reading_level(input_dataframe, output_dir):
 	header = ['University name', 'University SHC URL', 'Relevant content on all pages',
 			  'Count of keywords matching webpages on SHC', 'Keywords matched webpages on SHC',
@@ -92,7 +88,7 @@ def get_reading_level(input_dataframe, output_dir):
 			  'Grade level']
 	output_dataframe = pd.DataFrame(columns=header)
 
-	## for every university
+	# For every university
 	for index, row in input_dataframe.iterrows():
 
 		university = row["University name"]
@@ -105,7 +101,8 @@ def get_reading_level(input_dataframe, output_dir):
 		print("\n", university)
 
 		try:
-			if content.isspace():  ### if the content has only spaces
+			# If the content has only spaces
+			if content.isspace():
 				print("Content contains only whitespace!")
 
 				output_dataframe = output_dataframe.append(
@@ -122,9 +119,8 @@ def get_reading_level(input_dataframe, output_dir):
 						'Grade level': 0
 					}, ignore_index=True)
 
+			# If no links found with keywords under SHC
 			elif content == "No content":
-				#### if no links found with LARC keywords under SHC
-
 				output_dataframe = output_dataframe.append(
 					{
 						'University name': university,
@@ -139,38 +135,25 @@ def get_reading_level(input_dataframe, output_dir):
 						'Grade level': "NA"
 					}, ignore_index=True)
 
-			else:  # content != "No content":               ### if content is present
+			# If content is present
+			else:
+				content_obj = Readability(content)
 
-				content_obj = reading_level(content)
-
-				# calculate all the numbers required for the formula
+				# Calculate all the numbers required for the formula
 				n_sentences = content_obj.sentence_count()
 				n_words = content_obj.word_count()
 				n_syllables = content_obj.syllable_count()
 
-				## calculate reading ease
+				# Calculate reading ease
 				reading_ease = content_obj.get_reading_ease_score(n_words, n_sentences, n_syllables)
 				print("reading ease score: " + "{:.2f}".format(reading_ease))
 
-				###calculate grade level
+				# Calculate grade level
 				grade_level = content_obj.get_grade_level_score(n_words, n_sentences, n_syllables)
 				print("grade level: " + "{:.2f}".format(grade_level))
 
-				'''
-				university = row["University name"]
-		content = row["Relevant content on all pages"]
-		shc = row['University SHC URL']
-		no_of_links = row['Count of keywords matching webpages on SHC']
-		links = row['Keywords matched webpages on SHC']
-		no_of_sentences = row['Num of sentences']
-		no_of_syllables = row['Num of syllables']
-		no_of_words = row['Num of words']
-		reading_ease = row['Reading ease']
-		grade_level = row['Grade level']
-				
-				'''
-
-				output_dataframe = output_dataframe.append(  ### append current dataframe to overall result
+				# Append current dataframe to overall result
+				output_dataframe = output_dataframe.append(
 					{
 						'University name': university,
 						'University SHC URL': shc,
@@ -184,8 +167,8 @@ def get_reading_level(input_dataframe, output_dir):
 						'Reading ease': reading_ease,
 						'Grade level': grade_level
 					}, ignore_index=True)
-
-		except Exception as e:  ### if there is some error in the reading content
+		# If there is some error in the reading content
+		except Exception as e:
 			print(e)
 			output_dataframe = output_dataframe.append(
 				{
@@ -198,7 +181,7 @@ def get_reading_level(input_dataframe, output_dir):
 					'Reading ease': "Error in reading content!",
 					'Grade level': "Error in reading content!"
 				}, ignore_index=True)
-
-	output_dataframe.to_csv(output_dir + '/Reading_level_of_content_without_pdf.csv')  ## storing results
+	# Storing results
+	output_dataframe.to_csv(output_dir + '/Reading_level_of_content_without_pdf.csv')
 
 	return output_dataframe
