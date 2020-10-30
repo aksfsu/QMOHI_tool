@@ -1,7 +1,7 @@
 import copy
 import re
 import qmomi.src.metric_calc.navigation_metric.constants as constants
-from qmomi.src.metric_calc.navigation_metric import Node
+from qmomi.src.metric_calc.navigation_metric.TreeStructure import Node
 
 
 def get_count(nodes, call_level, target_urls):
