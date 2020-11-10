@@ -13,6 +13,7 @@ def save_webpage_content(input_dataframe, output_dir):
 		save_output_path = output_dir + "/saved_webpages"
 
 	os.makedirs(save_output_path)
+	print("- Storing web pages at location: ", save_output_path)
 
 	# For every university
 	for index, row in input_dataframe.iterrows():
@@ -28,8 +29,6 @@ def save_webpage_content(input_dataframe, output_dir):
 		else:
 			save_output = save_output + '/' + university
 
-		print("Output path = ", save_output)
-
 		# Creating new directory for storing web pages of every university
 		os.makedirs(save_output)
 
@@ -39,11 +38,11 @@ def save_webpage_content(input_dataframe, output_dir):
 
 		for i in range(len(links)):
 			if links[i].endswith(".pdf") or links[i].endswith(".docx") or links[i].endswith(".doc"):
-				print("Either pdf or doc ", links[i])
-
+				pass
 			else:
 				try:
 					webpage_index_name = save_output + '/' + str(i) + '.html'
 					urllib.request.urlretrieve(links[i], webpage_index_name)
 				except Exception as e:
-					print("Error in saving webpage", e)
+					print("Error in saving one of the web page for ", university)
+					print(links[i], " : ", e)

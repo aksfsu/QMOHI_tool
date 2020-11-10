@@ -20,3 +20,4 @@ def combine_all_results_together(reading_quantity_df, metric_df, initial_uni_lis
 
 	# Store final output
 	final_output.to_csv(output_dir + '/final_output.csv')
+	print("- All results (intermediate and final) have been stored at location: ", output_dir)

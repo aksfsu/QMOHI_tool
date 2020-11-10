@@ -1,14 +1,14 @@
 import copy
 import re
 import qmomi.src.metric_calc.navigation_metric.constants as constants
-from qmomi.src.metric_calc.navigation_metric.TreeStructure import Node, set_up_selenium_driver
+from qmomi.src.metric_calc.navigation_metric.tree_structure import Node, set_up_selenium_driver
 
 
 def get_count(nodes, call_level, target_urls):
 
     child_nodes = []
     cur_level = call_level + 1
-    print(f"Creating nodes at level {cur_level}")
+    print("      - Searching web pages with minimum number of clicks =",cur_level)
     if cur_level <= constants.LEVEL_THRESHOLD:
         status = 0
 
@@ -17,9 +17,9 @@ def get_count(nodes, call_level, target_urls):
                 parent_node_trace = copy.copy(cur_node.trace)
                 obj = Node(url=page, level=cur_level, target_urls=target_urls, trace=parent_node_trace)
                 child_nodes.append(obj)
+
+                # If URL match found with target URLs
                 if obj.hit != -1:
-                    # print(f"------->>>> found HIT here {obj.url} ------->>>>")
-                    print(f"------>>>> Trace : {obj.trace}")
                     constants.trace = obj.trace
                     status = 1
                     break
@@ -43,7 +43,7 @@ def clean_target_urls(target_urls):
     for check in url_filter:
         for url in target_urls:
             if url.find(check) != -1:
-                print("Contains given substring ")
+                # Contains given substring of pdf/doc
                 target_urls.remove(url)
 
     return target_urls
@@ -60,6 +60,7 @@ def get_min_click_count(no_of_links, links, shc_url, driver_path):
         target_urls = clean_target_urls(links)
         constants.visited_urls = []
         constants.visited_urls.append(shc_url)
+        print("      - Searching web pages with minimum number of clicks = 0")
         root_node = Node(url = shc_url,
                          level = 0,
                          target_urls = target_urls,

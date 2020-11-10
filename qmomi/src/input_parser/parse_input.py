@@ -2,7 +2,6 @@ import sys
 import datetime
 import os
 import pandas as pd
-import json
 
 
 def read_input_file(path):
@@ -43,6 +42,7 @@ def set_output_directory(file):
 		output_dir = output_dir + '/Output ' + now.strftime("%Y-%m-%d %H:%M:%S")
 
 	os.makedirs(output_dir)
+	print(output_dir)
 
 	return output_dir
 
@@ -57,6 +57,7 @@ def get_input_university_names(file):
 		print("Please provide university names!")
 		sys.exit()
 
+	print(universities_list, "\n")
 	no_of_universities = universities_list.University_name.count()
 
 	return universities_list, no_of_universities
@@ -72,9 +73,16 @@ def get_input_keywords(file):
 		print("Please provide keywords to look for!")
 		sys.exit()
 
+	# Stripping extra leading and trailing spaces in the keywords
+	keywords = keywords.apply(lambda x:x.str.strip())
+
+	# Stripping extra spaces between keywords
+	keywords = keywords.apply(lambda x:x.str.replace(' +', ' '))
+
 	# Creating list of keywords to pass it as required
 	keyword_list = keywords['Keywords'].tolist()
 
+	print(keywords, "\n")
 	return keyword_list
 
 
@@ -117,8 +125,10 @@ def get_input_api_keys(file):
 	keys = keys.dropna(axis=0, how='any')
 	no_of_keys = keys.API_keys.count()
 
+	print(keys['API_keys'])
 	# Creating list of keys to pass it as required
 	keys_list = keys['API_keys'].tolist()
+
 	return keys_list, no_of_keys
 
 
@@ -145,7 +155,7 @@ def get_input_webdriver(file):
 		sys.exit()
 
 	driver_path = webdriver['Selenium_Chrome_webdriver'].values[0]
-
+	print(": ", driver_path)
 	return driver_path
 
 
@@ -160,6 +170,7 @@ def get_input_cse(file):
 		sys.exit()
 
 	cse_id = cse['CSE_id'].values[0]
+	print(": ", cse_id)
 	return cse_id
 
 
@@ -174,4 +185,5 @@ def get_ideal_document_with_path(file):
 		sys.exit()
 
 	ideal_doc = cse['Ideal_document_name_with_absolute_path'].values[0]
+	print(": ", ideal_doc)
 	return ideal_doc

@@ -118,6 +118,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 		no_of_links = row['Count of keywords matching webpages on SHC']
 		links = row['Keywords matched webpages on SHC']
 		total_words = row['Total word count on all pages']
+		print("- ", university)
 
 		if content != "No content":
 			# Try writing content in the text file
@@ -160,8 +161,8 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 			removed_unicode = remove_circumflex_a(joined_final_relevant_content)
 			# Check if final content is only space
 			if removed_unicode.isspace() or not removed_unicode:
-
-				print("\n\nOnly space!")
+				# If data is white space
+				pass
 			# Writing to dataframe
 			else:
 				output_dataframe = output_dataframe.append({'University name': university,

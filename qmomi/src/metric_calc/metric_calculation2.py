@@ -5,7 +5,7 @@ from textblob import TextBlob
 import requests
 import re
 from urllib.parse import urlparse
-from qmomi.src.metric_calc.navigation_metric.Counter import get_min_click_count
+from qmomi.src.metric_calc.navigation_metric.counter import get_min_click_count
 
 
 class University:
@@ -21,14 +21,12 @@ class University:
 
 		university_content = self.content
 		polarity = TextBlob(university_content).polarity
-		print(polarity)
 		return round(polarity, 3)
 
 	def calculate_sentiment_objectivity(self):
 
 		university_content = self.content
 		objectivity = 1 - TextBlob(university_content).subjectivity
-		print(objectivity)
 		return round(objectivity, 3)
 
 	def calculate_timeliness(self):
@@ -47,7 +45,7 @@ class University:
 					if 'Last-Modified' in header:
 						last_modified = header['Last-Modified']
 					else:
-						print("Data is not available")
+						# Last-modified information is not available
 						last_modified = -1
 				else:
 					last_modified = -1
@@ -55,10 +53,9 @@ class University:
 				timeliness.append(last_modified)
 
 			except Exception as e:
-				print("Unable to get the header. Error - ", e)
+				print("Unable to get the header of the web page. Error - ", e)
 				return -1
 
-		print("\n\nTimeliness:", timeliness)
 		return timeliness
 
 	def calculate_similarity(self, ideal_content):
@@ -77,7 +74,6 @@ class University:
 		trsfm = vectorizer.fit_transform(corpus)
 
 		similarity = cosine_similarity(trsfm[0], trsfm[1])
-		print("\n Similarity:", similarity)
 
 		# To get the similarity with the content with fake document
 		return round(similarity[0][0], 3)
@@ -107,17 +103,23 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 		links = row['Keywords matched webpages on SHC']
 		content = row['Relevant content on all pages']
 		shc_url = row['University SHC URL']
+		print("\n- ", uni_name)
 
 		obj = University(uni_name, shc_url, content, links, no_of_links)
 
+		print("   - Similarity")
 		similarity = obj.calculate_similarity(ideal_content)
 
+		print("   - Objectivity")
 		sentiment_objectivity = obj.calculate_sentiment_objectivity()
 
+		print("   - Polarity")
 		sentiment_polarity = obj.calculate_sentiment_polarity()
 
+		print("   - Timeliness")
 		timeliness = obj.calculate_timeliness()
 
+		print("   - Navigation")
 		navigation, trace = obj.calculate_navigation(driver_path)
 
 		output_dataframe = output_dataframe.append({'University name': uni_name,

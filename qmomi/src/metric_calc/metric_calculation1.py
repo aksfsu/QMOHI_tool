@@ -16,6 +16,7 @@ class QuantityMetrics:
 	# Getting keyword count for given content
 	def metric_count(self, keywords):
 		count_dict = {}
+		print("   - Keywords quantity")
 
 		# For every keyword given
 		for each_keyword in keywords:
@@ -27,11 +28,13 @@ class QuantityMetrics:
 
 def get_prevalence(metric_dataframe):
 
+	print("   - Prevalence")
 	return metric_dataframe.sum(axis=1)
 
 
 def get_coverage(metric_dataframe, input_keyword_count):
 
+	print("   - Coverage")
 	present_keyword_count = metric_dataframe.astype(bool).sum(axis=1).values
 	coverage_percent = '{0:.2f}'.format(present_keyword_count[0] / input_keyword_count * 100)
 
@@ -47,7 +50,6 @@ def metric_calculation(input_dataframe, keywords, output_dir):
 	input_keyword_count = len(keywords)
 	# Extending header as per keywords provided
 	header.extend(keywords)
-	print(f"----> {header}------>")
 	output_dataframe = pd.DataFrame(columns=header)
 
 	# For every university's relevant content
@@ -65,17 +67,16 @@ def metric_calculation(input_dataframe, keywords, output_dir):
 		grade_level = row['Grade level']
 		total_words = row['Total word count on all pages']
 
-		print("\n", university)
+		print("- ", university)
 
 		try:
 			if content.isspace() or content == "No content":
-				print("No content")
-			# check if content is available
+				print("   - No content found!")
+			# Check if content is available
 			else:
 				content_obj = QuantityMetrics(content)
 				# Getting dictionary of keywords with count of keywords
 				metric_array = content_obj.metric_count(keywords)
-				print(metric_array.items())
 				# Converting dict into dataframe
 				metric_dataframe = pd.DataFrame([metric_array])
 

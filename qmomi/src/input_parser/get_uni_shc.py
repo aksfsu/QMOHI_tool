@@ -4,16 +4,15 @@ Input - list of university names
 Output - list of university SHCs
 """
 
-import re
-import sys
-
 from googleapiclient.discovery import build
-import pandas as pd
-import numpy as np
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common import exceptions
 from selenium.common.exceptions import WebDriverException
+import pandas as pd
+import numpy as np
+import re
+import sys
 
 
 # Building Google custom search engine
@@ -116,7 +115,6 @@ def get_shc_urls_from_uni_name(input_dataframe, keys, driver_path, cse_id, outpu
 
 		every_split = pd.DataFrame(every_split)
 		i = 0
-		print("Key : ", my_api_key)
 
 		for index, row in every_split.iterrows():
 
@@ -124,6 +122,7 @@ def get_shc_urls_from_uni_name(input_dataframe, keys, driver_path, cse_id, outpu
 
 			output_dataframe_splitted = pd.DataFrame(columns=header)
 			university = row["University_name"]
+			print("- ", university)
 
 			# Clean university name, replace special characters with space
 			uni_name = re.sub("[!@#$%^&*()[]{};:,./<>?\|`~-=_+]", " ", university)
@@ -131,7 +130,6 @@ def get_shc_urls_from_uni_name(input_dataframe, keys, driver_path, cse_id, outpu
 			# Construct the queries for the following searches
 			uni_shc = uni_name + " student health center"
 			uni_shc_web = google_search(uni_shc, my_api_key, cse_id, num=3, )  # consider 3 results
-			print("print query:", uni_shc)
 
 			# Check if retrieved URL do not
 			for result in uni_shc_web:
@@ -148,11 +146,10 @@ def get_shc_urls_from_uni_name(input_dataframe, keys, driver_path, cse_id, outpu
 					break
 
 			if url_found == 0:
+				print("   - University SHC website not found!")
 				output_dataframe_splitted.loc[i] = [university, "-1"]
 
-			print(output_dataframe_splitted.loc[i])
 			i = i + 1
-			print("\n")
 
 			output_dataframe = pd.concat([output_dataframe, output_dataframe_splitted], sort=False)
 

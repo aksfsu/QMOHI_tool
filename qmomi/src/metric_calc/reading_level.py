@@ -49,7 +49,6 @@ class Readability:
 		nlp.add_pipe(sentencizer)
 
 		doc = nlp(self.content)
-		print("Spacy sentence count", len(list(doc.sents)))
 		n_sentences = len(list(doc.sents))
 
 		return n_sentences
@@ -61,7 +60,6 @@ class Readability:
 
 		words = [token.text for token in doc]
 		n_words = len(words)
-		print("Spacy word count", len(words))
 
 		return n_words
 
@@ -98,12 +96,12 @@ def get_reading_level(input_dataframe, output_dir):
 		content = row["Relevant content on all pages"]
 		total_words = row["Total word count on all pages"]
 
-		print("\n", university)
+		print("- ", university)
 
 		try:
 			# If the content has only spaces
 			if content.isspace():
-				print("Content contains only whitespace!")
+				print("   - Relevant information contains only whitespace!")
 
 				output_dataframe = output_dataframe.append(
 					{
@@ -146,11 +144,9 @@ def get_reading_level(input_dataframe, output_dir):
 
 				# Calculate reading ease
 				reading_ease = content_obj.get_reading_ease_score(n_words, n_sentences, n_syllables)
-				print("reading ease score: " + "{:.2f}".format(reading_ease))
 
 				# Calculate grade level
 				grade_level = content_obj.get_grade_level_score(n_words, n_sentences, n_syllables)
-				print("grade level: " + "{:.2f}".format(grade_level))
 
 				# Append current dataframe to overall result
 				output_dataframe = output_dataframe.append(

@@ -33,7 +33,7 @@ def tag_visible(element):
 # Access web page content with Selenium
 def html_from_selenium(url_obj, driver_path):
 	try:
-		print("Issues in accessing URL content by Request, trying with Selenium: ")
+		print("   - Issues in accessing URL content, trying with Selenium for ", url_obj.url)
 		options = Options()
 		options.add_argument("--headless")  # Runs Chrome in headless mode.
 
@@ -118,6 +118,7 @@ def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_pat
 		shc = row['University SHC URL']
 		no_of_links = row['Count of keywords matching webpages on SHC']
 		links = row['Keywords matched webpages on SHC']
+		print("- ", university)
 
 		if isinstance(links, str):
 			links = re.findall(r"'(.*?)'", links)
@@ -135,15 +136,11 @@ def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_pat
 
 			for each_link in unique_links:
 				url_obj = UrlContent(each_link)
-				print(each_link)
 
 				if each_link.endswith(".pdf"):
-
-					print("PDF!")
 					url_content = ""
 
 				elif each_link.endswith(".docx") or each_link.endswith(".doc"):
-					print("DOCS!")
 					url_content = ""
 
 				else:

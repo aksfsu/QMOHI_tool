@@ -23,7 +23,6 @@ class ShcUrl:
 	def get_links_with_keywords(self, keywords):
 
 		links = []
-		print("Given SHC URL is : " + self.url)
 
 		# Preparing query with the given keywords
 		for keyword in keywords:
@@ -45,10 +44,9 @@ class ShcUrl:
 
 				# Items contain all the retrieved results
 				if 'items' not in response:
-					print('No result !!\nres is: {}'.format(response))
+					print("   - No web pages found!")
 
 				else:
-					print("Total results found : ", len(response['items']))
 					for item in response['items']:
 						# Links from the items contain URLs
 						links.append(item['link'])
@@ -57,7 +55,6 @@ class ShcUrl:
 				print("Caught exception for Custom Search engine!", e)
 
 		links = list(dict.fromkeys(links))
-		print(links)
 		return links
 
 
@@ -89,6 +86,7 @@ def get_links(input_dataframe, keywords, keys, cse_id, output_dir):
 			output_dataframe_splitted = pd.DataFrame(columns=header)
 			university = row['University_name']
 			shc = row['University SHC URL']
+			print("- ", university)
 
 			# If SHC URL was found
 			if shc != -1:
@@ -99,7 +97,6 @@ def get_links(input_dataframe, keywords, keys, cse_id, output_dir):
 													start_timestamp, end_timestamp]
 
 			i = i + 1
-			print("\n")
 
 			# Concatenating current dataframe with overall result
 			output_dataframe = pd.concat([output_dataframe, output_dataframe_splitted], sort=False)
