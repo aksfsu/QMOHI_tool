@@ -1,0 +1,12 @@
+python>=3.7.0
+google-api-python-client>=1.7.11
+selenium>=3.141.0
+pandas>=0.25.1
+nltk>=3.4.5
+numpy>=1.17.2
+urllib3>=1.25.8
+beautifulsoup4>=4.8.0
+scikit-learn>=0.21.3
+textblob>=0.15.3
+requests>=2.22.0
+spacy>=2.2.1
