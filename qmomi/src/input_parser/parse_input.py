@@ -13,7 +13,7 @@ def read_input_file(path):
 	except Exception as e:
 		print(e)
 		print("Problem with input file! Make sure the location of the file is correct and columns are "
-			  "'University_name', 'Keywords', 'API_keys', 'CSE_id', 'Selenium_Chrome_webdriver', 'Output_directory. ")
+			  "'University_name', 'Keywords', 'API_keys', 'CSE_id', 'Selenium_Chrome_webdriver', 'Output_directory', 'Ideal_document. ")
 		sys.exit()
 
 	return file
@@ -176,7 +176,7 @@ def get_input_cse(file):
 
 def get_ideal_document_with_path(file):
 	# Reading ideal document path provided by user
-	cse = file[['Ideal_document_name_with_absolute_path']].copy()
+	cse = file[['Ideal_document']].copy()
 	# Dropping rows with NaN values
 	cse = cse.dropna(axis=0, how='any')
 
@@ -184,6 +184,6 @@ def get_ideal_document_with_path(file):
 		print("Please provide ideal document to calculate similarity!")
 		sys.exit()
 
-	ideal_doc = cse['Ideal_document_name_with_absolute_path'].values[0]
+	ideal_doc = cse['Ideal_document'].values[0]
 	print(": ", ideal_doc)
 	return ideal_doc
