@@ -9,11 +9,11 @@ def read_input_file(path):
 	try:
 		file = pd.read_excel(path,
 							 usecols=['University_name', 'Keywords', 'API_keys', 'CSE_id', 'Selenium_Chrome_webdriver',
-									  'Output_directory', 'Ideal_document_name_with_absolute_path'])
+									  'Output_directory', 'Ideal_document'])
 	except Exception as e:
 		print(e)
 		print("Problem with input file! Make sure the location of the file is correct and columns are "
-			  "'University_name', 'Keywords', 'API_keys', 'CSE_id', 'Selenium_Chrome_webdriver', 'Output_directory', 'Ideal_document. ")
+			  "'University_name', 'Keywords', 'API_keys', 'CSE_id', 'Selenium_Chrome_webdriver', 'Output_directory', 'Ideal_document'. ")
 		sys.exit()
 
 	return file

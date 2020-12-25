@@ -66,6 +66,9 @@ class Readability:
 	# Calculating reading ease score as per formula
 	def get_reading_ease_score(self, n_words, n_sentences, n_syllables):
 		# Flesch reading ease formula
+		print('n_words =', n_words)
+		print('n_sentences = ', n_sentences)
+		print('n_syllables = ', n_syllables)
 		score = 206.835 - 1.015 * (n_words / n_sentences) - 84.6 * (n_syllables / n_words)
 		score = round(score, 2)
 		return score

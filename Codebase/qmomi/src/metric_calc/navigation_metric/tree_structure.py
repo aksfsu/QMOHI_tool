@@ -1,7 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import WebDriverException
-import qmomi.src.metric_calc.navigation_metric.constants as constants
+import Codebase.qmomi.src.metric_calc.navigation_metric.constants as constants
 import copy
 
 driver = None

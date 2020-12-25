@@ -12,9 +12,10 @@ Argument - Input file in form of excel sheet along with absolute path with below
 7. Ideal document name with absolute path
 """
 
-from qmomi.src.input_parser import get_uni_shc, parse_input
-from qmomi.src.data_prep import store_webpages, get_shc_webpages_with_keywords, filter_relevant_data, webpage_crawling
-from qmomi.src.metric_calc import combine_results, metric_calculation1, reading_level, metric_calculation2
+from Codebase.qmomi.src.input_parser import parse_input, get_uni_shc
+from Codebase.qmomi.src.data_prep import filter_relevant_data, webpage_crawling, store_webpages, \
+	get_shc_webpages_with_keywords
+from Codebase.qmomi.src.metric_calc import reading_level, combine_results, metric_calculation1, metric_calculation2
 
 
 # Execute complete pipeline
