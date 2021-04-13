@@ -37,7 +37,7 @@ def get_coverage(metric_dataframe, input_keyword_count):
 	print("   - Coverage")
 	present_keyword_count = metric_dataframe.astype(bool).sum(axis=1).values
 	coverage_percent = '{0:.2f}'.format(present_keyword_count[0] / input_keyword_count * 100)
-
+	
 	return coverage_percent
 
 

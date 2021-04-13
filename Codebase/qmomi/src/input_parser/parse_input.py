@@ -7,7 +7,7 @@ import pandas as pd
 def read_input_file(path):
 	# Read the content from user's input file
 	try:
-		file = pd.read_excel(path,
+		file = pd.read_csv(path,
 							 usecols=['University_name', 'Keywords', 'API_keys', 'CSE_id', 'Selenium_Chrome_webdriver',
 									  'Output_directory', 'Ideal_document'])
 	except Exception as e:
@@ -31,6 +31,7 @@ def set_output_directory(file):
 
 	output_dir = output_dir['Output_directory'].values[0]
 	if not os.access(output_dir, os.W_OK):
+		print(output_dir)
 		print("Either provided output directory do not exist or it do not have write access for this program!")
 		sys.exit()
 
@@ -42,7 +43,6 @@ def set_output_directory(file):
 		output_dir = output_dir + '/Output ' + now.strftime("%Y-%m-%d %H:%M:%S")
 
 	os.makedirs(output_dir)
-	print(output_dir)
 
 	return output_dir
 
@@ -114,7 +114,6 @@ def calculate_num_keys_required(no_of_universities, num_of_words):
 
 	# Assuming daily limit of 90 queries per API key and maximum 6 words in university name
 	no_of_keys_for_site_specific_search = ((((num_of_words // 26) + 1) * no_of_universities) // 90) + 1
-
 	return no_of_keys_for_shc, no_of_keys_for_site_specific_search
 
 
@@ -135,7 +134,7 @@ def get_input_api_keys(file):
 def are_input_api_keys_sufficient(no_of_keys_for_shc,
 								  no_of_keys_for_site_specific_search,
 								  no_of_input_keys):
-	no_of_keys_required = no_of_keys_for_shc + no_of_keys_for_site_specific_search
+	no_of_keys_required = max(no_of_keys_for_shc, no_of_keys_for_site_specific_search)
 	# Checking if number of API keys provided by user are sufficient
 	if no_of_input_keys < no_of_keys_required:
 		print(f"For given universities and keywords, we need {no_of_keys_required} Google API keys. In the given input "
