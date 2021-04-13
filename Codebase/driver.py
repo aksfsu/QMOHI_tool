@@ -2,7 +2,7 @@
 Complete generic pipeline
 Input - File containing university names, keywords and Google API keys
 Output - reading level and quantity metric
-Argument - Input file in form of excel sheet along with absolute path with below columns -
+Argument - Input file in form of csv sheet along with absolute path with below columns -
 1. University_name
 2. Keywords
 3. API_keys (Google API keys for custom search)
@@ -11,11 +11,13 @@ Argument - Input file in form of excel sheet along with absolute path with below
 6. Output directory for storing results
 7. Ideal document name with absolute path
 """
+import sys
+# sys.path.append(r'./qmomi')
 
-from Codebase.qmomi.src.input_parser import parse_input, get_uni_shc
-from Codebase.qmomi.src.data_prep import filter_relevant_data, webpage_crawling, store_webpages, \
+from qmomi.src.input_parser import parse_input, get_uni_shc
+from qmomi.src.data_prep import filter_relevant_data, webpage_crawling, store_webpages, \
 	get_shc_webpages_with_keywords
-from Codebase.qmomi.src.metric_calc import reading_level, combine_results, metric_calculation1, metric_calculation2
+from qmomi.src.metric_calc import reading_level, combine_results, metric_calculation1, metric_calculation2
 
 
 # Execute complete pipeline
@@ -74,7 +76,7 @@ def execute(input_file_path):
 	print("\n============ PHASE 2 =============\n")
 	print("###### Searching SHC web pages having presence of keywords ######")
 	result_dataframe4 = get_shc_webpages_with_keywords.get_links(result_dataframe3, query_keywords, keys_list[
-								no_of_keys_for_shc:no_of_keys_for_shc + no_of_keys_for_site_specific_search],
+								0:no_of_keys_for_shc + no_of_keys_for_site_specific_search],
 																 cse_id, output_dir)
 
 	# Store web pages in html format

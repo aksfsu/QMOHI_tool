@@ -5,7 +5,7 @@ from textblob import TextBlob
 import requests
 import re
 from urllib.parse import urlparse
-from Codebase.qmomi import get_min_click_count
+from qmomi.src.metric_calc.navigation_metric.counter import get_min_click_count
 
 
 class University:
