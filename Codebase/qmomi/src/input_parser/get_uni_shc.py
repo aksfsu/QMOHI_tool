@@ -13,6 +13,8 @@ import pandas as pd
 import numpy as np
 import re
 import sys
+import time
+import datetime
 
 
 # Building Google custom search engine
@@ -117,6 +119,9 @@ def get_shc_urls_from_uni_name(input_dataframe, keys, driver_path, cse_id, outpu
 		i = 0
 
 		for index, row in every_split.iterrows():
+			timestamp = int(time.time())
+			date = datetime.datetime.fromtimestamp(timestamp)
+			print("Start:", date.strftime('%H:%M:%S'))
 
 			url_found = 0
 
@@ -152,6 +157,9 @@ def get_shc_urls_from_uni_name(input_dataframe, keys, driver_path, cse_id, outpu
 			i = i + 1
 
 			output_dataframe = pd.concat([output_dataframe, output_dataframe_splitted], sort=False)
+			timestamp = int(time.time())
+			date = datetime.datetime.fromtimestamp(timestamp)
+			print("End:", date.strftime('%H:%M:%S'))
 
 	# Store result in output directory
 	output_dataframe.to_csv(output_dir + '/University_SHC.csv')

@@ -13,6 +13,8 @@ from urllib.request import Request, urlopen
 from bs4.element import Comment
 import re
 import pandas as pd
+import time
+import datetime
 
 
 class UrlContent:
@@ -35,8 +37,10 @@ def html_from_selenium(url_obj, driver_path):
 	try:
 		print("   - Issues in accessing URL content, trying with Selenium for ", url_obj.url)
 		options = Options()
+		options.add_argument("--no-sandbox")
 		options.add_argument("--headless")  # Runs Chrome in headless mode.
-
+		options.add_argument('--disable-dev-shm-usage')
+		
 		# run web driver with the driver_path provided by user
 		driver = webdriver.Chrome(driver_path, chrome_options=options)
 		# driver = webdriver.Chrome(executable_path=r"/Users/tejasvibelsare/Downloads/chromedriver")
@@ -112,6 +116,9 @@ def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_pat
 
 	# For every university
 	for index, row in input_dataframe.iterrows():
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("Start:", date.strftime('%H:%M:%S'))
 
 		complete_data = ""
 		university = row['University name']
@@ -165,6 +172,9 @@ def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_pat
 														'Content on all retrieved webpages': final_content,
 														'Total word count on all pages': total_words,
 														}, ignore_index=True)
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("End:", date.strftime('%H:%M:%S'))
 	# Storing result
 	output_dataframe.to_csv(output_dir + '/get_data_from_url_output_without_pdf_links.csv')
 

@@ -5,6 +5,8 @@ Output - reading ease score and grade level score of the data
 """
 from spacy.lang.en import English
 import pandas as pd
+import time
+import datetime
 
 
 class Readability:
@@ -91,6 +93,9 @@ def get_reading_level(input_dataframe, output_dir):
 
 	# For every university
 	for index, row in input_dataframe.iterrows():
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("Start:", date.strftime('%H:%M:%S'))	
 
 		university = row["University name"]
 		shc = row['University SHC URL']
@@ -180,6 +185,10 @@ def get_reading_level(input_dataframe, output_dir):
 					'Reading ease': "Error in reading content!",
 					'Grade level': "Error in reading content!"
 				}, ignore_index=True)
+
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("End:", date.strftime('%H:%M:%S'))	
 	# Storing results
 	output_dataframe.to_csv(output_dir + '/Reading_level_of_content_without_pdf.csv')
 

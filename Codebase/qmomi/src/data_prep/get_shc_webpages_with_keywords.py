@@ -81,6 +81,9 @@ def get_links(input_dataframe, keywords, keys, cse_id, output_dir):
 
 		# For every university in the split
 		for index, row in every_split.iterrows():
+			timestamp = int(time.time())
+			date = datetime.datetime.fromtimestamp(timestamp)
+			print("Start:", date.strftime('%H:%M:%S'))
 
 			start_timestamp = datetime.datetime.now()
 			output_dataframe_splitted = pd.DataFrame(columns=header)
@@ -100,6 +103,9 @@ def get_links(input_dataframe, keywords, keys, cse_id, output_dir):
 
 			# Concatenating current dataframe with overall result
 			output_dataframe = pd.concat([output_dataframe, output_dataframe_splitted], sort=False)
+			timestamp = int(time.time())
+			date = datetime.datetime.fromtimestamp(timestamp)
+			print("End:", date.strftime('%H:%M:%S'))
 	# Storing overall results
 	output_dataframe.to_csv(output_dir + '/keywords_matched_webpages_on_SHC.csv')
 

@@ -9,6 +9,8 @@ import nltk
 import nltk.corpus
 import pandas as pd
 import os
+import time
+import datetime
 
 nltk.download('gutenberg')  # Can be run only once in the beginning
 
@@ -109,6 +111,10 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 
 	# For every university in the dataframe
 	for index, row in input_dataframe.iterrows():
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("Start:", date.strftime('%H:%M:%S'))
+
 		final_relevant_content = []
 		seen_content = set()
 		unique_content = []
@@ -181,6 +187,9 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 														# Content contains "No content here!
 														'Total word count on all pages': total_words
 														}, ignore_index=True)
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("End:", date.strftime('%H:%M:%S'))
 
 	# Storing output dataframe
 	output_dataframe.to_csv(output_dir + '/get_relevant_data_from_collected_data_without_pdf_links.csv')
