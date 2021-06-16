@@ -3,6 +3,8 @@ import urllib.error
 import urllib.parse
 import os
 import re
+import time
+import datetime
 
 
 def save_webpage_content(input_dataframe, output_dir):
@@ -17,6 +19,9 @@ def save_webpage_content(input_dataframe, output_dir):
 
 	# For every university
 	for index, row in input_dataframe.iterrows():
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("Start:", date.strftime('%H:%M:%S'))
 
 		university = row['University name']
 		links = row['Keywords matched webpages on SHC']
@@ -46,3 +51,6 @@ def save_webpage_content(input_dataframe, output_dir):
 				except Exception as e:
 					print("Error in saving one of the web page for ", university)
 					print(links[i], " : ", e)
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("End:", date.strftime('%H:%M:%S'))

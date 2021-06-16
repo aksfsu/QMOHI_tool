@@ -13,6 +13,8 @@ Argument - Input file in form of csv sheet along with absolute path with below c
 """
 import sys
 # sys.path.append(r'./qmomi')
+import time
+import datetime
 
 from qmomi.src.input_parser import parse_input, get_uni_shc
 from qmomi.src.data_prep import filter_relevant_data, webpage_crawling, store_webpages, \
@@ -22,6 +24,10 @@ from qmomi.src.metric_calc import reading_level, combine_results, metric_calcula
 
 # Execute complete pipeline
 def execute(input_file_path):
+	timestamp = int(time.time())
+	date = datetime.datetime.fromtimestamp(timestamp)
+	print("Start Overall:", date.strftime('%H:%M:%S'))
+
 	# Get user's input
 	print("\n============ PHASE 1 =============\n")
 	print("###### Reading input file ######")
@@ -111,6 +117,9 @@ def execute(input_file_path):
 	# Consolidating final result together
 	print("\n###### Consolidating all metric values together ######")
 	combine_results.combine_all_results_together(result_dataframe8, result_dataframe9, result_dataframe3, output_dir)
+	timestamp = int(time.time())	
+	date = datetime.datetime.fromtimestamp(timestamp)
+	print("End Overall:", date.strftime('%H:%M:%S'))
 
 	print("\n============ FINISHED =============\n")
 

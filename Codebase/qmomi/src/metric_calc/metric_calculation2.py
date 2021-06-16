@@ -6,6 +6,8 @@ import requests
 import re
 from urllib.parse import urlparse
 from qmomi.src.metric_calc.navigation_metric.counter import get_min_click_count
+import time
+import datetime
 
 
 class University:
@@ -98,6 +100,10 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 	file.close()
 
 	for index, row in input_dataframe.iterrows():
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("Start:", date.strftime('%H:%M:%S'))
+
 		uni_name = row['University name']
 		no_of_links = row['Count of keywords matching webpages on SHC']
 		links = row['Keywords matched webpages on SHC']
@@ -119,8 +125,16 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 		print("   - Timeliness")
 		timeliness = obj.calculate_timeliness()
 
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("Start:", date.strftime('%H:%M:%S'))
+
 		print("   - Navigation")
 		navigation, trace = obj.calculate_navigation(driver_path)
+
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("End:", date.strftime('%H:%M:%S'))
 
 		output_dataframe = output_dataframe.append({'University name': uni_name,
 													'Count of keywords matching webpages on SHC': no_of_links,
@@ -133,6 +147,9 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 													'Navigation': navigation,
 													'Trace': trace
 													}, ignore_index=True)
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("End:", date.strftime('%H:%M:%S'))
 	# Storing output
 	output_dataframe.to_csv(output_dir + '/measures_result.csv')
 

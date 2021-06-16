@@ -6,6 +6,8 @@ Output - Getting prevalence metric as per keywords provided
 
 import pandas as pd
 import re
+import time
+import datetime
 
 
 class QuantityMetrics:
@@ -37,7 +39,6 @@ def get_coverage(metric_dataframe, input_keyword_count):
 	print("   - Coverage")
 	present_keyword_count = metric_dataframe.astype(bool).sum(axis=1).values
 	coverage_percent = '{0:.2f}'.format(present_keyword_count[0] / input_keyword_count * 100)
-	
 	return coverage_percent
 
 
@@ -54,6 +55,9 @@ def metric_calculation(input_dataframe, keywords, output_dir):
 
 	# For every university's relevant content
 	for index, row in input_dataframe.iterrows():
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("Start:", date.strftime('%H:%M:%S'))
 
 		university = row["University name"]
 		content = row["Relevant content on all pages"]
@@ -125,6 +129,9 @@ def metric_calculation(input_dataframe, keywords, output_dir):
 					'Grade level': grade_level
 
 				}, ignore_index=True)
+		timestamp = int(time.time())
+		date = datetime.datetime.fromtimestamp(timestamp)
+		print("End:", date.strftime('%H:%M:%S'))
 	# Storing output
 	output_dataframe.to_csv(output_dir + '/Keywords_count_for_universities.csv')
 
