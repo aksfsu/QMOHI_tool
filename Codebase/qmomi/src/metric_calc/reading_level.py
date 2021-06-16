@@ -47,8 +47,8 @@ class Readability:
 	# Calculating number of sentences with Spacy
 	def sentence_count(self):
 		nlp = English()
-		sentencizer = nlp.create_pipe("sentencizer")
-		nlp.add_pipe(sentencizer)
+		# sentencizer = nlp.create_pipe("sentencizer")
+		nlp.add_pipe("sentencizer")
 
 		doc = nlp(self.content)
 		n_sentences = len(list(doc.sents))
