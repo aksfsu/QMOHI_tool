@@ -24,9 +24,9 @@ from qmomi.src.metric_calc import reading_level, combine_results, metric_calcula
 
 # Execute complete pipeline
 def execute(input_file_path):
-	timestamp = int(time.time())
+	timestamp = time.time()
 	date = datetime.datetime.fromtimestamp(timestamp)
-	print("Start Overall:", date.strftime('%H:%M:%S'))
+	print("Start Overall:", date.strftime('%H:%M:%S.%f'))
 
 	# Get user's input
 	print("\n============ PHASE 1 =============\n")
@@ -117,9 +117,9 @@ def execute(input_file_path):
 	# Consolidating final result together
 	print("\n###### Consolidating all metric values together ######")
 	combine_results.combine_all_results_together(result_dataframe8, result_dataframe9, result_dataframe3, output_dir)
-	timestamp = int(time.time())	
+	timestamp = time.time()
 	date = datetime.datetime.fromtimestamp(timestamp)
-	print("End Overall:", date.strftime('%H:%M:%S'))
+	print("End Overall:", date.strftime('%H:%M:%S.%f'))
 
 	print("\n============ FINISHED =============\n")
 

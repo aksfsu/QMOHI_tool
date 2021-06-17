@@ -100,9 +100,9 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 	file.close()
 
 	for index, row in input_dataframe.iterrows():
-		timestamp = int(time.time())
+		timestamp = time.time()
 		date = datetime.datetime.fromtimestamp(timestamp)
-		print("Start:", date.strftime('%H:%M:%S'))
+		print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		uni_name = row['University name']
 		no_of_links = row['Count of keywords matching webpages on SHC']
@@ -125,16 +125,16 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 		print("   - Timeliness")
 		timeliness = obj.calculate_timeliness()
 
-		timestamp = int(time.time())
+		timestamp = time.time()
 		date = datetime.datetime.fromtimestamp(timestamp)
-		print("Start:", date.strftime('%H:%M:%S'))
+		print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		print("   - Navigation")
 		navigation, trace = obj.calculate_navigation(driver_path)
 
-		timestamp = int(time.time())
+		timestamp = time.time()
 		date = datetime.datetime.fromtimestamp(timestamp)
-		print("End:", date.strftime('%H:%M:%S'))
+		print("End:", date.strftime('%H:%M:%S.%f'))
 
 		output_dataframe = output_dataframe.append({'University name': uni_name,
 													'Count of keywords matching webpages on SHC': no_of_links,
@@ -147,9 +147,9 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 													'Navigation': navigation,
 													'Trace': trace
 													}, ignore_index=True)
-		timestamp = int(time.time())
+		timestamp = time.time()
 		date = datetime.datetime.fromtimestamp(timestamp)
-		print("End:", date.strftime('%H:%M:%S'))
+		print("End:", date.strftime('%H:%M:%S.%f'))
 	# Storing output
 	output_dataframe.to_csv(output_dir + '/measures_result.csv')
 
