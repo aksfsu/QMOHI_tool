@@ -55,9 +55,9 @@ def metric_calculation(input_dataframe, keywords, output_dir):
 
 	# For every university's relevant content
 	for index, row in input_dataframe.iterrows():
-		timestamp = int(time.time())
+		timestamp = time.time()
 		date = datetime.datetime.fromtimestamp(timestamp)
-		print("Start:", date.strftime('%H:%M:%S'))
+		print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		university = row["University name"]
 		content = row["Relevant content on all pages"]
@@ -129,9 +129,9 @@ def metric_calculation(input_dataframe, keywords, output_dir):
 					'Grade level': grade_level
 
 				}, ignore_index=True)
-		timestamp = int(time.time())
+		timestamp = time.time()
 		date = datetime.datetime.fromtimestamp(timestamp)
-		print("End:", date.strftime('%H:%M:%S'))
+		print("End:", date.strftime('%H:%M:%S.%f'))
 	# Storing output
 	output_dataframe.to_csv(output_dir + '/Keywords_count_for_universities.csv')
 

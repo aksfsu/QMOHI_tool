@@ -116,9 +116,9 @@ def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_pat
 
 	# For every university
 	for index, row in input_dataframe.iterrows():
-		timestamp = int(time.time())
+		timestamp = time.time()
 		date = datetime.datetime.fromtimestamp(timestamp)
-		print("Start:", date.strftime('%H:%M:%S'))
+		print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		complete_data = ""
 		university = row['University name']
@@ -172,9 +172,9 @@ def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_pat
 														'Content on all retrieved webpages': final_content,
 														'Total word count on all pages': total_words,
 														}, ignore_index=True)
-		timestamp = int(time.time())
+		timestamp = time.time()
 		date = datetime.datetime.fromtimestamp(timestamp)
-		print("End:", date.strftime('%H:%M:%S'))
+		print("End:", date.strftime('%H:%M:%S.%f'))
 	# Storing result
 	output_dataframe.to_csv(output_dir + '/get_data_from_url_output_without_pdf_links.csv')
 
