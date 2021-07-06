@@ -2,6 +2,7 @@ import sys
 import datetime
 import os
 import pandas as pd
+from nltk.stem.snowball import SnowballStemmer
 
 
 def read_input_file(path):
@@ -82,7 +83,16 @@ def get_input_keywords(file):
 	# Creating list of keywords to pass it as required
 	keyword_list = keywords['Keywords'].tolist()
 
+	# Modifying list to be stemmed
+	# Creating snowball stemmer
+	stemmer = SnowballStemmer("english")
+	keyword_list = [stemmer.stem(keyword) for keyword in keyword_list]
+	# Remove duplicates after stemming
+	keyword_list = list(set(keyword_list))
+
 	print(keywords, "\n")
+	print("Stemmed Keywords: ")
+	print(keyword_list)
 	return keyword_list
 
 
