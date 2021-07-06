@@ -5,6 +5,7 @@ Output - data relevant to the keywords
 """
 from nltk.text import Text
 from nltk import tokenize
+from nltk.stem.snowball import SnowballStemmer
 import nltk
 import nltk.corpus
 import pandas as pd
@@ -30,10 +31,13 @@ class RelevantContent:
 		tokens = []
 		for each_token in self.content.tokens:
 			tokens.append(remove_circumflex_a(each_token))
+		# Creating snowball stemmer
+		stemmer = SnowballStemmer("english")
+		# Stemming tokens before finding relevant content. Assumption: keywords have been stemmed
+		tokens = [stemmer.stem(token) for token in tokens]
 
 		# Keeps track of the keyword index in the content and retrieve the surrounding words
 		c = nltk.ConcordanceIndex(tokens, key=lambda s: s.lower())
-
 		for phrase in keywords:
 			phrase_list = phrase.split(' ')
 
@@ -61,6 +65,8 @@ class RelevantContent:
 			# Ignore if no content was retrieved
 			if outputs:
 				list_of_sentences.append(outputs)
+			# print("list of sentences: ")
+			# print(list_of_sentences)
 
 		return list_of_sentences
 
