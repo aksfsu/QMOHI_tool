@@ -5,6 +5,7 @@ Output - data relevant to the keywords
 """
 from nltk.text import Text
 from nltk import tokenize
+from nltk.corpus import stopwords
 from nltk.stem.snowball import SnowballStemmer
 import nltk
 import nltk.corpus
@@ -31,16 +32,39 @@ class RelevantContent:
 		tokens = []
 		for each_token in self.content.tokens:
 			tokens.append(remove_circumflex_a(each_token))
-		# Creating snowball stemmer
+		# # Removing stop words
+		# stop_words = set(stopwords.words('english'))
+		# tokens = [token for token in tokens if not token in [stop_words]]
+		# Stemming tokens before finding relevant content. Assumption: keywords have/will be been stemmed
 		stemmer = SnowballStemmer("english")
-		# Stemming tokens before finding relevant content. Assumption: keywords have been stemmed
+		# token_stem_dictionary is structured as such: {'stem': [(index, 'non-stemmed-token'),(index, 'non-stemmed-token'),...],...}
+		token_stem_dictionary = {}
+		for i in range(len(tokens)):
+			stemmed_token = stemmer.stem(tokens[i])
+			if stemmed_token in token_stem_dictionary:
+				token_stem_dictionary[stemmed_token].append(tuple([i, tokens[i]]))
+			else:
+				token_stem_dictionary[stemmed_token] = [(i, tokens[i])]
+		# print(token_stem_dictionary)
+
 		tokens = [stemmer.stem(token) for token in tokens]
 
 		# Keeps track of the keyword index in the content and retrieve the surrounding words
 		c = nltk.ConcordanceIndex(tokens, key=lambda s: s.lower())
+		# Stemming the phrase list for filtering step only
+		# phrase_stem_dictionary is structured as such: {'stem': ['non-stemmed-token', 'non-stemmed-token',...],...}
+		phrase_stem_dictionary = {}
+		for i in range(len(phrase_list)):
+			stemmed_phrase = stemmer.stem(phrase_list[i])
+			if stemmed_phrase in phrase_stem_dictionary:
+				phrase_stem_dictionary[stemmed_phrase].append(phrase_list[i])
+			else:
+				phrase_stem_dictionary[stemmed_phrase] = [phrase_list[i]]
+		print(phrase_stem_dictionary)
 		for phrase in keywords:
 			phrase_list = phrase.split(' ')
-
+			print("phrase list")
+			print(phrase_list)
 			# Find the offset for each token in the phrase
 			offsets = [c.offsets(x) for x in phrase_list]
 			offsets_norm = []
