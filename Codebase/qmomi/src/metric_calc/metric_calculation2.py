@@ -8,6 +8,9 @@ from urllib.parse import urlparse
 from qmomi.src.metric_calc.navigation_metric.counter import get_min_click_count
 import time
 import datetime
+from nltk.stem.snowball import SnowballStemmer
+import nltk
+from nltk.tokenize.treebank import TreebankWordDetokenizer
 
 
 class University:
@@ -22,12 +25,24 @@ class University:
 	def calculate_sentiment_polarity(self):
 
 		university_content = self.content
+		# Stem university content
+		tokens = nltk.word_tokenize(university_content)
+		stemmer = SnowballStemmer("english")
+		tokens = [stemmer.stem(token) for token in tokens]
+		university_content = TreebankWordDetokenizer().detokenize(tokens)
+		# print("University Content Stemmed:")
+		# print(university_content)
 		polarity = TextBlob(university_content).polarity
 		return round(polarity, 3)
 
 	def calculate_sentiment_objectivity(self):
 
 		university_content = self.content
+		# Stem university content
+		tokens = nltk.word_tokenize(university_content)
+		stemmer = SnowballStemmer("english")
+		tokens = [stemmer.stem(token) for token in tokens]
+		university_content = TreebankWordDetokenizer().detokenize(tokens)
 		objectivity = 1 - TextBlob(university_content).subjectivity
 		return round(objectivity, 3)
 
