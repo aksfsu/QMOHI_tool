@@ -110,7 +110,7 @@ def remove_unwanted_data(complete_data, keywords):
 
 # Collect content from the given URLs
 def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_path):
-	header = ['University name', 'University SHC URL', 'Count of keywords matching webpages on SHC',
+	header = ['University name', 'University SHC URL', 'Count of SHC webpages matching keywords',
 			  'Keywords matched webpages on SHC', 'Content on all retrieved webpages', 'Total word count on all pages']
 	output_dataframe = pd.DataFrame(columns=header)
 
@@ -123,7 +123,7 @@ def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_pat
 		complete_data = ""
 		university = row['University name']
 		shc = row['University SHC URL']
-		no_of_links = row['Count of keywords matching webpages on SHC']
+		no_of_links = row['Count of SHC webpages matching keywords']
 		links = row['Keywords matched webpages on SHC']
 		print("- ", university)
 
@@ -167,7 +167,7 @@ def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_pat
 
 			output_dataframe = output_dataframe.append({'University name': university,
 														'University SHC URL': shc,
-														'Count of keywords matching webpages on SHC': no_of_links,
+														'Count of SHC webpages matching keywords': no_of_links,
 														'Keywords matched webpages on SHC': links,
 														'Content on all retrieved webpages': final_content,
 														'Total word count on all pages': total_words,

@@ -67,7 +67,7 @@ def get_service(api_key):
 
 # Get relevant URLs by custom search with keywords and SHC site
 def get_links(input_dataframe, keywords, keys, cse_id, output_dir):
-	header = ['University name', 'University SHC URL', 'Count of keywords matching webpages on SHC',
+	header = ['University name', 'University SHC URL', 'Count of SHC webpages matching keywords',
 			  'Keywords matched webpages on SHC', 'start_timestamp', 'end_timestamp']
 	output_dataframe = pd.DataFrame(columns=header)
 

@@ -145,7 +145,7 @@ def add_space_in_keywords(keywords):
 
 # Find relevant content from the data provided on the basis of keywords
 def find_relevant_content(input_dataframe, keywords, output_dir):
-	header = ['University name', 'University SHC URL', 'Count of keywords matching webpages on SHC',
+	header = ['University name', 'University SHC URL', 'Count of SHC webpages matching keywords',
 			  'Keywords matched webpages on SHC', 'Total word count on all pages', 'Relevant content on all pages']
 	output_dataframe = pd.DataFrame(columns=header)
 	keywords = add_space_in_keywords(keywords)
@@ -162,7 +162,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 		university = row['University name']
 		content = row['Content on all retrieved webpages']
 		shc = row['University SHC URL']
-		no_of_links = row['Count of keywords matching webpages on SHC']
+		no_of_links = row['Count of SHC webpages matching keywords']
 		links = row['Keywords matched webpages on SHC']
 		total_words = row['Total word count on all pages']
 		print("- ", university)
@@ -214,7 +214,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 			else:
 				output_dataframe = output_dataframe.append({'University name': university,
 															'University SHC URL': shc,
-															'Count of keywords matching webpages on SHC': no_of_links,
+															'Count of SHC webpages matching keywords': no_of_links,
 															'Keywords matched webpages on SHC': links,
 															'Relevant content on all pages': removed_unicode,
 															'Total word count on all pages': total_words
@@ -222,7 +222,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 		else:
 			output_dataframe = output_dataframe.append({'University name': university,
 														'University SHC URL': shc,
-														'Count of keywords matching webpages on SHC': no_of_links,
+														'Count of SHC webpages matching keywords': no_of_links,
 														'Keywords matched webpages on SHC': links,
 														'Relevant content on all pages': content,
 														# Content contains "No content here!

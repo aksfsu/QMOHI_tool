@@ -7,7 +7,7 @@ def combine_all_results_together(reading_quantity_df, metric_df, initial_uni_lis
 	reading_quantity_df = reading_quantity_df.drop(columns=['Num of sentences', 'Num of syllables', 'Num of words'])
 
 	merged_result = pd.merge(reading_quantity_df, metric_df, how='inner',
-							 on=['University name', 'Count of keywords matching webpages on SHC'])
+							 on=['University name', 'Count of SHC webpages matching keywords'])
 
 	merged_result.to_csv(output_dir + '/merged_results.csv')
 
@@ -16,7 +16,7 @@ def combine_all_results_together(reading_quantity_df, metric_df, initial_uni_lis
 							right_on=['University name', 'University SHC URL'], how='left').drop(columns=['University name'])
 
 	# Adding data found column for convenience
-	final_output['Data found'] = [1 if x > 0 else 0 for x in final_output['Count of keywords matching webpages on SHC']]
+	final_output['Data found'] = [1 if x > 0 else 0 for x in final_output['Count of SHC webpages matching keywords']]
 
 	# Store final output
 	final_output.to_csv(output_dir + '/final_output.csv')
