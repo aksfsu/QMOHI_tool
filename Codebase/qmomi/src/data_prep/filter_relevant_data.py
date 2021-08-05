@@ -32,9 +32,7 @@ class RelevantContent:
 		tokens = []
 		for each_token in self.content.tokens:
 			tokens.append(remove_circumflex_a(each_token))
-		# # Removing stop words
-		# stop_words = set(stopwords.words('english'))
-		# tokens = [token for token in tokens if not token in [stop_words]]
+
 		# Stemming tokens before finding relevant content. Assumption: keywords have/will be been stemmed
 		stemmer = SnowballStemmer("english")
 		# token_stem_dictionary is structured as such: {'stem': [(index, 'non-stemmed-token'),(index, 'non-stemmed-token'),...],...}
@@ -45,32 +43,46 @@ class RelevantContent:
 				token_stem_dictionary[stemmed_token].append(tuple([i, tokens[i]]))
 			else:
 				token_stem_dictionary[stemmed_token] = [(i, tokens[i])]
-		# print(token_stem_dictionary)
+		stemmed_tokens = [stemmer.stem(token) for token in tokens]
 
-		tokens = [stemmer.stem(token) for token in tokens]
-
-		# Keeps track of the keyword index in the content and retrieve the surrounding words
-		c = nltk.ConcordanceIndex(tokens, key=lambda s: s.lower())
 		# Stemming the phrase list for filtering step only
 		# phrase_stem_dictionary is structured as such: {'stem': ['non-stemmed-token', 'non-stemmed-token',...],...}
 		phrase_stem_dictionary = {}
-		for i in range(len(phrase_list)):
-			stemmed_phrase = stemmer.stem(phrase_list[i])
-			if stemmed_phrase in phrase_stem_dictionary:
-				phrase_stem_dictionary[stemmed_phrase].append(phrase_list[i])
-			else:
-				phrase_stem_dictionary[stemmed_phrase] = [phrase_list[i]]
-		print(phrase_stem_dictionary)
 		for phrase in keywords:
 			phrase_list = phrase.split(' ')
-			print("phrase list")
-			print(phrase_list)
-			# Find the offset for each token in the phrase
-			offsets = [c.offsets(x) for x in phrase_list]
-			offsets_norm = []
-
-			# For each token in the phrase list, find the offsets tokenize and rebase them to the start of the phrase
+			stemmed_phrase_list = []
 			for i in range(len(phrase_list)):
+				stemmed_phrase_list.append(stemmer.stem(phrase_list[i]))
+			stemmed_phrase = ' '.join(stemmed_phrase_list)
+			if stemmed_phrase in phrase_stem_dictionary:
+				phrase_stem_dictionary[stemmed_phrase].append(phrase_list)
+			else:
+				phrase_stem_dictionary[stemmed_phrase] = [phrase_list]
+
+		print("Phrase Stem Dictionary: ")
+		print(phrase_stem_dictionary)
+
+		# found_per_stem_dictionary is structured as such: {'stem': [index1, index2, index3]}
+		found_per_stem_dictionary = {}
+
+		# Keeps track of the keyword index in the content and retrieve the surrounding words
+		c = nltk.ConcordanceIndex(stemmed_tokens, key=lambda s: s.lower())
+		for phrase in phrase_stem_dictionary:
+			stemmed_phrase_list = phrase.split(' ')
+			# stemmed_phrase_list = list(phrase)
+			# Find the offset for each token in the phrase
+			offsets = [c.offsets(x) for x in stemmed_phrase_list]
+			offsets_norm = []
+			temp_list = offsets[0][:]
+			found_per_stem_dictionary[phrase] = offsets[0][:]
+			for i in range(len(temp_list)):
+				for j in range(1, len(offsets)):
+					if temp_list[i]+j not in offsets[j]:
+						if temp_list[i] in found_per_stem_dictionary[phrase]:
+							found_per_stem_dictionary[phrase].remove(temp_list[i])
+					
+			# For each token in the phrase list, find the offsets tokenize and rebase them to the start of the phrase
+			for i in range(len(stemmed_phrase_list)):
 				offsets_norm.append([x - i for x in offsets[i]])
 
 			# Storing content in the set so that, overlapping/ duplicate content can be removed
@@ -81,7 +93,7 @@ class RelevantContent:
 								list(
 									map(lambda x: x - self.left_margin if (x - self.left_margin) > 0 else 0, [offset]))[
 									0]:offset + len(
-									phrase_list) + self.right_margin]
+									stemmed_phrase_list) + self.right_margin]
 								for offset in intersects])
 
 			# Combining all lists together as single content
@@ -91,8 +103,7 @@ class RelevantContent:
 				list_of_sentences.append(outputs)
 			# print("list of sentences: ")
 			# print(list_of_sentences)
-
-		return list_of_sentences
+		return list_of_sentences, found_per_stem_dictionary
 
 
 # Converting words into sentences from left and right margin
@@ -138,7 +149,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 			  'Keywords matched webpages on SHC', 'Total word count on all pages', 'Relevant content on all pages']
 	output_dataframe = pd.DataFrame(columns=header)
 	keywords = add_space_in_keywords(keywords)
-
+	list_of_found_per_stem_dictionary = []
 	# For every university in the dataframe
 	for index, row in input_dataframe.iterrows():
 		timestamp = time.time()
@@ -166,8 +177,8 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 				# Creating object per university
 				uni_object = RelevantContent(university, relevant_content_file)
 				# Words_content here is list of lists
-				words_content_list = uni_object.relevant_content_words(keywords)
-
+				words_content_list, found_per_stem_dictionary = uni_object.relevant_content_words(keywords)
+				list_of_found_per_stem_dictionary.append(found_per_stem_dictionary)
 				# Joining lists together with full stop
 				for words_content in words_content_list:
 
@@ -225,4 +236,4 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 	output_dataframe.to_csv(output_dir + '/get_relevant_data_from_collected_data_without_pdf_links.csv')
 
 	# Returning output dataframe and space added keywords for metric calculation
-	return output_dataframe, keywords
+	return output_dataframe, keywords, list_of_found_per_stem_dictionary

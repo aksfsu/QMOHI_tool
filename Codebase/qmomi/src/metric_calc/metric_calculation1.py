@@ -16,15 +16,15 @@ class QuantityMetrics:
 		self.content = content
 
 	# Getting keyword count for given content
-	def metric_count(self, keywords):
+	def metric_count(self, found_per_stem_dictionary):
+		print("the found per stem dictionary in metric calc: ")
+		print(found_per_stem_dictionary)
 		count_dict = {}
 		print("   - Keywords quantity")
 
 		# For every keyword given
-		for each_keyword in keywords:
-			count = len(re.findall(each_keyword, self.content, flags=re.IGNORECASE))
-			count_dict[each_keyword] = count
-
+		for each_stem in found_per_stem_dictionary:
+			count_dict[each_stem] = len(found_per_stem_dictionary[each_stem])
 		return count_dict
 
 
@@ -43,14 +43,16 @@ def get_coverage(metric_dataframe, input_keyword_count):
 
 
 # Calculating count of keywords for prevalence metric
-def metric_calculation(input_dataframe, keywords, output_dir):
+def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_stem_dictionary):
 	header = ['University name', 'University SHC URL', 'Count of keywords matching webpages on SHC',
 			  'Keywords matched webpages on SHC', 'Total word count on all pages', 'Num of sentences', 'Num of syllables',
 			  'Num of words', 'Reading ease', 'Grade level', 'Prevalence_metric', 'Percent_coverage']
 
-	input_keyword_count = len(keywords)
-	# Extending header as per keywords provided
-	header.extend(keywords)
+	# input_keyword_count = len(keywords)
+	# # Extending header as per keywords provided
+	# header.extend(keywords)
+	input_keyword_count = len(list_of_found_per_stem_dictionary[0])
+	header.extend(list_of_found_per_stem_dictionary[0])
 	output_dataframe = pd.DataFrame(columns=header)
 
 	# For every university's relevant content
@@ -80,7 +82,7 @@ def metric_calculation(input_dataframe, keywords, output_dir):
 			else:
 				content_obj = QuantityMetrics(content)
 				# Getting dictionary of keywords with count of keywords
-				metric_array = content_obj.metric_count(keywords)
+				metric_array = content_obj.metric_count(list_of_found_per_stem_dictionary[index])
 				# Converting dict into dataframe
 				metric_dataframe = pd.DataFrame([metric_array])
 
