@@ -90,7 +90,7 @@ class University:
 
 def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 
-	header = ['University name', 'Count of keywords matching webpages on SHC', 'Keywords matched webpages on SHC',
+	header = ['University name', 'Count of SHC webpages matching keywords', 'Keywords matched webpages on SHC',
 			  'Content on all pages', 'Similarity', 'Sentiment objectivity', 'Sentiment polarity', 'Timeliness',
 			  'Navigation', 'Trace']
 	output_dataframe = pd.DataFrame(columns=header)
@@ -105,7 +105,7 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 		print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		uni_name = row['University name']
-		no_of_links = row['Count of keywords matching webpages on SHC']
+		no_of_links = row['Count of SHC webpages matching keywords']
 		links = row['Keywords matched webpages on SHC']
 		content = row['Relevant content on all pages']
 		shc_url = row['University SHC URL']
@@ -137,7 +137,7 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 		print("End:", date.strftime('%H:%M:%S.%f'))
 
 		output_dataframe = output_dataframe.append({'University name': uni_name,
-													'Count of keywords matching webpages on SHC': no_of_links,
+													'Count of SHC webpages matching keywords': no_of_links,
 													'Keywords matched webpages on SHC': row['Keywords matched webpages on SHC'],
 													'Content on all pages': content,
 													'Similarity': similarity,

@@ -17,8 +17,6 @@ class QuantityMetrics:
 
 	# Getting keyword count for given content
 	def metric_count(self, found_per_stem_dictionary):
-		print("the found per stem dictionary in metric calc: ")
-		print(found_per_stem_dictionary)
 		count_dict = {}
 		print("   - Keywords quantity")
 
@@ -44,7 +42,7 @@ def get_coverage(metric_dataframe, input_keyword_count):
 
 # Calculating count of keywords for prevalence metric
 def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_stem_dictionary):
-	header = ['University name', 'University SHC URL', 'Count of keywords matching webpages on SHC',
+	header = ['University name', 'University SHC URL', 'Count of SHC webpages matching keywords',
 			  'Keywords matched webpages on SHC', 'Total word count on all pages', 'Num of sentences', 'Num of syllables',
 			  'Num of words', 'Reading ease', 'Grade level', 'Prevalence_metric', 'Percent_coverage']
 
@@ -64,7 +62,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 		university = row["University name"]
 		content = row["Relevant content on all pages"]
 		shc = row['University SHC URL']
-		no_of_links = row['Count of keywords matching webpages on SHC']
+		no_of_links = row['Count of SHC webpages matching keywords']
 		links = row['Keywords matched webpages on SHC']
 		no_of_sentences = row['Num of sentences']
 		no_of_syllables = row['Num of syllables']
@@ -98,7 +96,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 				uni_dict = {
 					'University name': university,
 					'University SHC URL': shc,
-					'Count of keywords matching webpages on SHC': no_of_links,
+					'Count of SHC webpages matching keywords': no_of_links,
 					'Keywords matched webpages on SHC': links,
 					'Total word count on all pages': total_words,
 					'Num of sentences': no_of_sentences,
@@ -121,7 +119,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 				{
 					'University name': university,
 					'University SHC URL': shc,
-					'Count of keywords matching webpages on SHC': no_of_links,
+					'Count of SHC webpages matching keywords': no_of_links,
 					'Keywords matched webpages on SHC': links,
 					'Total word count on all pages': total_words,
 					'Num of sentences': no_of_sentences,

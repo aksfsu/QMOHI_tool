@@ -86,7 +86,7 @@ class Readability:
 # Calculating reading level of the given content
 def get_reading_level(input_dataframe, output_dir):
 	header = ['University name', 'University SHC URL', 'Relevant content on all pages',
-			  'Count of keywords matching webpages on SHC', 'Keywords matched webpages on SHC',
+			  'Count of SHC webpages matching keywords', 'Keywords matched webpages on SHC',
 			  'Total word count on all pages', 'Num of sentences', 'Num of syllables', 'Num of words', 'Reading ease',
 			  'Grade level']
 	output_dataframe = pd.DataFrame(columns=header)
@@ -99,7 +99,7 @@ def get_reading_level(input_dataframe, output_dir):
 
 		university = row["University name"]
 		shc = row['University SHC URL']
-		no_of_links = row['Count of keywords matching webpages on SHC']
+		no_of_links = row['Count of SHC webpages matching keywords']
 		links = row['Keywords matched webpages on SHC']
 		content = row["Relevant content on all pages"]
 		total_words = row["Total word count on all pages"]
@@ -115,7 +115,7 @@ def get_reading_level(input_dataframe, output_dir):
 					{
 						'University name': university,
 						'University SHC URL': shc,
-						'Count of keywords matching webpages on SHC': no_of_links,
+						'Count of SHC webpages matching keywords': no_of_links,
 						'Keywords matched webpages on SHC': links,
 						'Total word count on all pages': total_words,
 						'Num of sentences': 0,
@@ -131,7 +131,7 @@ def get_reading_level(input_dataframe, output_dir):
 					{
 						'University name': university,
 						'University SHC URL': shc,
-						'Count of keywords matching webpages on SHC': no_of_links,
+						'Count of SHC webpages matching keywords': no_of_links,
 						'Keywords matched webpages on SHC': links,
 						'Total word count on all pages': total_words,
 						'Num of sentences': "NA",
@@ -162,7 +162,7 @@ def get_reading_level(input_dataframe, output_dir):
 						'University name': university,
 						'University SHC URL': shc,
 						'Relevant content on all pages': content,
-						'Count of keywords matching webpages on SHC': no_of_links,
+						'Count of SHC webpages matching keywords': no_of_links,
 						'Keywords matched webpages on SHC': links,
 						'Total word count on all pages': total_words,
 						'Num of sentences': n_sentences,
@@ -179,7 +179,7 @@ def get_reading_level(input_dataframe, output_dir):
 					'University name': university,
 					'University SHC URL': shc,
 					'Relevant content on all pages': content,
-					'Count of keywords matching webpages on SHC': no_of_links,
+					'Count of SHC webpages matching keywords': no_of_links,
 					'Keywords matched webpages on SHC': links,
 					'Total word count on all pages': total_words,
 					'Reading ease': "Error in reading content!",
