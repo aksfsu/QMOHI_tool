@@ -80,7 +80,18 @@ class RelevantContent:
 					if temp_list[i]+j not in offsets[j]:
 						if temp_list[i] in found_per_stem_dictionary[phrase]:
 							found_per_stem_dictionary[phrase].remove(temp_list[i])
-					
+			# stem_found_phrase_dictionary is a dictionary structured as such {'stem': ['unstemmed matching phrase1', 'unstemmed matching phrase1']}
+			stem_found_phrase_dictionary = {}
+			for stem in found_per_stem_dictionary:
+				stem_list = stem.split()
+				phrases_list = []
+				for index in found_per_stem_dictionary[stem]:
+					phrase_list = []
+					for i in range(len(stem_list)):
+						phrase_list.append(tokens[index + i])
+					phrase = ' '.join(phrase_list)
+					phrases_list.append(phrase)
+				stem_found_phrase_dictionary[stem] = phrases_list
 			# For each token in the phrase list, find the offsets tokenize and rebase them to the start of the phrase
 			for i in range(len(stemmed_phrase_list)):
 				offsets_norm.append([x - i for x in offsets[i]])
@@ -103,7 +114,7 @@ class RelevantContent:
 				list_of_sentences.append(outputs)
 			# print("list of sentences: ")
 			# print(list_of_sentences)
-		return list_of_sentences, found_per_stem_dictionary
+		return list_of_sentences, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary
 
 
 # Converting words into sentences from left and right margin
@@ -150,6 +161,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 	output_dataframe = pd.DataFrame(columns=header)
 	keywords = add_space_in_keywords(keywords)
 	list_of_found_per_stem_dictionary = []
+	list_of_stem_found_phrase_dictionary = []
 	# For every university in the dataframe
 	for index, row in input_dataframe.iterrows():
 		timestamp = time.time()
@@ -177,8 +189,9 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 				# Creating object per university
 				uni_object = RelevantContent(university, relevant_content_file)
 				# Words_content here is list of lists
-				words_content_list, found_per_stem_dictionary = uni_object.relevant_content_words(keywords)
+				words_content_list, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary = uni_object.relevant_content_words(keywords)
 				list_of_found_per_stem_dictionary.append(found_per_stem_dictionary)
+				list_of_stem_found_phrase_dictionary.append(stem_found_phrase_dictionary)
 				# Joining lists together with full stop
 				for words_content in words_content_list:
 
@@ -236,4 +249,4 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 	output_dataframe.to_csv(output_dir + '/get_relevant_data_from_collected_data_without_pdf_links.csv')
 
 	# Returning output dataframe and space added keywords for metric calculation
-	return output_dataframe, keywords, list_of_found_per_stem_dictionary
+	return output_dataframe, keywords, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary

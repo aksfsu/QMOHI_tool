@@ -61,9 +61,7 @@ class University:
 		return timeliness
 
 	def calculate_similarity(self, ideal_content):
-
 		university_content = self.content
-
 		# Because ideal content should match with the relevant content
 		non_alphabets_list = ['_', '-', ':']
 		for every_item in non_alphabets_list:

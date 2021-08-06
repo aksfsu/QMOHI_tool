@@ -96,7 +96,7 @@ def execute(input_file_path):
 
 	# Find relevant content from retrieved website data
 	print("\n###### Filtering information relevant to keywords ######")
-	result_dataframe6, keyword_list, list_of_found_per_stem_dictionary = filter_relevant_data.find_relevant_content(result_dataframe5, keyword_list, output_dir)
+	result_dataframe6, keyword_list, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary = filter_relevant_data.find_relevant_content(result_dataframe5, keyword_list, output_dir)
 
 	print("\n###### Universities where keywords relevant information was found ######")
 	print(result_dataframe6["University name"])
@@ -108,7 +108,7 @@ def execute(input_file_path):
 
 	# Calculate quantity of keywords, Prevalence metric, Coverage metric
 	print("\n###### Calculating quantity of keywords, Prevalence metric, Coverage metric ######")
-	result_dataframe8 = metric_calculation1.metric_calculation(result_dataframe7, keyword_list, output_dir, list_of_found_per_stem_dictionary)
+	result_dataframe8 = metric_calculation1.metric_calculation(result_dataframe7, keyword_list, output_dir, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary)
 
 	# Calculate Similarity metric, Objectivity metric, Polarity metric, Timeliness metric, Navigation metric
 	print("\n###### Calculating Similarity metric, Objectivity metric, Polarity metric, Timeliness metric, Navigation metric ######")
