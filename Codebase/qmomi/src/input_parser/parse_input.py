@@ -9,11 +9,11 @@ def read_input_file(path):
 	try:
 		file = pd.read_csv(path,
 							 usecols=['University_name', 'Keywords', 'API_keys', 'CSE_id', 'Selenium_Chrome_webdriver',
-									  'Output_directory', 'Ideal_document'])
+									  'Output_directory', 'Ideal_document', 'Word_vector_model'])
 	except Exception as e:
 		print(e)
 		print("Problem with input file! Make sure the location of the file is correct and columns are "
-			  "'University_name', 'Keywords', 'API_keys', 'CSE_id', 'Selenium_Chrome_webdriver', 'Output_directory', 'Ideal_document'. ")
+			  "'University_name', 'Keywords', 'API_keys', 'CSE_id', 'Selenium_Chrome_webdriver', 'Output_directory', 'Ideal_document', 'Word_vector_model'. ")
 		sys.exit()
 
 	return file
@@ -186,3 +186,17 @@ def get_ideal_document_with_path(file):
 	ideal_doc = cse['Ideal_document'].values[0]
 	print(": ", ideal_doc)
 	return ideal_doc
+
+def get_model(file):
+	# Reading the word vector model provided by user
+	model_dir = file[['Word_vector_model']].copy()
+
+	model_dir = model_dir.dropna(axis=0, how='any')
+
+	if model_dir.empty:
+		print("Please provide a model for calculating similarity! Will use old metric.")
+		return 0
+
+	model_dir = model_dir['Word_vector_model'].values[0]
+
+	return model_dir

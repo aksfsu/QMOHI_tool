@@ -1,5 +1,6 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
+import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from textblob import TextBlob
 import requests
@@ -8,6 +9,10 @@ from urllib.parse import urlparse
 from qmomi.src.metric_calc.navigation_metric.counter import get_min_click_count
 import time
 import datetime
+from gensim.models.word2vec import Word2Vec
+from gensim.models import KeyedVectors
+from gensim.test.utils import datapath, get_tmpfile
+from gensim.utils import tokenize
 
 
 class University:
@@ -60,7 +65,7 @@ class University:
 
 		return timeliness
 
-	def calculate_similarity(self, ideal_content):
+	def calculate_similarity(self, word_vector, ideal_content):
 
 		university_content = self.content
 
@@ -70,15 +75,31 @@ class University:
 			replacing_item = " " + every_item + " "
 			ideal_content = re.sub(every_item, replacing_item, ideal_content)
 
-		corpus = [ideal_content, university_content]
+		# if we were provided a word vector, we will use it, otherwise we will use tfidf
+		if (word_vector):
+		    # summed_ideal will hold the sum of all of its word's vectors
+			summed_ideal = [0] * len(word_vector['word'])
+			for token in ideal_content:
+				if token in word_vector:
+					summed_ideal = np.sum([summed_ideal, word_vector[token]], axis=0)
 
-		vectorizer = TfidfVectorizer()
-		trsfm = vectorizer.fit_transform(corpus)
+		    # summed_main will hold the sum of all of its word's vectors
+			summed_main = [0] * len(word_vector['word'])
+			for token in university_content:
+				if token in word_vector:
+					summed_main = np.sum([summed_main, word_vector[token]], axis=0)
+			similarity = cosine_similarity([summed_ideal], [summed_main])
+			return round(similarity[0][0], 3)
+		else:
+			corpus = [ideal_content, university_content]
 
-		similarity = cosine_similarity(trsfm[0], trsfm[1])
+			vectorizer = TfidfVectorizer()
+			trsfm = vectorizer.fit_transform(corpus)
 
-		# To get the similarity with the content with fake document
-		return round(similarity[0][0], 3)
+			similarity = cosine_similarity(trsfm[0], trsfm[1])
+
+			# To get the similarity with the content with fake document
+			return round(similarity[0][0], 3)
 
 	def calculate_navigation(self, driver_path):
 
@@ -88,7 +109,7 @@ class University:
 		return min_clicks, trace
 
 
-def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
+def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path, model_path):
 
 	header = ['University name', 'Count of SHC webpages matching keywords', 'Keywords matched webpages on SHC',
 			  'Content on all pages', 'Similarity', 'Sentiment objectivity', 'Sentiment polarity', 'Timeliness',
@@ -98,6 +119,12 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 	file = open(ideal_doc)
 	ideal_content = file.read()
 	file.close()
+
+	# If the model_path is 0, that means a model was not provided. Old method for similarity will be used.
+	if (model_path != 0):
+		print("Loading model...")
+		wv = KeyedVectors.load_word2vec_format(datapath(model_path), binary=True)
+		print("Loaded")
 
 	for index, row in input_dataframe.iterrows():
 		# timestamp = time.time()
@@ -114,7 +141,10 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 		obj = University(uni_name, shc_url, content, links, no_of_links)
 
 		print("   - Similarity")
-		similarity = obj.calculate_similarity(ideal_content)
+		if (model_path != 0):
+			similarity = obj.calculate_similarity(wv, ideal_content)
+		else:
+			similarity = obj.calculate_similarity(None, ideal_content)
 
 		print("   - Objectivity")
 		sentiment_objectivity = obj.calculate_sentiment_objectivity()
