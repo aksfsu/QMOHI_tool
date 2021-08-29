@@ -73,6 +73,10 @@ def execute(input_file_path):
 	print("- Collecting ideal document name", end="")
 	ideal_doc = parse_input.get_ideal_document_with_path(file)
 
+	# Get the pre-trained model for calculating similarity. If not provided, old method is used.
+	print("- Collecting input model", end="")
+	model_path = parse_input.get_model(file)
+
 	# Get university SHC from university name
 	print("\n###### Finding university SHC websites ######")
 	result_dataframe3 = get_uni_shc.get_shc_urls_from_uni_name(universities_list, keys_list[:no_of_keys_for_shc],
@@ -112,7 +116,7 @@ def execute(input_file_path):
 
 	# Calculate Similarity metric, Objectivity metric, Polarity metric, Timeliness metric, Navigation metric
 	print("\n###### Calculating Similarity metric, Objectivity metric, Polarity metric, Timeliness metric, Navigation metric ######")
-	result_dataframe9 = metric_calculation2.calculate_metrics(result_dataframe6, output_dir, ideal_doc, driver_path)
+	result_dataframe9 = metric_calculation2.calculate_metrics(result_dataframe6, output_dir, ideal_doc, driver_path, model_path)
 
 	# Consolidating final result together
 	print("\n###### Consolidating all metric values together ######")
