@@ -93,9 +93,9 @@ def get_reading_level(input_dataframe, output_dir):
 
 	# For every university
 	for index, row in input_dataframe.iterrows():
-		timestamp = time.time()
-		date = datetime.datetime.fromtimestamp(timestamp)
-		print("Start:", date.strftime('%H:%M:%S.%f'))
+		# timestamp = time.time()
+		# date = datetime.datetime.fromtimestamp(timestamp)
+		# print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		university = row["University name"]
 		shc = row['University SHC URL']
@@ -186,9 +186,9 @@ def get_reading_level(input_dataframe, output_dir):
 					'Grade level': "Error in reading content!"
 				}, ignore_index=True)
 
-		timestamp = time.time()
-		date = datetime.datetime.fromtimestamp(timestamp)
-		print("End:", date.strftime('%H:%M:%S.%f'))
+		# timestamp = time.time()
+		# date = datetime.datetime.fromtimestamp(timestamp)
+		# print("End:", date.strftime('%H:%M:%S.%f'))
 	# Storing results
 	output_dataframe.to_csv(output_dir + '/Reading_level_of_content_without_pdf.csv')
 

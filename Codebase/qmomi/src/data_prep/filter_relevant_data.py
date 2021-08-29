@@ -19,8 +19,8 @@ nltk.download('gutenberg')  # Can be run only once in the beginning
 
 class RelevantContent:
 	# Number of words in the margin
-	left_margin = 90
-	right_margin = 90
+	left_margin = 20
+	right_margin = 20
 
 	def __init__(self, uni_name, relevant_content_file):
 		self.uni_name = uni_name
@@ -59,8 +59,8 @@ class RelevantContent:
 			else:
 				phrase_stem_dictionary[stemmed_phrase] = [phrase_list]
 
-		print("Phrase Stem Dictionary: ")
-		print(phrase_stem_dictionary)
+		# print("Phrase Stem Dictionary: ")
+		# print(phrase_stem_dictionary)
 
 		# found_per_stem_dictionary is structured as such: {'stem': [index1, index2, index3]}
 		found_per_stem_dictionary = {}
@@ -69,7 +69,6 @@ class RelevantContent:
 		c = nltk.ConcordanceIndex(stemmed_tokens, key=lambda s: s.lower())
 		for phrase in phrase_stem_dictionary:
 			stemmed_phrase_list = phrase.split(' ')
-			# stemmed_phrase_list = list(phrase)
 			# Find the offset for each token in the phrase
 			offsets = [c.offsets(x) for x in stemmed_phrase_list]
 			offsets_norm = []
@@ -80,6 +79,7 @@ class RelevantContent:
 					if temp_list[i]+j not in offsets[j]:
 						if temp_list[i] in found_per_stem_dictionary[phrase]:
 							found_per_stem_dictionary[phrase].remove(temp_list[i])
+
 			# stem_found_phrase_dictionary is a dictionary structured as such {'stem': ['unstemmed matching phrase1', 'unstemmed matching phrase1']}
 			stem_found_phrase_dictionary = {}
 			for stem in found_per_stem_dictionary:
@@ -164,9 +164,9 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 	list_of_stem_found_phrase_dictionary = []
 	# For every university in the dataframe
 	for index, row in input_dataframe.iterrows():
-		timestamp = time.time()
-		date = datetime.datetime.fromtimestamp(timestamp)
-		print("Start:", date.strftime('%H:%M:%S.%f'))
+		# timestamp = time.time()
+		# date = datetime.datetime.fromtimestamp(timestamp)
+		# print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		final_relevant_content = []
 		seen_content = set()
@@ -241,9 +241,9 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 														# Content contains "No content here!
 														'Total word count on all pages': total_words
 														}, ignore_index=True)
-		timestamp = time.time()
-		date = datetime.datetime.fromtimestamp(timestamp)
-		print("End:", date.strftime('%H:%M:%S.%f'))
+		# timestamp = time.time()
+		# date = datetime.datetime.fromtimestamp(timestamp)
+		# print("End:", date.strftime('%H:%M:%S.%f'))
 
 	# Storing output dataframe
 	output_dataframe.to_csv(output_dir + '/get_relevant_data_from_collected_data_without_pdf_links.csv')

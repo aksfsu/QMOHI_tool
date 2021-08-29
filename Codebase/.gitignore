@@ -130,3 +130,6 @@ dmypy.json
 
 # argument csv file
 myargument.csv
+
+# generated json file
+data.json
