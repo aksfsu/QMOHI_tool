@@ -19,9 +19,9 @@ def save_webpage_content(input_dataframe, output_dir):
 
 	# For every university
 	for index, row in input_dataframe.iterrows():
-		timestamp = time.time()
-		date = datetime.datetime.fromtimestamp(timestamp)
-		print("Start:", date.strftime('%H:%M:%S.%f'))
+		# timestamp = time.time()
+		# date = datetime.datetime.fromtimestamp(timestamp)
+		# print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		university = row['University name']
 		links = row['Keywords matched webpages on SHC']
@@ -51,6 +51,6 @@ def save_webpage_content(input_dataframe, output_dir):
 				except Exception as e:
 					print("Error in saving one of the web page for ", university)
 					print(links[i], " : ", e)
-		timestamp = time.time()
-		date = datetime.datetime.fromtimestamp(timestamp)
-		print("End:", date.strftime('%H:%M:%S.%f'))
+		# timestamp = time.time()
+		# date = datetime.datetime.fromtimestamp(timestamp)
+		# print("End:", date.strftime('%H:%M:%S.%f'))

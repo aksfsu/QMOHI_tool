@@ -33,10 +33,8 @@ class QuantityMetrics:
 					continue
 				break
 			count_dict[each_keyword] = len(found_per_stem_dictionary[matched_stem])
-		# for each_stem in found_per_stem_dictionary:
-		# 	count_dict[each_stem] = len(found_per_stem_dictionary[each_stem])
-		print("count_dict: ")
-		print(count_dict)
+		# print("count_dict: ")
+		# print(count_dict)
 		return count_dict
 
 
@@ -60,9 +58,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 			  'Keywords matched webpages on SHC', 'Total word count on all pages', 'Num of sentences', 'Num of syllables',
 			  'Num of words', 'Reading ease', 'Grade level', 'Prevalence_metric', 'Percent_coverage']
 
-	# input_keyword_count = len(keywords)
-	# # Extending header as per keywords provided
-	# header.extend(keywords)
+	# Headers are created based on the dictionary created during the filtering step
 	list_of_keyword_headers = []
 	for i in range(len(keywords)):
 		matched_stem = ''
@@ -83,18 +79,17 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 			list_of_keyword_headers.append(keywords[i])
 		else:
 			list_of_keyword_headers.append(keywords[i] + "(" + ','.join(phrases_matching_stem) + ")")
-	print("list of keyword headers: ")
-	print(list_of_keyword_headers)
+	# print("list of keyword headers: ")
+	# print(list_of_keyword_headers)
 	input_keyword_count = len(list_of_keyword_headers)
 	header.extend(list_of_keyword_headers)
 	output_dataframe = pd.DataFrame(columns=header)
 
 	# For every university's relevant content
 	for index, row in input_dataframe.iterrows():
-		timestamp = time.time()
-		date = datetime.datetime.fromtimestamp(timestamp)
-		print("Start:", date.strftime('%H:%M:%S.%f'))
-
+		# timestamp = time.time()
+		# date = datetime.datetime.fromtimestamp(timestamp)
+		# print("Start:", date.strftime('%H:%M:%S.%f'))
 		university = row["University name"]
 		content = row["Relevant content on all pages"]
 		shc = row['University SHC URL']
@@ -123,8 +118,8 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 				for key in metric_array:
 					modified_metric_array[list_of_keyword_headers[index]] = metric_array[key]
 					index += 1
-				print("metric_array: ")
-				print(modified_metric_array)
+				# print("metric_array: ")
+				# print(modified_metric_array)
 				# Converting dict into dataframe
 				metric_dataframe = pd.DataFrame([modified_metric_array])
 
@@ -173,9 +168,9 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 					'Grade level': grade_level
 
 				}, ignore_index=True)
-		timestamp = time.time()
-		date = datetime.datetime.fromtimestamp(timestamp)
-		print("End:", date.strftime('%H:%M:%S.%f'))
+		# timestamp = time.time()
+		# date = datetime.datetime.fromtimestamp(timestamp)
+		# print("End:", date.strftime('%H:%M:%S.%f'))
 	# Storing output
 	output_dataframe.to_csv(output_dir + '/Keywords_count_for_universities.csv')
 

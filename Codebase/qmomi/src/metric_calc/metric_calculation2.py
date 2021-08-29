@@ -61,7 +61,9 @@ class University:
 		return timeliness
 
 	def calculate_similarity(self, ideal_content):
+
 		university_content = self.content
+
 		# Because ideal content should match with the relevant content
 		non_alphabets_list = ['_', '-', ':']
 		for every_item in non_alphabets_list:
@@ -98,9 +100,9 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 	file.close()
 
 	for index, row in input_dataframe.iterrows():
-		timestamp = time.time()
-		date = datetime.datetime.fromtimestamp(timestamp)
-		print("Start:", date.strftime('%H:%M:%S.%f'))
+		# timestamp = time.time()
+		# date = datetime.datetime.fromtimestamp(timestamp)
+		# print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		uni_name = row['University name']
 		no_of_links = row['Count of SHC webpages matching keywords']
@@ -123,16 +125,16 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 		print("   - Timeliness")
 		timeliness = obj.calculate_timeliness()
 
-		timestamp = time.time()
-		date = datetime.datetime.fromtimestamp(timestamp)
-		print("Start:", date.strftime('%H:%M:%S.%f'))
+		# timestamp = time.time()
+		# date = datetime.datetime.fromtimestamp(timestamp)
+		# print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		print("   - Navigation")
 		navigation, trace = obj.calculate_navigation(driver_path)
 
-		timestamp = time.time()
-		date = datetime.datetime.fromtimestamp(timestamp)
-		print("End:", date.strftime('%H:%M:%S.%f'))
+		# timestamp = time.time()
+		# date = datetime.datetime.fromtimestamp(timestamp)
+		# print("End:", date.strftime('%H:%M:%S.%f'))
 
 		output_dataframe = output_dataframe.append({'University name': uni_name,
 													'Count of SHC webpages matching keywords': no_of_links,
@@ -145,9 +147,9 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path):
 													'Navigation': navigation,
 													'Trace': trace
 													}, ignore_index=True)
-		timestamp = time.time()
-		date = datetime.datetime.fromtimestamp(timestamp)
-		print("End:", date.strftime('%H:%M:%S.%f'))
+		# timestamp = time.time()
+		# date = datetime.datetime.fromtimestamp(timestamp)
+		# print("End:", date.strftime('%H:%M:%S.%f'))
 	# Storing output
 	output_dataframe.to_csv(output_dir + '/measures_result.csv')
 
