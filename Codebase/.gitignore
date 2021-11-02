@@ -133,3 +133,8 @@ myargument.csv
 
 # generated json file
 data.json
+
+#input files
+QMOMI_input/experiments/2021/QMOMI_input_11thOct2021/GoogleNews-vectors-negative300.bin
+QMOMI_input/experiments/2021/QMOMI_input_11thOct2021/output/*
+QMOMI_input/test_input_template.csv
