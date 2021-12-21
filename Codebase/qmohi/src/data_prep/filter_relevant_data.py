@@ -11,8 +11,6 @@ import nltk
 import nltk.corpus
 import pandas as pd
 import os
-import time
-import datetime
 
 nltk.download('gutenberg')  # Can be run only once in the beginning
 
@@ -59,8 +57,6 @@ class RelevantContent:
 			else:
 				phrase_stem_dictionary[stemmed_phrase] = [phrase_list]
 
-		# print("Phrase Stem Dictionary: ")
-		# print(phrase_stem_dictionary)
 
 		# found_per_stem_dictionary is structured as such: {'stem': [index1, index2, index3]}
 		found_per_stem_dictionary = {}
@@ -112,8 +108,6 @@ class RelevantContent:
 			# Ignore if no content was retrieved
 			if outputs:
 				list_of_sentences.append(outputs)
-			# print("list of sentences: ")
-			# print(list_of_sentences)
 		return list_of_sentences, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary
 
 
@@ -164,9 +158,6 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 	list_of_stem_found_phrase_dictionary = []
 	# For every university in the dataframe
 	for index, row in input_dataframe.iterrows():
-		# timestamp = time.time()
-		# date = datetime.datetime.fromtimestamp(timestamp)
-		# print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		final_relevant_content = []
 		seen_content = set()
@@ -241,9 +232,6 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 														# Content contains "No content here!
 														'Total word count on all pages': total_words
 														}, ignore_index=True)
-		# timestamp = time.time()
-		# date = datetime.datetime.fromtimestamp(timestamp)
-		# print("End:", date.strftime('%H:%M:%S.%f'))
 
 	# Storing output dataframe
 	output_dataframe.to_csv(output_dir + '/get_relevant_data_from_collected_data_without_pdf_links.csv')

@@ -5,9 +5,6 @@ Output - Getting prevalence metric as per keywords provided
 """
 
 import pandas as pd
-import re
-import time
-import datetime
 
 
 class QuantityMetrics:
@@ -33,8 +30,6 @@ class QuantityMetrics:
 					continue
 				break
 			count_dict[each_keyword] = len(found_per_stem_dictionary[matched_stem])
-		# print("count_dict: ")
-		# print(count_dict)
 		return count_dict
 
 
@@ -79,17 +74,14 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 			list_of_keyword_headers.append(keywords[i])
 		else:
 			list_of_keyword_headers.append(keywords[i] + "(" + ','.join(phrases_matching_stem) + ")")
-	# print("list of keyword headers: ")
-	# print(list_of_keyword_headers)
+	
 	input_keyword_count = len(list_of_keyword_headers)
 	header.extend(list_of_keyword_headers)
 	output_dataframe = pd.DataFrame(columns=header)
 
 	# For every university's relevant content
 	for index, row in input_dataframe.iterrows():
-		# timestamp = time.time()
-		# date = datetime.datetime.fromtimestamp(timestamp)
-		# print("Start:", date.strftime('%H:%M:%S.%f'))
+		
 		university = row["University name"]
 		content = row["Relevant content on all pages"]
 		shc = row['University SHC URL']
@@ -118,9 +110,6 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 				for key in metric_array:
 					modified_metric_array[list_of_keyword_headers[index]] = metric_array[key]
 					index += 1
-				# print("metric_array: ")
-				# print(modified_metric_array)
-				# Converting dict into dataframe
 				metric_dataframe = pd.DataFrame([modified_metric_array])
 
 				# Calculating prevalence metric
@@ -168,10 +157,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 					'Grade level': grade_level
 
 				}, ignore_index=True)
-		# timestamp = time.time()
-		# date = datetime.datetime.fromtimestamp(timestamp)
-		# print("End:", date.strftime('%H:%M:%S.%f'))
-	# Storing output
+		
 	output_dataframe.to_csv(output_dir + '/Keywords_count_for_universities.csv')
 
 	return output_dataframe

@@ -13,8 +13,6 @@ import pandas as pd
 import numpy as np
 import re
 import sys
-import time
-import datetime
 
 
 # Building Google custom search engine
@@ -22,7 +20,8 @@ def google_search(search_term, api_key, cse_id, **kwargs):
 	try:
 		service = build("customsearch", "v1", developerKey=api_key)
 		res = service.cse().list(q=search_term, cx=cse_id, **kwargs).execute()
-		return res['items']
+		if('items' in res):
+			return res['items']
 
 	except Exception as e:
 		print("Error in google search : ", e)
@@ -119,9 +118,6 @@ def get_shc_urls_from_uni_name(input_dataframe, keys, driver_path, cse_id, outpu
 		i = 0
 
 		for index, row in every_split.iterrows():
-			# timestamp = time.time()
-			# date = datetime.datetime.fromtimestamp(timestamp)
-			# print("Start:", date.strftime('%H:%M:%S.%f'))
 
 			url_found = 0
 
@@ -136,19 +132,20 @@ def get_shc_urls_from_uni_name(input_dataframe, keys, driver_path, cse_id, outpu
 			uni_shc = uni_name + " student health center"
 			uni_shc_web = google_search(uni_shc, my_api_key, cse_id, num=3, )  # consider 3 results
 
+			if(uni_shc_web is not None):
 			# Check if retrieved URL do not
-			for result in uni_shc_web:
-				url = result.get('link', 'none')
+				for result in uni_shc_web:
+					url = result.get('link', 'none')
 
-				# If url with .edu found
-				if ('.edu' in url) and ('.pdf' not in url):
-					# Get the redirected URL, remove sub-urls and store it in the dataframe
-					redirected_url = get_redirected_url(url, driver_path)
-					sanitized_url = remove_sub_urls(redirected_url)
+					# If url with .edu found
+					if ('.edu' in url) and ('.pdf' not in url):
+						# Get the redirected URL, remove sub-urls and store it in the dataframe
+						redirected_url = get_redirected_url(url, driver_path)
+						sanitized_url = remove_sub_urls(redirected_url)
 
-					output_dataframe_splitted.loc[i] = [university, sanitized_url]
-					url_found = 1
-					break
+						output_dataframe_splitted.loc[i] = [university, sanitized_url]
+						url_found = 1
+						break
 
 			if url_found == 0:
 				print("   - University SHC website not found!")
@@ -157,9 +154,6 @@ def get_shc_urls_from_uni_name(input_dataframe, keys, driver_path, cse_id, outpu
 			i = i + 1
 
 			output_dataframe = pd.concat([output_dataframe, output_dataframe_splitted], sort=False)
-			# timestamp = time.time()
-			# date = datetime.datetime.fromtimestamp(timestamp)
-			# print("End:", date.strftime('%H:%M:%S.%f'))
 
 	# Store result in output directory
 	output_dataframe.to_csv(output_dir + '/University_SHC.csv')

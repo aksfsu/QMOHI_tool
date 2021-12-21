@@ -135,6 +135,6 @@ myargument.csv
 data.json
 
 #input files
-QMOMI_input/experiments/2021/QMOMI_input_11thOct2021/GoogleNews-vectors-negative300.bin
-QMOMI_input/experiments/2021/QMOMI_input_11thOct2021/output/*
-QMOMI_input/test_input_template.csv
+QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/GoogleNews-vectors-negative300.bin
+QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/output/*
+QMOHI_input/test_input_template.csv

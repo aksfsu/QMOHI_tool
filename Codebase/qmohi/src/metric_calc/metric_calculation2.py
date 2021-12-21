@@ -6,9 +6,7 @@ from textblob import TextBlob
 import requests
 import re
 from urllib.parse import urlparse
-from qmomi.src.metric_calc.navigation_metric.counter import get_min_click_count
-import time
-import datetime
+from qmohi.src.metric_calc.navigation_metric.counter import get_min_click_count
 from gensim.models.word2vec import Word2Vec
 from gensim.models import KeyedVectors
 from gensim.test.utils import datapath, get_tmpfile
@@ -127,9 +125,6 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path, model
 		print("Loaded")
 
 	for index, row in input_dataframe.iterrows():
-		# timestamp = time.time()
-		# date = datetime.datetime.fromtimestamp(timestamp)
-		# print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		uni_name = row['University name']
 		no_of_links = row['Count of SHC webpages matching keywords']
@@ -155,17 +150,11 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path, model
 		print("   - Timeliness")
 		timeliness = obj.calculate_timeliness()
 
-		# timestamp = time.time()
-		# date = datetime.datetime.fromtimestamp(timestamp)
-		# print("Start:", date.strftime('%H:%M:%S.%f'))
 
 		print("   - Navigation")
 		navigation, trace = obj.calculate_navigation(driver_path)
 
-		# timestamp = time.time()
-		# date = datetime.datetime.fromtimestamp(timestamp)
-		# print("End:", date.strftime('%H:%M:%S.%f'))
-
+		
 		output_dataframe = output_dataframe.append({'University name': uni_name,
 													'Count of SHC webpages matching keywords': no_of_links,
 													'Keywords matched webpages on SHC': row['Keywords matched webpages on SHC'],
@@ -177,9 +166,7 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path, model
 													'Navigation': navigation,
 													'Trace': trace
 													}, ignore_index=True)
-		# timestamp = time.time()
-		# date = datetime.datetime.fromtimestamp(timestamp)
-		# print("End:", date.strftime('%H:%M:%S.%f'))
+		
 	# Storing output
 	output_dataframe.to_csv(output_dir + '/measures_result.csv')
 
