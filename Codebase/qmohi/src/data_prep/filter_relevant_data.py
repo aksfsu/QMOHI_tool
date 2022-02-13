@@ -154,6 +154,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 			  'Keywords matched webpages on SHC', 'Total word count on all pages', 'Relevant content on all pages']
 	output_dataframe = pd.DataFrame(columns=header)
 	keywords = add_space_in_keywords(keywords)
+	phrase_stem_dictionary = []
 	list_of_found_per_stem_dictionary = []
 	list_of_stem_found_phrase_dictionary = []
 	# For every university in the dataframe
