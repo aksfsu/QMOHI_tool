@@ -16,10 +16,10 @@ import sys
 import time
 import datetime
 
-from qmohi.src.input_parser import parse_input, get_uni_shc
-from qmohi.src.data_prep import filter_relevant_data, webpage_crawling, store_webpages, \
+from qmohi.input_parser import parse_input, get_uni_shc
+from qmohi.data_prep import filter_relevant_data, webpage_crawling, store_webpages, \
 	get_shc_webpages_with_keywords
-from qmohi.src.metric_calc import reading_level, combine_results, metric_calculation1, metric_calculation2
+from qmohi.metric_calc import reading_level, combine_results, metric_calculation1, metric_calculation2
 
 
 # Execute complete pipeline

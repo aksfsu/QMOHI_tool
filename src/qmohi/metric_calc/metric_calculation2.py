@@ -6,7 +6,7 @@ from textblob import TextBlob
 import requests
 import re
 from urllib.parse import urlparse
-from qmohi.src.metric_calc.navigation_metric.counter import get_min_click_count
+from qmohi.metric_calc.navigation_metric.counter import get_min_click_count
 from gensim.models.word2vec import Word2Vec
 from gensim.models import KeyedVectors
 from gensim.test.utils import datapath, get_tmpfile

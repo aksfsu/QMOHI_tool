@@ -1,7 +1,7 @@
 import copy
 import re
-import qmohi.src.metric_calc.navigation_metric.constants as constants
-from qmohi.src.metric_calc.navigation_metric.tree_structure import Node, set_up_selenium_driver
+import qmohi.metric_calc.navigation_metric.constants as constants
+from qmohi.metric_calc.navigation_metric.tree_structure import Node, set_up_selenium_driver
 
 
 def get_count(nodes, call_level, target_urls):
