@@ -159,8 +159,8 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 	list_of_stem_found_phrase_dictionary = []
 	# For every university in the dataframe
 	for index, row in input_dataframe.iterrows():
-
-		final_relevant_content = []
+		found_per_stem_dictionary = []
+		stem_found_phrase_dictionary = []
 		seen_content = set()
 		unique_content = []
 		university = row['University name']
@@ -182,8 +182,6 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 				uni_object = RelevantContent(university, relevant_content_file)
 				# Words_content here is list of lists
 				words_content_list, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary = uni_object.relevant_content_words(keywords)
-				list_of_found_per_stem_dictionary.append(found_per_stem_dictionary)
-				list_of_stem_found_phrase_dictionary.append(stem_found_phrase_dictionary)
 				# Joining lists together with full stop
 				for words_content in words_content_list:
 
@@ -197,8 +195,6 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 							unique_content.append(each_sentence)
 
 					sentences_content = join_array(unique_content)
-					# Final content after removing duplicate sentences
-					final_relevant_content.append(sentences_content)
 
 				# Deleting relevant_file.txt
 				os.remove(relevant_content_file)
@@ -217,6 +213,8 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 				pass
 			# Writing to dataframe
 			else:
+				list_of_found_per_stem_dictionary.append(found_per_stem_dictionary)
+				list_of_stem_found_phrase_dictionary.append(stem_found_phrase_dictionary)
 				output_dataframe = output_dataframe.append({'University name': university,
 															'University SHC URL': shc,
 															'Count of SHC webpages matching keywords': no_of_links,
