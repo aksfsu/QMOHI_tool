@@ -89,7 +89,7 @@ def get_links(input_dataframe, keywords, keys, cse_id, output_dir):
 			print("- ", university)
 
 			# If SHC URL was found
-			if shc != -1:
+			if shc:
 				url_obj = ShcUrl(shc, my_api_key, cse_id)
 				links_shc_website = url_obj.get_links_with_keywords(keywords)
 				end_timestamp = datetime.datetime.now()
