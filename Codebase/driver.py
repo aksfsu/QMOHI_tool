@@ -16,7 +16,7 @@ import sys
 import time
 import datetime
 
-from qmohi.src.input_parser import parse_input, get_uni_shc
+from qmohi.src.input_parser import parse_input, get_uni_shc, sentence_extraction
 from qmohi.src.data_prep import filter_relevant_data, webpage_crawling, store_webpages, \
 	get_shc_webpages_with_keywords
 from qmohi.src.metric_calc import reading_level, combine_results, metric_calculation1, metric_calculation2
@@ -93,6 +93,8 @@ def execute(input_file_path):
 	print("\n###### Saving web pages locally in HTML format ######")
 	store_webpages.save_webpage_content(result_dataframe4, output_dir)
 
+	sentence_extraction.get_search_results(output_dir, keyword_list, 2)
+	
 	# Get data from the urls found under shc
 	print("\n###### Collecting all text data from SHC web pages found ######")
 	result_dataframe5 = webpage_crawling.retrieve_content_from_urls(result_dataframe4, keyword_list,
