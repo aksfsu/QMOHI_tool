@@ -77,6 +77,10 @@ def execute(input_file_path):
 	print("- Collecting input model", end="")
 	model_path = parse_input.get_model(file)
 
+	# Get the margin for the sentence extraction. If not provided, the function returns the default value (=2)
+	print("- Collecting sentence extraction margin", end="")
+	sentence_extraction_margin = parse_input.get_sentence_extraction_margin(file)
+
 	# Get university SHC from university name
 	print("\n###### Finding university SHC websites ######")
 	result_dataframe3 = get_uni_shc.get_shc_urls_from_uni_name(universities_list, keys_list[:no_of_keys_for_shc],
@@ -93,7 +97,8 @@ def execute(input_file_path):
 	print("\n###### Saving web pages locally in HTML format ######")
 	store_webpages.save_webpage_content(result_dataframe4, output_dir)
 
-	sentence_extraction.get_search_results(output_dir, keyword_list, 2)
+	# Find anchor sentences and highlight them in html format
+	sentence_extraction.get_search_results(output_dir, keyword_list, sentence_extraction_margin)
 	
 	# Get data from the urls found under shc
 	print("\n###### Collecting all text data from SHC web pages found ######")
