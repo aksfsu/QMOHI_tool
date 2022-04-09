@@ -41,7 +41,6 @@ def get_search_results(output_dir, keyword_list, margin=2):
 			# Segment the sentences
 			sentences = sent_tokenize(text)
 			# Add space to the end of the sentence for the readability in output file
-			#sentences = [sentence + " " for sentence in sentences]
 			sentences = [re.sub(r' +', ' ', sentence) for sentence in sentences]
 			sentences = [re.sub(r'\n+', '<br>', sentence) + " " for sentence in sentences]
 			#print(sentences)
@@ -64,7 +63,7 @@ def get_search_results(output_dir, keyword_list, margin=2):
 							anchor_sentence_ref[j] = MARGIN
 
 			# Convert the keyword list into regex format
-			re_keywords = "|".join(keyword_list)
+			re_keywords = "|".join(sorted(keyword_list, key=len, reverse=True))
 			# Highlight margin and anchor sentences and keywords
 			for i, sentence in enumerate(sentences):
 				# Highlight anchor sentences
