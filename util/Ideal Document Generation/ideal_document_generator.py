@@ -88,9 +88,6 @@ def get_document(output_file, url, depth, visited_urls):
     if depth == 0:
         return
 
-    if depth != DEPTH:
-        output_file.write("\n\n")
-
     # Get the HTML based on URL
     html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
     # Parse the HTML
@@ -170,6 +167,8 @@ def get_document(output_file, url, depth, visited_urls):
             urls.extend(get_internal_links(side, url))
 
         # Export into a text file
+        if depth != DEPTH:
+            output_file.write("\n\n")
         output_file.write(text)
 
     # Crawl internal links

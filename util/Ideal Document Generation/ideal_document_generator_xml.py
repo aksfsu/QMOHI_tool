@@ -57,6 +57,7 @@ async def exec_medlineplus_web_service(term):
     await browser.close()
     return xml
 
+# Get URL of the first hit by MedlinePlus API
 def get_url_from_query(term):
 	# Get the XML 
 	xml = asyncio.get_event_loop().run_until_complete(exec_medlineplus_web_service(term))
@@ -71,6 +72,34 @@ def get_url_from_query(term):
 		else:
 			return None
 	return None
+
+# Get all the text in all the hit URLs
+def get_documents_from_query(output_file, term):
+	# Get the XML 
+	xml = asyncio.get_event_loop().run_until_complete(exec_medlineplus_web_service(term))
+	# Pass the XML to the XML parset
+	tree = ET.fromstring(xml)
+	# Identify the summary of the term
+	documents = [d for d in tree.iter('document')]
+	for document in documents:
+		document_attrib_dict = document.attrib
+		if document_attrib_dict:
+			url = document_attrib_dict['url']
+
+		for content in document.findall('content'):
+			if content.get('name') == "FullSummary":
+				# Remove xml tags from the text
+				bs_summary = BeautifulSoup(content.text, "html.parser")
+				summary = bs_summary.get_text()
+				#print(f'summary: {summary}')
+				break
+
+		# Export into a text file
+		if url:
+			output_file.writelines(['Source: ', url, "\n"])
+		if summary:
+			output_file.writelines([summary, "\n\n"])
+	return
 
 # Access websites based on the given URL
 async def get_html_from_url(url):
@@ -108,9 +137,6 @@ def get_internal_links(soup, parent_url):
 def get_document(output_file, url, depth, visited_urls):
 	if depth == 0:
 		return
-
-	if depth != DEPTH:
-		output_file.write("\n\n")
 
 	# Get the HTML based on URL
 	html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
@@ -191,7 +217,9 @@ def get_document(output_file, url, depth, visited_urls):
 			urls.extend(get_internal_links(side, url))
 
 		# Export into a text file
-		output_file.writelines(['Source: ', url, '\n', text])
+		if depth != DEPTH:
+			output_file.write("\n\n")
+		output_file.writelines(['Source: ', url, "\n", text])
 
 	# Crawl internal links
 	for url in urls:
@@ -208,12 +236,12 @@ def main():
 	# Search for the given terms 
 	for term in terms:
 		# Get the url for the term
-		url = get_url_from_query(term)
+		# url = get_url_from_query(term)
 
         # Try next term if no website was found
-		if not url:
-			print("Not Found")
-			continue
+		# if not url:
+		# 	print("Not Found")
+		# 	continue
 
 		# Open the output file
 		output_file_path = join(OUTPUT_DIR, term.replace("%20", " ") + ".txt")
@@ -221,8 +249,9 @@ def main():
 		output_file = open(output_file_path, 'w')
 
 		# Extract documents
-		print(f'{term.replace("%20", " ")}:')
-		get_document(output_file, url, DEPTH, [])
+		# print(f'{term.replace("%20", " ")}:')
+		#get_document(output_file, url, DEPTH, []) # Dig deeper the internal links
+		get_documents_from_query(output_file, term) # Collect all the summary texts API returns
 
 		# Close the output file
 		output_file.close()
