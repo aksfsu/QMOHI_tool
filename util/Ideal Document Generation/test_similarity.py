@@ -9,7 +9,7 @@ from gensim.models import KeyedVectors
 from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
 from gensim.utils import tokenize
 
-WORD_VECTOR_PATH = "./GoogleNews-vectors-negative300.bin"
+WORD_VECTOR_PATH = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/GoogleNews-vectors-negative300.bin"
 
 # Get text from the text file
 def get_text_from_file(file_path):
@@ -100,7 +100,7 @@ def main():
         csv_writer.writerow(['University', 'Cache File Name', 'Similarity'])
 
         # Run tests over the cache data of SHC websites
-        cache_dir_path = "./../QMOHI_tool/Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/output/Second Run/saved_webpages"
+        cache_dir_path = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/output/Second Run/saved_webpages"
         cache_universities = [d for d in listdir(cache_dir_path) if isdir(join(cache_dir_path, d))]
         for cache_university in cache_universities:
             # Build the path to each university's cache data
@@ -115,7 +115,7 @@ def main():
                 cache_file_path = join(cache_university_path, cache_file)
                 # Calculate similarity between the ideal document and a cached SHC website
                 similarity = calculate_similarity(word_vector, 
-                    get_text_from_file(join("./output depth=1", term + '.txt')), 
+                    get_text_from_file(join("./output", term + '.txt')), 
                     get_text_from_html_file(cache_file_path)
                 )
                 csv_writer.writerow([cache_university, cache_file, similarity])
