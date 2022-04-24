@@ -3,3 +3,4 @@ archive/
 output*/
 GoogleNews-vectors-negative300.bin
 config.py
+.DS_Store
