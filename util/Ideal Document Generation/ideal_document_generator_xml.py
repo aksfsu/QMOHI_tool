@@ -90,7 +90,7 @@ def get_documents_from_query(output_file, term):
 			if content.get('name') == "FullSummary":
 				# Remove xml tags from the text
 				bs_summary = BeautifulSoup(content.text, "html.parser")
-				summary = bs_summary.get_text()
+				summary = bs_summary.get_text(separator=" ", strip=True)
 				#print(f'summary: {summary}')
 				break
 
