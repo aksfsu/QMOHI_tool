@@ -9,6 +9,8 @@ from gensim.models import KeyedVectors
 from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
 from gensim.utils import tokenize
 
+from customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
+
 WORD_VECTOR_PATH = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/GoogleNews-vectors-negative300.bin"
 
 # Get text from the text file
@@ -69,6 +71,44 @@ def calculate_similarity(word_vector, doc1, doc2):
     similarity = cosine_similarity([sum1], [sum2])
     return similarity[0][0]
 
+def calculate_tfidf():
+    EXPERIMENTAL_TERMS = [
+        "Accidental Injury",
+        "First Aid",
+        "Allergy",
+        "Cold",
+        "Vaccines",
+    ]
+
+    shc_corpora = []
+    id_corpora = []
+
+    # Run tests over the cache data of SHC websites
+    cache_dir_path = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/output/Second Run/saved_webpages"
+    cache_universities = [d for d in listdir(cache_dir_path) if isdir(join(cache_dir_path, d))]
+    for cache_university in cache_universities:
+        # Build the path to each university's cache data
+        cache_university_path = join(cache_dir_path, cache_university)
+        cache_files = [f for f in listdir(cache_university_path) if isfile(join(cache_university_path, f))]
+        if not cache_files:
+            continue
+
+        # Read cache files
+        for cache_file in cache_files:
+            # Specify the path to each cache file
+            cache_file_path = join(cache_university_path, cache_file)
+            # Add to corpora
+            shc_corpora.append(get_text_from_html_file(cache_file_path))
+
+    for term in EXPERIMENTAL_TERMS:
+        # Add to corpora
+        id_corpora.append(get_text_from_file(join("./output", term + '.txt')))
+
+    ctfidf = CustomizableTfidfVectorizer(shc_corpora, id_corpora)
+    print(ctfidf.rank_tfidf(-5))
+
+    return
+
 def main():
     '''
     with open(join("./output", 'Medicated Abortion.txt'), 'r') as f:
@@ -77,6 +117,8 @@ def main():
     with open(join("./output", 'Abortion.txt'), 'r') as f:
         doc2 = f.read()
     '''
+
+    # calculate_tfidf()
 
     # Load the word vector
     print("Loading model...")
