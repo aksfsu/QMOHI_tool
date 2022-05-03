@@ -84,34 +84,40 @@ class CustomizableTfidfVectorizer:
         # print(tfidf_vec)
         return tfidf_vec
 
+    # Get the document by ID
     def id2doc(self, idx):
         return self.tf_docs[idx]
 
+    # Get the token by ID
     def id2token(self, idx):
         return self.vocab[idx]
 
+    # Get the vocabulary
     def feature_names(self):
         return self.vocab
 
+    # Get the number of documents
     def idf_doc_num(self):
         return self.idf_dct.num_docs
 
+    # Get the most common words in IDF documents
     def most_common_idf(self, n=None):
         return self.idf_dct.most_common(n)
 
+    # Get the TF-IDF vector
     def tfidf_vec(self):
         return self.tfidf_vec
 
-    def rank_tfidf(self, n=5):
-        if not n:
-            return
-
+    # Rank words by TD-IDF values and return a set of top 'n' words in each document
+    def rank_tfidf(self, n=5, printout=None):
+        # Convert the TF-IDF dictionary to a pandas dataframe
         tfidf_df = pd.DataFrame(columns=['doc_id'] + self.vocab)
         tfidf_df.set_index("doc_id", inplace = True)
         tfidf_df['doc_id'] = [i for i in range(len(self.tf_docs))]
         for k, v in self.tfidf.items():
             tfidf_df.loc[tfidf_df.doc_id[k[0]], k[1]] = v
 
+        # Sort words in each document by their TF-IDF values
         tfidf_lst = []
         for i in range(len(self.tf_docs)):
             dct = tfidf_df.loc[tfidf_df.doc_id[i], tfidf_df.columns!='doc_id'].to_dict()
@@ -121,15 +127,18 @@ class CustomizableTfidfVectorizer:
                     cleaned_dct[k] = v
             tfidf_lst.append(cleaned_dct)
 
+        # Show top 'n' words in each document
         features = set()
-        print(f' doc_id | token | TF-IDF ')
-        print('---------------------------')
-        for i, tfidf_dct in enumerate(tfidf_lst):
+        if printout:
+            print(f' doc_id | token | TF-IDF ')
+            print('---------------------------')
+        for doc_id, tfidf_dct in enumerate(tfidf_lst):
             sorted_dct = dict(sorted(tfidf_dct.items(), key=lambda x:x[1], reverse=(n>0)))
             for i, (k, v) in enumerate(sorted_dct.items()):
                 if i >= abs(n):
                     break
-                print(f' {i} | {k} \t| {v} ')
+                if printout:
+                    print(f' {doc_id} | {k} \t| {v} ')
                 features.add(k)
 
         return features
@@ -159,9 +168,10 @@ def test():
     # print(ctfidf.id2token(2))
     ctfidf.rank_tfidf(5)
     '''
-    ctfidf = CustomizableTfidfVectorizer([], idf_dir="./health_topics_summary")
+    ctfidf = CustomizableTfidfVectorizer(tf_docs, idf_dir="./health_topics_summary")
     print(ctfidf.idf_doc_num)
     print(ctfidf.most_common_idf(50))
+    print(ctfidf.rank_tfidf(10))
 
 # Run the test
 test()
