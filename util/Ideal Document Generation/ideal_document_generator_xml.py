@@ -9,7 +9,7 @@ import asyncio
 import pyppeteer
 
 MEDLINE_URL = "https://medlineplus.gov"
-DEPTH = 1 # >= 1
+DEPTH = 2 # >= 1
 OUTPUT_DIR = "./output"
 
 # Experimental terms
@@ -57,24 +57,17 @@ async def exec_medlineplus_web_service(term):
     await browser.close()
     return xml
 
-# Get URL of the first hit by MedlinePlus API
-def get_url_from_query(term):
+# Get URLs MedlinePlus API returns
+def get_urls_from_query(term):
 	# Get the XML 
 	xml = asyncio.get_event_loop().run_until_complete(exec_medlineplus_web_service(term))
 	# Pass the XML to the XML parset
 	tree = ET.fromstring(xml)
 	# Identify the summary of the term
-	documents = [d for d in tree.iter('document')]
-	if documents:
-		document_attrib_dict = documents[0].attrib
-		if document_attrib_dict:
-			return document_attrib_dict['url']
-		else:
-			return None
-	return None
+	return [d.attrib['url'] for d in tree.iter('document')]
 
 # Get all the text in all the hit URLs
-def get_documents_from_query(output_file, term):
+def write_documents_from_query(output_file, term):
 	# Get the XML 
 	xml = asyncio.get_event_loop().run_until_complete(exec_medlineplus_web_service(term))
 	# Pass the XML to the XML parset
@@ -134,9 +127,9 @@ def get_internal_links(soup, parent_url):
     return internal_links
 
 # Get text data and export in the output file
-def get_document(output_file, url, depth, visited_urls):
+def write_document(output_file, url, depth, visited_urls):
 	if depth == 0:
-		return
+		return visited_urls
 
 	# Get the HTML based on URL
 	html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
@@ -161,7 +154,7 @@ def get_document(output_file, url, depth, visited_urls):
 				# Get the description
 				description = summary.parent.find(class_="section-body")
 			else:
-				return
+				return visited_urls
 			if description:
 				# Collect internal links
 				urls.extend(get_internal_links(description, url))
@@ -178,7 +171,7 @@ def get_document(output_file, url, depth, visited_urls):
 				# Get the text data
 				text += description.get_text(separator=" ", strip=True)
 			else:
-				return
+				return visited_urls
 
 		# The term has a dedicated "Drugs, Herbs and Supplements" page
 		elif "druginfo" in url or "genetics" in url:
@@ -201,7 +194,7 @@ def get_document(output_file, url, depth, visited_urls):
 					# Get the text data
 					text += bottom.get_text(separator=" ", strip=True)
 			else:
-				return
+				return visited_urls
 
 		# The term has a dedicated "Health Topics" page
 		else:
@@ -210,7 +203,7 @@ def get_document(output_file, url, depth, visited_urls):
 				urls.extend(get_internal_links(summary, url))
 				text += summary.get_text(separator=" ", strip=True)
 			else:
-				return
+				return visited_urls
 
 		side = soup.find('div', {'class': "side"})
 		if side:
@@ -223,8 +216,8 @@ def get_document(output_file, url, depth, visited_urls):
 
 	# Crawl internal links
 	for url in urls:
-		get_document(output_file, url, depth-1, visited_urls)
-	return
+		write_document(output_file, url, depth-1, visited_urls)
+	return visited_urls
 
 def main():
 	if len(sys.argv) > 1:
@@ -236,12 +229,12 @@ def main():
 	# Search for the given terms 
 	for term in terms:
 		# Get the url for the term
-		# url = get_url_from_query(term)
-
+		urls = get_urls_from_query(term)
+		# print(urls)
         # Try next term if no website was found
-		# if not url:
-		# 	print("Not Found")
-		# 	continue
+		if not urls:
+			print("Not Found")
+			continue
 
 		# Open the output file
 		output_file_path = join(OUTPUT_DIR, term.replace("%20", " ") + ".txt")
@@ -250,8 +243,14 @@ def main():
 
 		# Extract documents
 		# print(f'{term.replace("%20", " ")}:')
-		#get_document(output_file, url, DEPTH, []) # Dig deeper the internal links
-		get_documents_from_query(output_file, term) # Collect all the summary texts API returns
+		### Method 1. Use all the URLs MedlinePlus API returns and crawl internal links
+		# visited_urls = []
+		# for url in urls:
+		# 	visited_urls = write_document(output_file, url, DEPTH, visited_urls)
+		### Method 2. Use the first hit only and crawl internal links
+		write_document(output_file, urls[0], DEPTH, [])
+		### Method 3. Use all the URLs MedlinePlus API returns
+		# write_documents_from_query(output_file, term)
 
 		# Close the output file
 		output_file.close()
