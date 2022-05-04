@@ -12,6 +12,7 @@ from gensim.utils import tokenize
 from customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
 
 WORD_VECTOR_PATH = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/GoogleNews-vectors-negative300.bin"
+STOPWORD_FILE_PATH = "./stopwords"
 
 # Get text from the text file
 def get_text_from_file(file_path):
@@ -30,6 +31,19 @@ def get_text_from_html_file(file_path):
     soup = BeautifulSoup(html, 'html.parser')
     return soup.get_text(separator=" ", strip=True)
 
+def remove_optional_stopwords(doc):
+    stopword_file_paths = [join(STOPWORD_FILE_PATH, f) for f in listdir(STOPWORD_FILE_PATH) if isfile(join(STOPWORD_FILE_PATH, f)) and not f.startswith(".")]
+
+    doc = list(tokenize(doc, to_lower=True, deacc = True))
+    # print(f'before: {len(doc)}')
+    # Read stopword files
+    for stopword_file_path in stopword_file_paths:
+        with open(stopword_file_path, 'r') as f:
+            stopwords = f.read()
+            doc = [word for word in doc if word not in stopwords]
+    # print(f'after: {len(doc)}')
+    return " ".join(doc)
+
 # Preprocess the document
 def preprocess_document(doc):
     # Remove URLs
@@ -37,6 +51,7 @@ def preprocess_document(doc):
     doc = re.sub(r'www\S+', '', doc, flags=re.MULTILINE)
     # Remove stop words
     doc = remove_stopwords(doc)
+    doc = remove_optional_stopwords(doc)
     # Remove punctuation
     doc = strip_punctuation(doc)
     # Remove non-alphanumeric characters
