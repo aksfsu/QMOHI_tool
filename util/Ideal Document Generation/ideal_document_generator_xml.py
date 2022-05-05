@@ -108,23 +108,23 @@ async def get_html_from_url(url):
 
 # Collect internal links within Medline
 def get_internal_links(soup, parent_url):
-    internal_links = []
-    for a in soup.findAll('a', href=True):
-        link = a['href']
-        if not link:
-            print("No URL assigned")
-        elif MEDLINE_URL in link:
-            m = re.search("/", parent_url[::-1])
-            if m.start() > 0:
-                internal_links.append(link)
-        elif re.match('./', link):
-            m = re.search("/", parent_url[::-1])
-            if m.start() > 0:
-                parent_url = parent_url[:-m.start()]
-                abs_link = parent_url + link[2:]
-                #print(f'Abs Link: {abs_link}')
-                internal_links.append(abs_link)
-    return internal_links
+	internal_links = []
+	for a in soup.find_all('a', href=True):
+		link = a['href']
+		if not link:
+			print("No URL assigned")
+		elif MEDLINE_URL in link:
+			m = re.search("/", parent_url[::-1])
+			if m.start() > 0:
+				internal_links.append(link)
+		elif re.match('./', link):
+			m = re.search("/", parent_url[::-1])
+			if m.start() > 0:
+				parent_url = parent_url[:-m.start()]
+				abs_link = parent_url + link[2:]
+				#print(f'Abs Link: {abs_link}')
+				internal_links.append(abs_link)
+	return internal_links
 
 # Get text data and export in the output file
 def write_document(output_file, url, depth, visited_urls):
@@ -151,15 +151,18 @@ def write_document(output_file, url, depth, visited_urls):
 				urls.extend(get_internal_links(summary, url))
 				# Get the text data
 				text += summary.get_text(separator=" ", strip=True)
-				# Get the description
-				description = summary.parent.find(class_="section-body")
+				# Get the sections
+				sections = summary.parent.find_all(class_="section")
 			else:
 				return visited_urls
-			if description:
-				# Collect internal links
-				urls.extend(get_internal_links(description, url))
-				# Get the text data
-				text += description.get_text(separator=" ", strip=True)
+			if sections:
+				for section in sections:
+					section_body = section.find(class_="section-body")
+					if section_body:
+						# Collect internal links
+						urls.extend(get_internal_links(section_body, url))
+						# Get the text data
+						text += section_body.get_text(separator=" ", strip=True)
 
 		# The term has a dedicated "Lab Tests" page
 		elif "lab-tests" in url:
@@ -179,7 +182,7 @@ def write_document(output_file, url, depth, visited_urls):
 			article = soup.find('article')
 			if article:
 				# Get all the description section elements
-				descriptions = article.findAll('section')
+				descriptions = article.find_all('section')
 				for description in descriptions:
 					# Collect internal links
 					urls.extend(get_internal_links(description, url))
@@ -187,7 +190,7 @@ def write_document(output_file, url, depth, visited_urls):
 					text += description.get_text(separator=" ", strip=True)
 
 				# Get all the bottom section elements
-				bottoms = article.findAll('div', {'class': "bottom"})
+				bottoms = article.find_all('div', {'class': "bottom"})
 				for bottom in bottoms:
 					# Collect internal links
 					urls.extend(get_internal_links(bottom, url))
