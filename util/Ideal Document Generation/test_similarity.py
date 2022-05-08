@@ -86,15 +86,7 @@ def calculate_similarity(word_vector, doc1, doc2):
     similarity = cosine_similarity([sum1], [sum2])
     return similarity[0][0]
 
-def calculate_tfidf():
-    EXPERIMENTAL_TERMS = [
-        "Accidental Injury",
-        "First Aid",
-        "Allergy",
-        "Cold",
-        "Vaccines",
-    ]
-
+def calculate_tfidf(id_terms):
     shc_corpora = []
     id_corpora = []
 
@@ -115,14 +107,17 @@ def calculate_tfidf():
             # Add to corpora
             shc_corpora.append(get_text_from_html_file(cache_file_path))
 
-    for term in EXPERIMENTAL_TERMS:
+    for term in id_terms:
         # Add to corpora
         id_corpora.append(get_text_from_file(join("./output", term + '.txt')))
 
     ctfidf = CustomizableTfidfVectorizer(shc_corpora, id_corpora)
-    print(ctfidf.rank_tfidf(-5))
+    features = ctfidf.rank_tfidf(-20)
 
-    return
+    with open(join("./stopwords", 'health_topics_stop_words_tfidf.txt'), 'w') as f:
+        f.write("\n".join(features))
+
+    return features
 
 def main():
     '''
@@ -133,20 +128,23 @@ def main():
         doc2 = f.read()
     '''
 
-    # calculate_tfidf()
-
-    # Load the word vector
-    print("Loading model...")
-    word_vector = KeyedVectors.load_word2vec_format(WORD_VECTOR_PATH, binary=True)
-    print("Loaded")
-
     EXPERIMENTAL_TERMS = [
         "Accidental Injury",
         "First Aid",
         "Allergy",
         "Cold",
         "Vaccines",
+        "Abortion",
+        "Medicated Abortion",
     ]
+    
+    # Create a stopword file based on TF-IDF
+    calculate_tfidf(EXPERIMENTAL_TERMS)
+    
+    # Load the word vector
+    print("Loading model...")
+    word_vector = KeyedVectors.load_word2vec_format(WORD_VECTOR_PATH, binary=True)
+    print("Loaded")
 
     for term in EXPERIMENTAL_TERMS:
         # Open the output file
