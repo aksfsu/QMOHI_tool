@@ -14,7 +14,7 @@ import pyppeteer
 API_KEY = config.MY_API_KEY
 CSE_ID = config.MY_CSE_ID
 MEDLINE_URL = "https://medlineplus.gov"
-DEPTH = 1 # >= 1
+DEPTH = 2 # >= 1
 OUTPUT_DIR = "./output"
 
 # Experimental terms
@@ -108,15 +108,18 @@ def get_document(output_file, url, depth, visited_urls):
                 urls.extend(get_internal_links(summary, url))
                 # Get the text data
                 text += summary.get_text(separator=" ", strip=True)
-                # Get the description
-                description = summary.parent.find(class_="section-body")
+                # Get the sections
+                sections = summary.parent.find_all(class_="section")
             else:
-                return
-            if description:
-                # Collect internal links
-                urls.extend(get_internal_links(description, url))
-                # Get the text data
-                text += description.get_text(separator=" ", strip=True)
+                return visited_urls
+            if sections:
+                for section in sections:
+                    section_body = section.find(class_="section-body")
+                    if section_body:
+                        # Collect internal links
+                        urls.extend(get_internal_links(section_body, url))
+                        # Get the text data
+                        text += section_body.get_text(separator=" ", strip=True)
 
         # The term has a dedicated "Lab Tests" page
         elif "lab-tests" in url:
