@@ -1,4 +1,3 @@
-#regular stop words with clinical
 x
 y
 your
