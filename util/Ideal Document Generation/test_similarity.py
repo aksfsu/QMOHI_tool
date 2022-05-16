@@ -1,7 +1,7 @@
 import re
 import numpy as np
 from os import listdir, makedirs
-from os.path import isdir, isfile, join, dirname
+from os.path import isdir, isfile, join, dirname, exists
 import csv
 from bs4 import BeautifulSoup
 from sklearn.metrics.pairwise import cosine_similarity
@@ -32,7 +32,7 @@ def get_text_from_html_file(file_path):
     return soup.get_text(separator=" ", strip=True)
 
 def remove_optional_stopwords(doc):
-    stopword_file_paths = [join(STOPWORD_FILE_PATH, f) for f in listdir(STOPWORD_FILE_PATH) if isfile(join(STOPWORD_FILE_PATH, f)) and not f.startswith(".")]
+    stopword_file_paths = [join(STOPWORD_FILE_PATH, f) for f in listdir(STOPWORD_FILE_PATH) if isfile(join(STOPWORD_FILE_PATH, f)) and f.startswith("stopwords")]
 
     doc = list(tokenize(doc, to_lower=True, deacc = True))
     # print(f'before: {len(doc)}')
@@ -63,22 +63,31 @@ def preprocess_document(doc):
     return doc
 
 # Tokenize the document
-def get_token_list(doc):
+def get_token_list(doc, doc_name=None):
     # Data cleaning
     doc = preprocess_document(doc)
+
+    # Export the preprocessed text
+    if doc_name:
+        preprocessed_dir = "./preprocessed"
+        makedirs(dirname(join(preprocessed_dir, doc_name + ".txt")), exist_ok=True)
+        if not exists(join(preprocessed_dir, doc_name + ".txt")):
+            with open(join(preprocessed_dir, doc_name + ".txt"), 'w') as f:
+                f.write(doc)
+
     return list(tokenize(doc, to_lower=True, deacc = True))
 
 # Calculate the similarity based on the given word vector
-def calculate_similarity(word_vector, doc1, doc2):
+def calculate_similarity(word_vector, doc1, doc2, doc_name1=None, doc_name2=None):
     # sum1 will hold the sum of all of its word's vectors
     sum1 = [0] * len(word_vector['word'])
-    for token in get_token_list(doc1):
+    for token in get_token_list(doc1, doc_name1):
         if token in word_vector:
             sum1 = np.sum([sum1, word_vector[token]], axis=0)
 
     # sum2 will hold the sum of all of its word's vectors
     sum2 = [0] * len(word_vector['word'])
-    for token in get_token_list(doc2):
+    for token in get_token_list(doc2, doc_name2):
         if token in word_vector:
             sum2 = np.sum([sum2, word_vector[token]], axis=0)
 
@@ -114,7 +123,7 @@ def calculate_tfidf(id_terms):
     ctfidf = CustomizableTfidfVectorizer(shc_corpora, id_corpora)
     features = ctfidf.rank_tfidf(-20)
 
-    with open(join("./stopwords", 'health_topics_stop_words_tfidf.txt'), 'w') as f:
+    with open(join(STOPWORD_FILE_PATH, 'stopwords_health_topics_tfidf.txt'), 'w') as f:
         f.write("\n".join(features))
 
     return features
@@ -171,7 +180,9 @@ def main():
                 # Calculate similarity between the ideal document and a cached SHC website
                 similarity = calculate_similarity(word_vector, 
                     get_text_from_file(join("./output", term + '.txt')), 
-                    get_text_from_html_file(cache_file_path)
+                    get_text_from_html_file(cache_file_path),
+                    term,
+                    cache_university + "-" + cache_file
                 )
                 csv_writer.writerow([cache_university, cache_file, similarity])
                 print(f'{cache_university}/{cache_file}: {round(similarity * 100, 3)}% ({similarity})')

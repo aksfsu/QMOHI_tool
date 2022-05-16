@@ -172,6 +172,7 @@ def get_document(output_file, url, depth, visited_urls):
         # Export into a text file
         if depth != DEPTH:
             output_file.write("\n\n")
+        output_file.writelines(['Source: ', url, "\n"])
         output_file.write(text)
 
     # Crawl internal links

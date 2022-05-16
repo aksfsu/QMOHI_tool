@@ -5,3 +5,4 @@ GoogleNews-vectors-negative300.bin
 config.py
 .DS_Store
 health_topics*/
+preprocessed/
