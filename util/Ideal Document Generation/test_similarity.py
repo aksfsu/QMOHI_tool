@@ -1,5 +1,6 @@
 import re
 import numpy as np
+import pandas as pd
 from os import listdir, makedirs
 from os.path import isdir, isfile, join, dirname, exists
 import csv
@@ -11,8 +12,20 @@ from gensim.utils import tokenize
 
 from customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 WORD_VECTOR_PATH = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/GoogleNews-vectors-negative300.bin"
 STOPWORD_FILE_PATH = "./stopwords"
+EXPERIMENTAL_TERMS = [
+        "Medicated Abortion",
+        "Abortion",
+        "Accidental Injury",
+        "First Aid",
+        "Allergy",
+        "Cold",
+        "Vaccines",
+    ]
 
 # Get text from the text file
 def get_text_from_file(file_path):
@@ -129,31 +142,16 @@ def calculate_tfidf(id_terms):
     return features
 
 def main():
-    '''
-    with open(join("./output", 'Medicated Abortion.txt'), 'r') as f:
-        doc1 = f.read()
-
-    with open(join("./output", 'Abortion.txt'), 'r') as f:
-        doc2 = f.read()
-    '''
-
-    EXPERIMENTAL_TERMS = [
-        "Accidental Injury",
-        "First Aid",
-        "Allergy",
-        "Cold",
-        "Vaccines",
-        "Abortion",
-        "Medicated Abortion",
-    ]
-    
     # Create a stopword file based on TF-IDF
     calculate_tfidf(EXPERIMENTAL_TERMS)
-    
+
     # Load the word vector
     print("Loading model...")
     word_vector = KeyedVectors.load_word2vec_format(WORD_VECTOR_PATH, binary=True)
     print("Loaded")
+
+    # Create a dataframe for visualization
+    results_df = pd.DataFrame(columns=['Website', 'Term', 'Similarity'])
 
     for term in EXPERIMENTAL_TERMS:
         # Open the output file
@@ -185,9 +183,26 @@ def main():
                     cache_university + "-" + cache_file
                 )
                 csv_writer.writerow([cache_university, cache_file, similarity])
-                print(f'{cache_university}/{cache_file}: {round(similarity * 100, 3)}% ({similarity})')
+                # print(f'{cache_university}/{cache_file}: {round(similarity * 100, 3)}% ({similarity})')
+                similarity_data = {
+                    'Website': [cache_university + ' ' + cache_file],
+                    'Term': [term],
+                    'Similarity': [similarity]
+                }
+                results_df = pd.concat([results_df, pd.DataFrame(similarity_data)], ignore_index=True)
 
     output_file.close()
+    # print(results_df.head())
+
+    # Visualize the results
+    results_df = results_df.groupby(['Term'], sort=False).apply(lambda x: x.sort_values(['Similarity'], ascending=False)).reset_index(drop=True)
+    results_df.reset_index(drop=True, inplace=True)
+    f, ax = plt.subplots(figsize=(10, 8), constrained_layout=True)
+    g = sns.lineplot(data=results_df, x="Website", y="Similarity", hue="Term")
+    plt.xticks(rotation=50, horizontalalignment='right')
+    plt.title("Similarity")
+    plt.show()
+
     return
 
 if __name__ == "__main__":
