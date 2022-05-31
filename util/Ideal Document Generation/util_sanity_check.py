@@ -9,6 +9,9 @@ from gensim.models import KeyedVectors
 from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
 from gensim.utils import tokenize
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 WORD_VECTOR_PATH = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/GoogleNews-vectors-negative300.bin"
 STOPWORD_FILE_PATH = "./stopwords"
 
@@ -94,24 +97,35 @@ def main():
     word_vector = KeyedVectors.load_word2vec_format(WORD_VECTOR_PATH, binary=True)
     print("Loaded")
 
-    # Open the output file
-    output_file_path = "./similarity_sanity_check_experiment.csv"
-    makedirs(dirname(output_file_path), exist_ok=True)
-    output_file = open(output_file_path, 'w')
-    csv_writer = csv.writer(output_file)
-    csv_writer.writerow(['File 1', 'File 2', 'Similarity'])
-
-    for term1 in EXPERIMENTAL_TERMS:
-        for term2 in EXPERIMENTAL_TERMS:
+    # Fill the similarity table
+    similarity_matrix = np.zeros(shape=(len(EXPERIMENTAL_TERMS), len(EXPERIMENTAL_TERMS)))
+    for i, term1 in enumerate(EXPERIMENTAL_TERMS):
+        for j, term2 in enumerate(EXPERIMENTAL_TERMS):
             # Calculate similarity between the ideal document and a cached SHC website
             similarity = calculate_similarity(word_vector, 
                 get_text_from_file(join("./output", term1 + '.txt')), 
                 get_text_from_file(join("./output", term2 + '.txt')), 
             )
-            csv_writer.writerow([term1, term2, similarity])
-            print(f'{term1}:{term2} | {round(similarity * 100, 3)}% ({similarity})')
+            similarity_matrix.itemset((i, j), round(similarity, 3))
+            # print(f'{term1}:{term2} | {round(similarity * 100, 3)}% ({similarity})')
+    print(similarity_matrix)
 
-    output_file.close()
+    # Generate a mask for the upper triangle
+    mask = np.array([[i > j for i in range(len(EXPERIMENTAL_TERMS))] for j in range(len(EXPERIMENTAL_TERMS))])
+
+    # Configure the matplotlib figure
+    f, ax = plt.subplots(figsize=(8, 8), constrained_layout=True)
+
+    # Draw the heatmap
+    sns.heatmap(similarity_matrix, annot=True, mask=mask, square=True, 
+        linewidths=.5, cbar_kws={"shrink": .5},
+        xticklabels=EXPERIMENTAL_TERMS, yticklabels=EXPERIMENTAL_TERMS)
+        
+    # Displaying the heatmap
+    plt.xticks(rotation=50, horizontalalignment='right')
+    plt.title("Similarity")
+    plt.show()
+
     return
 
 if __name__ == "__main__":
