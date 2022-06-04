@@ -40,13 +40,14 @@ def clean_target_urls(target_urls):
 
     # Check for pdf, doc and remove them
     url_filter = ['.pdf', '.doc', '.docx']
+    cleaned_urls = []
     for check in url_filter:
         for url in target_urls:
-            if url.find(check) != -1:
-                # Contains given substring of pdf/doc
-                target_urls.remove(url)
+            if url.find(check) == -1:
+                # Doesn't contain a given substring of pdf/doc
+                cleaned_urls.append(url)
 
-    return target_urls
+    return cleaned_urls
 
 
 def get_min_click_count(no_of_links, links, shc_url, driver_path):
