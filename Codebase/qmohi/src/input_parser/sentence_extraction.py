@@ -50,7 +50,7 @@ def get_search_results(output_dir, keyword_list, margin=2):
 			ANCHOR = 2
 			anchor_sentence_ref = [0] * len(sentences)
 			for i, sentence in enumerate(sentences):
-				if any(keyword in sentence.lower() for keyword in keyword_list):
+				if any(keyword.lower() in sentence.lower() for keyword in keyword_list):
 					for j in range(i-margin, i+margin+1):
 						# Ignore if the index is out of bounds
 						if j < 0 or j >= len(sentences):
@@ -69,7 +69,7 @@ def get_search_results(output_dir, keyword_list, margin=2):
 				# Highlight anchor sentences
 				if anchor_sentence_ref[i] == ANCHOR:
 					# Find the start and end indices of keywords
-					anchor_word_indices = [(m.start(), m.end()) for m in re.finditer(re_keywords, sentence.lower())]
+					anchor_word_indices = [(m.start(), m.end()) for m in re.finditer(re_keywords, sentence, re.IGNORECASE)]
 					if anchor_word_indices:
 						anchor_sentence_html = '<span style="background-color:#fff352;">'
 						# Highlight keywords
