@@ -117,7 +117,7 @@ class CustomizableTfidfVectorizer:
         for k, v in self.tfidf.items():
             tfidf_df.loc[tfidf_df.doc_id[k[0]], k[1]] = v
 
-        # Sort words in each document by their TF-IDF values
+        # Extract words that exist in TF corpus
         tfidf_lst = []
         for i in range(len(self.tf_docs)):
             dct = tfidf_df.loc[tfidf_df.doc_id[i], tfidf_df.columns!='doc_id'].to_dict()
@@ -127,7 +127,7 @@ class CustomizableTfidfVectorizer:
                     cleaned_dct[k] = v
             tfidf_lst.append(cleaned_dct)
 
-        # Show top 'n' words in each document
+        # Sort words in each document by their TF-IDF values
         features = set()
         if printout:
             print(f' doc_id | token | TF-IDF ')
@@ -141,6 +141,19 @@ class CustomizableTfidfVectorizer:
                     print(f' {doc_id} | {k} \t| {v} ')
                 features.add(k)
 
+        return features
+
+    # Return a set of stopwords filtered based on TD-IDF values
+    def filter_tfidf(self, max=float('inf'), min=0, printout=None):
+        features = set()
+        if printout:
+            print(f' doc_id | token | TF-IDF ')
+            print('---------------------------')
+        for k, v in self.tfidf.items():
+            if v <= max and v >= min:
+                if printout:
+                    print(f' {k[0]} | {k[1]} \t| {v} ')
+                features.add(k[1])
         return features
 
 def test():
@@ -174,4 +187,4 @@ def test():
     print(ctfidf.rank_tfidf(10))
 
 # Run the test
-test()
+# test()

@@ -14,7 +14,7 @@ import pyppeteer
 API_KEY = config.MY_API_KEY
 CSE_ID = config.MY_CSE_ID
 MEDLINE_URL = "https://medlineplus.gov"
-DEPTH = 2 # >= 1
+DEPTH = 2 # (>= 1)
 OUTPUT_DIR = "./output"
 
 # Experimental terms
@@ -109,12 +109,12 @@ def get_document(output_file, url, depth, visited_urls):
                 # Get the text data
                 text += summary.get_text(separator=" ", strip=True)
                 # Get the sections
-                sections = summary.parent.find_all(class_="section")
+                sections = summary.parent.find_all('div', {'class': 'section'})
             else:
                 return visited_urls
             if sections:
                 for section in sections:
-                    section_body = section.find(class_="section-body")
+                    section_body = section.find('div', {'id': re.compile(r'section-\d+')})
                     if section_body:
                         # Collect internal links
                         urls.extend(get_internal_links(section_body, url))
@@ -124,12 +124,16 @@ def get_document(output_file, url, depth, visited_urls):
         # The term has a dedicated "Lab Tests" page
         elif "lab-tests" in url:
             # Get the main description element
-            description = soup.find('div', {'class': "main"})
-            if description:
-                # Collect internal links
-                urls.extend(get_internal_links(description, url))
-                # Get the text data
-                text += description.get_text(separator=" ", strip=True)
+            sections = soup.find_all('div', {'class': 'mp-content'})
+            if sections:
+                for section in sections:
+                    if 'mp-refs' in section['class']:
+                        print('found ref')
+                        continue
+                    # Collect internal links
+                    urls.extend(get_internal_links(section, url))
+                    # Get the text data
+                    text += section.get_text(separator=" ", strip=True)
             else:
                 return
 
@@ -139,12 +143,12 @@ def get_document(output_file, url, depth, visited_urls):
             article = soup.find('article')
             if article:
                 # Get all the description section elements
-                descriptions = article.findAll('section')
-                for description in descriptions:
+                sections = article.find_all('section')
+                for section in sections:
                     # Collect internal links
-                    urls.extend(get_internal_links(description, url))
+                    urls.extend(get_internal_links(section, url))
                     # Get the text data
-                    text += description.get_text(separator=" ", strip=True)
+                    text += section.get_text(separator=" ", strip=True)
 
                 # Get all the bottom section elements
                 bottoms = article.findAll('div', {'class': "bottom"})
@@ -172,7 +176,7 @@ def get_document(output_file, url, depth, visited_urls):
         # Export into a text file
         if depth != DEPTH:
             output_file.write("\n\n")
-        output_file.writelines(['Source: ', url, "\n"])
+        output_file.writelines(["[", url, "]\n"])
         output_file.write(text)
 
     # Crawl internal links
@@ -194,7 +198,7 @@ def main():
     for term in terms:
         # Search links
         links = search_obj.get_links_by_query(MEDLINE_URL, term)
-        #print(links)
+        # print(links)
 
         # Try next term if no website was found
         if not len(links):

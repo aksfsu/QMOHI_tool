@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 
 WORD_VECTOR_PATH = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/GoogleNews-vectors-negative300.bin"
 STOPWORD_FILE_PATH = "./stopwords"
+'''
 EXPERIMENTAL_TERMS = [
         "Medicated Abortion",
         "Abortion",
@@ -26,6 +27,39 @@ EXPERIMENTAL_TERMS = [
         "Cold",
         "Vaccines",
     ]
+'''
+EXPERIMENTAL_TERMS = [
+    "Medicated Abortion",
+    "Abortion",
+    "Accidental Injury", #
+    "Broken Limbs",
+    "First Aid", #
+    "Allergy", #
+    "Asthma",
+    "Flu",
+    "Cold", #
+    "Standard Immunizations",
+    "Vaccines", #
+    "Tobacco",
+    "Alcohol",
+    "Drug Issues",
+    "Mental Health Depression",
+    "Anxiety",
+    "Stress",
+    "Time Management",
+    "Sexual Harrassment",
+    "Abuse",
+    "Assault",
+    "Violence",
+    "Body Image",
+    "Nutrition",
+    "Obesity",
+    "HIV",
+    "STD",
+    "Sexual Health",
+    "Safe Sex",
+    "Urinary Tract Infections",
+]
 
 # Get text from the text file
 def get_text_from_file(file_path):
@@ -84,9 +118,8 @@ def get_token_list(doc, doc_name=None):
     if doc_name:
         preprocessed_dir = "./preprocessed"
         makedirs(dirname(join(preprocessed_dir, doc_name + ".txt")), exist_ok=True)
-        if not exists(join(preprocessed_dir, doc_name + ".txt")):
-            with open(join(preprocessed_dir, doc_name + ".txt"), 'w') as f:
-                f.write(doc)
+        with open(join(preprocessed_dir, doc_name + ".txt"), 'w') as f:
+            f.write(doc)
 
     return list(tokenize(doc, to_lower=True, deacc = True))
 
@@ -134,7 +167,8 @@ def calculate_tfidf(id_terms):
         id_corpora.append(get_text_from_file(join("./output", term + '.txt')))
 
     ctfidf = CustomizableTfidfVectorizer(shc_corpora, id_corpora)
-    features = ctfidf.rank_tfidf(-20)
+    # features = ctfidf.rank_tfidf(-50, printout=True)
+    features = ctfidf.filter_tfidf(max=0.00008, printout=False)
 
     with open(join(STOPWORD_FILE_PATH, 'stopwords_health_topics_tfidf.txt'), 'w') as f:
         f.write("\n".join(features))
@@ -197,9 +231,10 @@ def main():
     # Visualize the results
     results_df = results_df.groupby(['Term'], sort=False).apply(lambda x: x.sort_values(['Similarity'], ascending=False)).reset_index(drop=True)
     results_df.reset_index(drop=True, inplace=True)
-    f, ax = plt.subplots(figsize=(10, 8), constrained_layout=True)
+    f, ax = plt.subplots(figsize=(14, 8), constrained_layout=True)
     g = sns.lineplot(data=results_df, x="Website", y="Similarity", hue="Term")
     plt.xticks(rotation=50, horizontalalignment='right')
+    plt.legend(bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0)
     plt.title("Similarity")
     plt.show()
 
