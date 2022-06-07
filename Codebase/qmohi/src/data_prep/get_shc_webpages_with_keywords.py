@@ -48,6 +48,13 @@ class ShcUrl:
 
 				else:
 					for item in response['items']:
+						# Exclude URLs to PDF
+						if 'mime' in item:
+							if 'pdf' in item['mime'].lower():
+								continue
+						if 'fileFormat' in item:
+							if 'pdf' in item['fileFormat'].lower():
+								continue
 						# Links from the items contain URLs
 						links.append(item['link'])
 

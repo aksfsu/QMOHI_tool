@@ -24,16 +24,20 @@ def get_search_results(output_dir, keyword_list, margin=2):
 			# Specify the path to each cache file
 			cache_file_path = join(cache_university_path, cache_file)
 			# Read the cache file
-			fo_input = open(cache_file_path, 'r')
-			text = fo_input.read()
-			fo_input.close()
+			try:
+				fo_input = open(cache_file_path, 'r')
+				text = fo_input.read()
+			except:
+				continue
+			finally:
+				fo_input.close()
 
 			# Create the output file for each cache file
 			se_output_file_path = join(se_output_dir_path, cache_file)
 			makedirs(dirname(se_output_file_path), exist_ok=True)
 			fo_output = open(se_output_file_path, 'w')
 			# Write the result page title and start the result paragraoh
-			fo_output.write('<h1 style="margin:2rem 5%">QMOHI Keyword Search Results</h1><p style="margin:2rem 5%">')
+			fo_output.write('<h1 style="margin:2rem 5%">QMOHI Keyword Search Result</h1><p style="margin:2rem 5%">')
 
 			# Clean the text data
 			bs_obj = BeautifulSoup(text, 'html.parser')
@@ -87,6 +91,6 @@ def get_search_results(output_dir, keyword_list, margin=2):
 				# Export into output file
 				fo_output.write(anchor_sentence_html)
 
-		# End the result paragraph and close the file
-		fo_output.write('</p>')
-		fo_output.close()
+			# End the result paragraph and close the file
+			fo_output.write('</p>')
+			fo_output.close()
