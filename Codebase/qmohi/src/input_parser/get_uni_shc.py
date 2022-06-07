@@ -138,15 +138,14 @@ def get_shc_urls_from_uni_name(input_dataframe, keys, driver_path, cse_id, outpu
 					url = result.get('link', 'none')
 
 					# If url with .edu found
-					if '.pdf' not in url:
-						if ('.edu' in url) or ('.org' in url):
-							# Get the redirected URL, remove sub-urls and store it in the dataframe
-							redirected_url = get_redirected_url(url, driver_path)
-							sanitized_url = remove_sub_urls(redirected_url)
+					if ('.edu' in url) or ('.org' in url):
+						# Get the redirected URL, remove sub-urls and store it in the dataframe
+						redirected_url = get_redirected_url(url, driver_path)
+						sanitized_url = remove_sub_urls(redirected_url)
 
-							output_dataframe_splitted.loc[i] = [university, sanitized_url]
-							url_found = 1
-							break
+						output_dataframe_splitted.loc[i] = [university, sanitized_url]
+						url_found = 1
+						break
 
 			if url_found == 0:
 				print("   - University SHC website not found!")

@@ -82,7 +82,7 @@ def get_links(input_dataframe, keywords, keys, cse_id, output_dir):
 		# For every university in the split
 		for index, row in every_split.iterrows():
 
-			start_timestamp = datetime.datetime.now() #??? remove
+			start_timestamp = datetime.datetime.now()
 			output_dataframe_splitted = pd.DataFrame(columns=header)
 			university = row['University_name']
 			shc = row['University SHC URL']
@@ -92,9 +92,9 @@ def get_links(input_dataframe, keywords, keys, cse_id, output_dir):
 			if shc:
 				url_obj = ShcUrl(shc, my_api_key, cse_id)
 				links_shc_website = url_obj.get_links_with_keywords(keywords)
+				valid_links_shc_website = [link for link in links_shc_website if not link.endswith(".pdf") and not link.endswith(".docx") and not link.endswith(".doc")]
 				end_timestamp = datetime.datetime.now()
-				output_dataframe_splitted.loc[i] = [university, shc, int(len(links_shc_website)), links_shc_website,
-													start_timestamp, end_timestamp]
+				output_dataframe_splitted.loc[i] = [university, shc, int(len(valid_links_shc_website)), valid_links_shc_website, start_timestamp, end_timestamp]
 
 			i = i + 1
 

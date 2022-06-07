@@ -128,25 +128,13 @@ def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_pat
 		if len(links) != 0:
 
 			#  Remove duplicate sentences from data
-			seen = set()
-			unique_links = []
+			unique_links = set()
 			for link in links:
-				if link not in seen:
-					seen.add(link)
-					unique_links.append(link)
+				unique_links.add(link)
 
 			for each_link in unique_links:
 				url_obj = UrlContent(each_link)
-
-				if each_link.endswith(".pdf"):
-					url_content = ""
-
-				elif each_link.endswith(".docx") or each_link.endswith(".doc"):
-					url_content = ""
-
-				else:
-					url_content = data_from_url(url_obj, driver_path)
-
+				url_content = data_from_url(url_obj, driver_path)
 				complete_data = complete_data + " " + str(url_content)
 
 			complete_data = re.sub(r'\n\s*\n', '\n\n', complete_data)

@@ -37,16 +37,12 @@ def save_webpage_content(input_dataframe, output_dir):
 			links = re.findall(r"'(.*?)'", links)
 
 		for i in range(len(links)):
-			if links[i].endswith(".pdf") or links[i].endswith(".docx") or links[i].endswith(".doc"):
-				pass
-			else:
-				try:
-					opener = urllib.request.build_opener()
-					opener.addheaders = [('User-Agent', 'Mozilla/5.0')] #chromedirver/selenuim
-					urllib.request.install_opener(opener)
-					webpage_index_name = save_output + '/' + str(i) + '.html'
-					urllib.request.urlretrieve(links[i], webpage_index_name)
-				except Exception as e:
-					print("Error in saving one of the web page for ", university)
-					print(links[i], " : ", e)
-		
+			try:
+				opener = urllib.request.build_opener()
+				opener.addheaders = [('User-Agent', 'Mozilla/5.0')] #chromedirver/selenuim
+				urllib.request.install_opener(opener)
+				webpage_index_name = save_output + '/' + str(i) + '.html'
+				urllib.request.urlretrieve(links[i], webpage_index_name)
+			except Exception as e:
+				print("Error in saving one of the web page for ", university)
+				print(links[i], " : ", e)
