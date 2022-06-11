@@ -14,7 +14,10 @@ import pyppeteer
 API_KEY = config.MY_API_KEY
 CSE_ID = config.MY_CSE_ID
 MEDLINE_URL = "https://medlineplus.gov"
+MEDLINE_DRUGINFO_URL = "https://medlineplus.gov/druginfo"
+DRUGBANK_URL = "https://go.drugbank.com/drugs/"
 DEPTH = 2 # (>= 1)
+THERAPY_NUM = 10
 OUTPUT_DIR = "./output"
 
 # Experimental terms
@@ -86,7 +89,7 @@ def get_internal_links(soup, parent_url):
 # Get text data and export in the output file
 def get_document(output_file, url, depth, visited_urls):
     if depth == 0:
-        return
+        return visited_urls
 
     # Get the HTML based on URL
     html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
@@ -107,8 +110,8 @@ def get_document(output_file, url, depth, visited_urls):
                 # Collect internal links
                 urls.extend(get_internal_links(summary, url))
                 # Get the text data
-                text += summary.get_text(separator=" ", strip=True)
-                # Get the sections
+                text += summary.get_text(separator=" ", strip=True) + " "
+                # Get all the sections
                 sections = summary.parent.find_all('div', {'class': 'section'})
             else:
                 return visited_urls
@@ -119,7 +122,9 @@ def get_document(output_file, url, depth, visited_urls):
                         # Collect internal links
                         urls.extend(get_internal_links(section_body, url))
                         # Get the text data
-                        text += section_body.get_text(separator=" ", strip=True)
+                        text += section_body.get_text(separator=" ", strip=True) + " "
+            else:
+                return visited_urls 
 
         # The term has a dedicated "Lab Tests" page
         elif "lab-tests" in url:
@@ -128,37 +133,42 @@ def get_document(output_file, url, depth, visited_urls):
             if sections:
                 for section in sections:
                     if 'mp-refs' in section['class']:
-                        print('found ref')
                         continue
                     # Collect internal links
                     urls.extend(get_internal_links(section, url))
                     # Get the text data
-                    text += section.get_text(separator=" ", strip=True)
+                    text += section.get_text(separator=" ", strip=True) + " "
             else:
-                return
+                return visited_urls
 
         # The term has a dedicated "Drugs, Herbs and Supplements" page
-        elif "druginfo" in url or "genetics" in url:
-            # Get the article element
-            article = soup.find('article')
-            if article:
-                # Get all the description section elements
-                sections = article.find_all('section')
+        elif "druginfo" in url:
+            # Get all the sections
+            sections = soup.find_all('div', {'class': 'section'})
+            if sections:
                 for section in sections:
-                    # Collect internal links
-                    urls.extend(get_internal_links(section, url))
-                    # Get the text data
-                    text += section.get_text(separator=" ", strip=True)
+                    section_body = section.find('div', {'id': re.compile('section-1')})
+                    if section_body:
+                        # Collect internal links
+                        urls.extend(get_internal_links(section_body, url))
+                        # Get the text data
+                        text += section_body.get_text(separator=" ", strip=True) + " "
+                    
+                    section_brandname = section.find('div', {'id': re.compile(r'section-brandname-\d+')})
+                    if section_brandname:
+                        # Collect internal links
+                        urls.extend(get_internal_links(section_brandname, url))
+                        # Get the text data
+                        text += section_brandname.get_text(separator=" ", strip=True) + " "
 
-                # Get all the bottom section elements
-                bottoms = article.findAll('div', {'class': "bottom"})
-                for bottom in bottoms:
-                    # Collect internal links
-                    urls.extend(get_internal_links(bottom, url))
-                    # Get the text data
-                    text += bottom.get_text(separator=" ", strip=True)
+                    section_other_name = section.find('div', {'id': re.compile('section-other-name')})
+                    if section_other_name:
+                        # Collect internal links
+                        urls.extend(get_internal_links(section_other_name, url))
+                        # Get the text data
+                        text += section_other_name.get_text(separator=" ", strip=True) + " "
             else:
-                return
+                return visited_urls
 
         # The term has a dedicated "Health Topics" page
         else:
@@ -167,7 +177,7 @@ def get_document(output_file, url, depth, visited_urls):
                 urls.extend(get_internal_links(summary, url))
                 text += summary.get_text(separator=" ", strip=True)
             else:
-                return
+                return visited_urls
 
         side = soup.find('div', {'class': "side"})
         if side:
@@ -182,7 +192,53 @@ def get_document(output_file, url, depth, visited_urls):
     # Crawl internal links
     for url in urls:
         get_document(output_file, url, depth-1, visited_urls)
-    return
+    return visited_urls
+
+def get_drugbank_indications(output_file, url):
+    # Get the HTML based on URL
+    html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
+    # Parse the HTML
+    soup = BeautifulSoup(html, 'html.parser')
+
+    text = ""
+
+    # Get the summary
+    summary = soup.find('dt', {'id': 'summary'})
+    if summary:
+        summary = summary.find_next_sibling()
+        if summary:
+            # Get the text data
+            text += summary.get_text(separator=" ", strip=True) + " "
+
+    # Get the brand names
+    brand_names = soup.find('dt', {'id': 'brand-names'})
+    if brand_names:
+        brand_names = brand_names.find_next_sibling()
+        if brand_names:
+            # Get the text data
+            text += brand_names.get_text(separator=" ", strip=True) + " "
+
+    # Get the brand names
+    generic_name = soup.find('dt', {'id': 'generic-name'})
+    if generic_name:
+        generic_name = generic_name.find_next_sibling()
+        if generic_name:
+            # Get the text data
+            text += generic_name.get_text(separator=" ", strip=True) + " "
+    
+    # Get the brand names
+    indication = soup.find('dt', {'id': 'indication'})
+    if indication:
+        indication = indication.find_next_sibling()
+        if indication:
+            indication_ps = indication.find_all('p')
+            for p in indication_ps:
+                # Get the text data
+                text += p.get_text(separator=" ", strip=True) + " "
+
+    output_file.write("\n\n")
+    output_file.writelines(["[", url, "]\n"])
+    output_file.write(text)
 
 def main():
     # Build the search term string from commandline arguments 
@@ -212,7 +268,18 @@ def main():
 
         # Extract documents
         #print(f'{term}:')
-        get_document(output_file, links[0], DEPTH, [])
+        visited_urls = get_document(output_file, links[0], depth=DEPTH, visited_urls=[])
+        
+        # Collect therapy information
+        ### Method 1: MedlinePlus Drug, Herbs and Suppliments database
+        # therapy_links = search_obj.get_links_by_query(MEDLINE_DRUGINFO_URL, term)
+        # for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
+        #     visited_urls = get_document(output_file, link, depth=1, visited_urls=visited_urls)
+
+        ### Method 2: DrugBank Indications
+        therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, "summary " + term)
+        for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
+            get_drugbank_indications(output_file, link)
 
         # Close the output file
         output_file.close()
