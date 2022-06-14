@@ -17,17 +17,7 @@ import matplotlib.pyplot as plt
 
 WORD_VECTOR_PATH = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/GoogleNews-vectors-negative300.bin"
 STOPWORD_FILE_PATH = "./stopwords"
-'''
-EXPERIMENTAL_TERMS = [
-        "Medicated Abortion",
-        "Abortion",
-        "Accidental Injury",
-        "First Aid",
-        "Allergy",
-        "Cold",
-        "Vaccines",
-    ]
-'''
+
 EXPERIMENTAL_TERMS = [
     "Medicated Abortion",
     "Abortion",
@@ -95,7 +85,7 @@ def remove_optional_stopwords(doc):
 def preprocess_document(doc):
     # Remove URLs
     doc = re.sub(r"http\S+", "", doc, flags=re.MULTILINE)
-    doc = re.sub(r'www\S+', '', doc, flags=re.MULTILINE)
+    doc = re.sub(r"www\S+", "", doc, flags=re.MULTILINE)
     # Remove stop words
     doc = remove_stopwords(doc)
     doc = remove_optional_stopwords(doc)
@@ -142,9 +132,11 @@ def calculate_similarity(word_vector, doc1, doc2, doc_name1=None, doc_name2=None
     return similarity[0][0]
 
 def calculate_tfidf(id_terms):
-    shc_corpora = []
-    id_corpora = []
-
+    tf_corpus = []
+    idf_corpus = []
+    
+    '''
+    # Build TF corpus
     # Run tests over the cache data of SHC websites
     cache_dir_path = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/output/Second Run/saved_webpages"
     cache_universities = [d for d in listdir(cache_dir_path) if isdir(join(cache_dir_path, d))]
@@ -159,18 +151,28 @@ def calculate_tfidf(id_terms):
         for cache_file in cache_files:
             # Specify the path to each cache file
             cache_file_path = join(cache_university_path, cache_file)
-            # Add to corpora
-            shc_corpora.append(get_text_from_html_file(cache_file_path))
+            tf_corpus.append(get_text_from_html_file(cache_file_path))
 
+    # Build IDF corpus
     for term in id_terms:
-        # Add to corpora
-        id_corpora.append(get_text_from_file(join("./output", term + '.txt')))
+        idf_corpus.append(get_text_from_file(join("./output", term + '.txt')))
+    '''
 
-    ctfidf = CustomizableTfidfVectorizer(shc_corpora, id_corpora)
+    # Build TF corpus
+    for term in id_terms:
+        tf_corpus.append(get_text_from_file(join("./output", term + '.txt')))
+
+    # Build IDF corpus
+    health_topics_path = "./health_topics_summary"
+    health_topics_files = [f for f in listdir(health_topics_path) if isfile(join(health_topics_path, f))]
+    for file in health_topics_files:
+        idf_corpus.append(get_text_from_file(join(health_topics_path, file)))
+
+    ctfidf = CustomizableTfidfVectorizer(tf_corpus, idf_corpus)
     # features = ctfidf.rank_tfidf(-50, printout=True)
-    features = ctfidf.filter_tfidf(max=0.00008, printout=False)
+    features = ctfidf.filter_tfidf(max=0.0001, printout=False)
 
-    with open(join(STOPWORD_FILE_PATH, 'stopwords_health_topics_tfidf.txt'), 'w') as f:
+    with open(join(STOPWORD_FILE_PATH, 'stopwords_tfidf.txt'), 'w') as f:
         f.write("\n".join(features))
 
     return features
