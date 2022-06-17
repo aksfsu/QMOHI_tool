@@ -131,56 +131,22 @@ def calculate_similarity(word_vector, doc1, doc2, doc_name1=None, doc_name2=None
     similarity = cosine_similarity([sum1], [sum2])
     return similarity[0][0]
 
-def calculate_tfidf(id_terms):
+def calculate_tfidf(tfidf_obj, term, cache_file_path=None):
+    # Build TF corpus
     tf_corpus = []
-    idf_corpus = []
-    
-    '''
-    # Build TF corpus
-    # Run tests over the cache data of SHC websites
-    cache_dir_path = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/output/Second Run/saved_webpages"
-    cache_universities = [d for d in listdir(cache_dir_path) if isdir(join(cache_dir_path, d))]
-    for cache_university in cache_universities:
-        # Build the path to each university's cache data
-        cache_university_path = join(cache_dir_path, cache_university)
-        cache_files = [f for f in listdir(cache_university_path) if isfile(join(cache_university_path, f))]
-        if not cache_files:
-            continue
-
-        # Read cache files
-        for cache_file in cache_files:
-            # Specify the path to each cache file
-            cache_file_path = join(cache_university_path, cache_file)
-            tf_corpus.append(get_text_from_html_file(cache_file_path))
-
-    # Build IDF corpus
-    for term in id_terms:
-        idf_corpus.append(get_text_from_file(join("./output", term + '.txt')))
-    '''
-
-    # Build TF corpus
-    for term in id_terms:
-        tf_corpus.append(get_text_from_file(join("./output", term + '.txt')))
-
-    # Build IDF corpus
-    health_topics_path = "./health_topics_summary"
-    health_topics_files = [f for f in listdir(health_topics_path) if isfile(join(health_topics_path, f))]
-    for file in health_topics_files:
-        idf_corpus.append(get_text_from_file(join(health_topics_path, file)))
-
-    ctfidf = CustomizableTfidfVectorizer(tf_corpus, idf_corpus)
+    tf_corpus.append(get_text_from_html_file(cache_file_path))
+    tf_corpus.append(get_text_from_file(join("./output", term + '.txt')))
+    tfidf_obj.update(tf_corpus)
     # features = ctfidf.rank_tfidf(-50, printout=True)
-    features = ctfidf.filter_tfidf(max=0.0001, printout=False)
+    features = tfidf_obj.filter_tfidf(max=0.001, printout=False)
 
+    # Export into file
     with open(join(STOPWORD_FILE_PATH, 'stopwords_tfidf.txt'), 'w') as f:
         f.write("\n".join(features))
 
     return features
 
 def main():
-    # Create a stopword file based on TF-IDF
-    calculate_tfidf(EXPERIMENTAL_TERMS)
-
     # Load the word vector
     print("Loading model...")
     word_vector = KeyedVectors.load_word2vec_format(WORD_VECTOR_PATH, binary=True)
@@ -189,6 +155,15 @@ def main():
     # Create a dataframe for visualization
     results_df = pd.DataFrame(columns=['Website', 'Term', 'Similarity'])
 
+    # Precompute IDF corpus
+    health_topics_path = "./health_topics_summary"
+    health_topics_files = [f for f in listdir(health_topics_path) if isfile(join(health_topics_path, f))]
+    idf_corpus = []
+    for file in health_topics_files:
+        idf_corpus.append(get_text_from_file(join(health_topics_path, file)))
+
+    ctfidf = CustomizableTfidfVectorizer([], idf_corpus)
+    
     for term in EXPERIMENTAL_TERMS:
         # Open the output file
         output_file_path = "./similarity_experiment_term=" + term + ".csv"
@@ -211,6 +186,10 @@ def main():
             for cache_file in cache_files:
                 # Specify the path to each cache file
                 cache_file_path = join(cache_university_path, cache_file)
+                
+                # Calculate TF-IDF
+                calculate_tfidf(ctfidf, term, cache_file_path)
+                
                 # Calculate similarity between the ideal document and a cached SHC website
                 similarity = calculate_similarity(word_vector, 
                     get_text_from_file(join("./output", term + '.txt')), 
@@ -220,11 +199,13 @@ def main():
                 )
                 csv_writer.writerow([cache_university, cache_file, similarity])
                 # print(f'{cache_university}/{cache_file}: {round(similarity * 100, 3)}% ({similarity})')
+                
                 similarity_data = {
                     'Website': [cache_university + ' ' + cache_file],
                     'Term': [term],
                     'Similarity': [similarity]
                 }
+                
                 results_df = pd.concat([results_df, pd.DataFrame(similarity_data)], ignore_index=True)
 
     output_file.close()

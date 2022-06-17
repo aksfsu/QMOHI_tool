@@ -10,18 +10,30 @@ from bs4 import BeautifulSoup
 import re
 
 class CustomizableTfidfVectorizer:
-    def __init__(self, tf_docs, idf_docs=[], idf_dir=""):
+    def __init__(self, tf_docs=None, idf_docs=[], idf_dir=""):
         self.tf_docs = tf_docs
         # If the directory path is provided, calculate IDF
         # using the documents in the directory. Otherwise,
         # a list of token lists must be passed.
         if idf_dir:
-            self.idf_dct = self.__precompute_idf(idf_dir)
+            self.idf_dct = self.__get_token_dict_in_dir(idf_dir)
         else:
             self.idf_dct = self.__get_token_dict(idf_docs)
-        self.tfidf = self.__compute_tfidf()
-        self.vocab = list(set(key[1] for key in self.tfidf.keys()))
-        self.tfidf_vec = self.__vectorize_tfidf()
+        if tf_docs:
+            self.tfidf = self.__compute_tfidf()
+            self.vocab = list(set(key[1] for key in self.tfidf.keys()))
+            self.tfidf_vec = self.__vectorize_tfidf()
+        else:
+            self.tfidf = []
+            self.vocab = []
+            self.tfidf_vec = []
+    
+    def update(self, tf_docs):
+        self.tf_docs = tf_docs
+        if tf_docs:
+            self.tfidf = self.__compute_tfidf()
+            self.vocab = list(set(key[1] for key in self.tfidf.keys()))
+            self.tfidf_vec = self.__vectorize_tfidf()
 
     # Preprocess the document
     def __preprocess_document(self, doc):
@@ -53,7 +65,7 @@ class CustomizableTfidfVectorizer:
         return np.log((self.idf_dct.num_docs + 1)/(self.idf_dct.dfs[self.idf_dct.token2id.get(word)] + 1)) + 1
 
     # Compute Inverse Document Frequency using the documents in the directory
-    def __precompute_idf(self, idf_dir):
+    def __get_token_dict_in_dir(self, idf_dir):
         idf_dct = Dictionary()
         idf_docs = [join(idf_dir, f) for f in listdir(idf_dir) if isfile(join(idf_dir, f))]
         if not idf_docs:
@@ -181,7 +193,8 @@ def test():
     # print(ctfidf.id2token(2))
     ctfidf.rank_tfidf(5)
     '''
-    ctfidf = CustomizableTfidfVectorizer(tf_docs, idf_dir="./health_topics_summary")
+    ctfidf = CustomizableTfidfVectorizer([], idf_dir="./health_topics_summary")
+    ctfidf.update(tf_docs)
     print(ctfidf.idf_doc_num)
     print(ctfidf.most_common_idf(50))
     print(ctfidf.rank_tfidf(10))
