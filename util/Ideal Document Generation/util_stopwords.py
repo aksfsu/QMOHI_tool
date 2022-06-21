@@ -14,7 +14,6 @@ FILE_PATH_LIST = [
     "long_stop_words.txt",
     "clinical_stop_words.txt",
     "medical_stop_words.txt",
-    # "health_topics_high_idf_words.txt"
 ]
 
 if not exists(join(STOPWORD_FILE_PATH, OUTPUT_FILE_PATH)):
