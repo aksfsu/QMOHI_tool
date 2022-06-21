@@ -1,17 +1,14 @@
 from math import isnan
-from os import listdir, makedirs
-from os.path import isdir, isfile, join, dirname, exists
+from os import listdir
+from os.path import isfile, join
 import pandas as pd
 import numpy as np
 from gensim.corpora import Dictionary
 from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
 from gensim.utils import tokenize
-from bs4 import BeautifulSoup
-import re
 
 class CustomizableTfidfVectorizer:
     def __init__(self, tf_docs=None, idf_docs=[], idf_dir=""):
-        self.tf_docs = tf_docs
         # If the directory path is provided, calculate IDF
         # using the documents in the directory. Otherwise,
         # a list of token lists must be passed.
@@ -20,10 +17,10 @@ class CustomizableTfidfVectorizer:
         else:
             self.idf_dct = self.__get_token_dict(idf_docs)
         if tf_docs:
-            self.tfidf = self.__compute_tfidf()
-            self.vocab = list(set(key[1] for key in self.tfidf.keys()))
-            self.tfidf_vec = self.__vectorize_tfidf()
+            self.tf_docs = tf_docs
+            self.update(self.tf_docs)
         else:
+            self.tf_docs = []
             self.tfidf = []
             self.vocab = []
             self.tfidf_vec = []
@@ -117,11 +114,11 @@ class CustomizableTfidfVectorizer:
         return self.idf_dct.most_common(n)
 
     # Get the TF-IDF vector
-    def tfidf_vec(self):
+    def get_tfidf_vec(self):
         return self.tfidf_vec
 
     # Rank words by TD-IDF values and return a set of top 'n' words in each document
-    def rank_tfidf(self, n=5, printout=None):
+    def rank_tfidf(self, n=5, print_=None):
         # Convert the TF-IDF dictionary to a pandas dataframe
         tfidf_df = pd.DataFrame(columns=['doc_id'] + self.vocab)
         tfidf_df.set_index("doc_id", inplace = True)
@@ -141,7 +138,7 @@ class CustomizableTfidfVectorizer:
 
         # Sort words in each document by their TF-IDF values
         features = set()
-        if printout:
+        if print_:
             print(f' doc_id | token | TF-IDF ')
             print('---------------------------')
         for doc_id, tfidf_dct in enumerate(tfidf_lst):
@@ -149,21 +146,21 @@ class CustomizableTfidfVectorizer:
             for i, (k, v) in enumerate(sorted_dct.items()):
                 if i >= abs(n):
                     break
-                if printout:
+                if print_:
                     print(f' {doc_id} | {k} \t| {v} ')
                 features.add(k)
 
         return features
 
     # Return a set of stopwords filtered based on TD-IDF values
-    def filter_tfidf(self, max=float('inf'), min=0, printout=None):
+    def filter_tfidf(self, max=float('inf'), min=0, print_=None):
         features = set()
-        if printout:
+        if print_:
             print(f' doc_id | token | TF-IDF ')
             print('---------------------------')
         for k, v in self.tfidf.items():
             if v <= max and v >= min:
-                if printout:
+                if print_:
                     print(f' {k[0]} | {k[1]} \t| {v} ')
                 features.add(k[1])
         return features
@@ -186,18 +183,18 @@ def test():
     ]
 
     # Test script
-    '''
     ctfidf = CustomizableTfidfVectorizer(tf_docs, idf_docs)
-    ctfidf.tfidf_vec()
-    # print(ctfidf.id2doc(0))
-    # print(ctfidf.id2token(2))
-    ctfidf.rank_tfidf(5)
+    tfidf_vec = ctfidf.get_tfidf_vec()
+    print(tfidf_vec)
+    print(ctfidf.id2doc(0))
+    print(ctfidf.id2token(2))
+    ctfidf.rank_tfidf(5, print_=True)
     '''
     ctfidf = CustomizableTfidfVectorizer([], idf_dir="./health_topics_summary")
     ctfidf.update(tf_docs)
     print(ctfidf.idf_doc_num)
     print(ctfidf.most_common_idf(50))
     print(ctfidf.rank_tfidf(10))
-
+    '''
 # Run the test
 # test()

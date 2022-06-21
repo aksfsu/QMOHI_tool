@@ -137,8 +137,8 @@ def calculate_tfidf(tfidf_obj, term, cache_file_path=None):
     tf_corpus.append(get_text_from_html_file(cache_file_path))
     tf_corpus.append(get_text_from_file(join("./output", term + '.txt')))
     tfidf_obj.update(tf_corpus)
-    # features = ctfidf.rank_tfidf(-50, printout=True)
-    features = tfidf_obj.filter_tfidf(max=0.001, printout=False)
+    # features = ctfidf.rank_tfidf(-50, print_=True)
+    features = tfidf_obj.filter_tfidf(max=0.001, print_=False)
 
     # Export into file
     with open(join(STOPWORD_FILE_PATH, 'stopwords_tfidf.txt'), 'w') as f:
