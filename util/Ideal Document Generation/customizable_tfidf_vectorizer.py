@@ -34,8 +34,6 @@ class CustomizableTfidfVectorizer:
 
     # Preprocess the document
     def __preprocess_document(self, doc):
-        # Remove stop words
-        doc = remove_stopwords(doc)
         # Remove punctuation
         doc = strip_punctuation(doc)
         # Remove non-alphanumeric characters
