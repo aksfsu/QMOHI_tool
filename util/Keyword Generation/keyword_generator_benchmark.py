@@ -280,16 +280,12 @@ def main():
     elif method == "keybert":
         from keybert import KeyBERT
 
-        # docs = get_lines_of_text_from_file("./../Ideal Document Generation/output/" + term + ".txt")
-        # docs = [get_token_list(doc) for doc in docs]
-        # docs = [" ".join(doc) for doc in docs if len(doc)]
-        # doc = ". ".join(docs)
         doc = get_text_from_file("./../Ideal Document Generation/output/" + term + ".txt")
         doc = minimal_preprocess_document(doc)
         # doc = " ".join(get_token_list(doc))
 
-        kw_model = KeyBERT()
-        keywords = [keyword for keyword, _ in kw_model.extract_keywords(doc, keyphrase_ngram_range=(1, 1), use_mmr=True, diversity=0.2, top_n=40)]
+        kb = KeyBERT()
+        keywords = [keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words='english', use_mmr=True, diversity=0.4, top_n=40)]
 
     # --------------------------------------------------------
     #  Rake
