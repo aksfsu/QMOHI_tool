@@ -240,6 +240,42 @@ def get_drugbank_indications(output_file, url):
     output_file.writelines(["[", url, "]\n"])
     output_file.write(text)
 
+def generate_ideal_document(term):
+    # Instanciate the CSE handler
+    search_obj = cse_handler.CSEHandler(API_KEY, CSE_ID)
+
+    # Search links
+    links = search_obj.get_links_by_query(MEDLINE_URL, term)
+    # print(links)
+
+    # Try next term if no website was found
+    if not len(links):
+        print("Not Found")
+        return
+
+    # Open the output file
+    output_file_path = join(OUTPUT_DIR, term + ".txt")
+    makedirs(dirname(output_file_path), exist_ok=True)
+    output_file = open(output_file_path, 'w')
+
+    # Extract documents
+    #print(f'{term}:')
+    visited_urls = get_document(output_file, links[0], depth=DEPTH, visited_urls=[])
+    
+    # Collect therapy information
+    ### Method 1: MedlinePlus Drug, Herbs and Suppliments database
+    # therapy_links = search_obj.get_links_by_query(MEDLINE_DRUGINFO_URL, term)
+    # for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
+    #     visited_urls = get_document(output_file, link, depth=1, visited_urls=visited_urls)
+
+    ### Method 2: DrugBank Indications
+    therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, "summary " + term)
+    for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
+        get_drugbank_indications(output_file, link)
+
+    # Close the output file
+    output_file.close()
+
 def main():
     # Build the search term string from commandline arguments 
     if len(sys.argv) > 1:
@@ -247,42 +283,9 @@ def main():
     else:
         terms = EXPERIMENTAL_TERMS
 
-    # Instanciate the CSE handler
-    search_obj = cse_handler.CSEHandler(API_KEY, CSE_ID)
-
     # Search for the given terms 
     for term in terms:
-        # Search links
-        links = search_obj.get_links_by_query(MEDLINE_URL, term)
-        # print(links)
-
-        # Try next term if no website was found
-        if not len(links):
-            print("Not Found")
-            continue
-
-        # Open the output file
-        output_file_path = join(OUTPUT_DIR, term + ".txt")
-        makedirs(dirname(output_file_path), exist_ok=True)
-        output_file = open(output_file_path, 'w')
-
-        # Extract documents
-        #print(f'{term}:')
-        visited_urls = get_document(output_file, links[0], depth=DEPTH, visited_urls=[])
-        
-        # Collect therapy information
-        ### Method 1: MedlinePlus Drug, Herbs and Suppliments database
-        # therapy_links = search_obj.get_links_by_query(MEDLINE_DRUGINFO_URL, term)
-        # for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
-        #     visited_urls = get_document(output_file, link, depth=1, visited_urls=visited_urls)
-
-        ### Method 2: DrugBank Indications
-        therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, "summary " + term)
-        for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
-            get_drugbank_indications(output_file, link)
-
-        # Close the output file
-        output_file.close()
+        generate_ideal_document(term)
 
 if __name__ == "__main__":
     main()
