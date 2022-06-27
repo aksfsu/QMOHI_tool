@@ -1,0 +1,88 @@
+import sys
+import re
+from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric
+from gensim.utils import tokenize
+
+EXPERIMENTAL_TERMS = [
+    "Medicated Abortion",
+    "Abortion",
+    "Accidental Injury",
+    "Broken Limbs",
+    "First Aid",
+    "Allergy",
+    "Asthma",
+    "Flu",
+    "Cold",
+    "Standard Immunizations",
+    "Vaccines",
+    "Tobacco",
+    "Alcohol",
+    "Drug Issues",
+    "Mental Health Depression",
+    "Anxiety",
+    "Stress",
+    "Time Management",
+    "Sexual Harrassment",
+    "Abuse",
+    "Assault",
+    "Violence",
+    "Body Image",
+    "Nutrition",
+    "Obesity",
+    "HIV",
+    "STD",
+    "Sexual Health",
+    "Safe Sex",
+    "Urinary Tract Infections",
+]
+
+# Get text from the text file
+def get_text_from_file(file_path):
+    # Open the output file
+    with open(file_path, 'r') as f:
+        text = f.read()
+    return text
+
+def preprocess_document(doc):
+    # Remove URLs
+    doc = re.sub(r"http\S+", "", doc, flags=re.MULTILINE)
+    doc = re.sub(r"www\S+", "", doc, flags=re.MULTILINE)
+    # Remove stop words
+    doc = remove_stopwords(doc)
+    # Remove non-alphanumeric characters
+    doc = strip_non_alphanum(doc)
+    # Remove numeric characters
+    doc = strip_numeric(doc)
+    # Remove redundant white spaces
+    doc = strip_multiple_whitespaces(doc)
+    return doc
+
+def generate_keywords(term):
+    from keybert import KeyBERT
+
+    # Read the ideal document for the given term
+    doc = get_text_from_file("./../Ideal Document Generation/output/" + term + ".txt")
+    doc = preprocess_document(doc)
+
+    # Extract keywords
+    kb = KeyBERT()
+    keywords = [keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=0.4, top_n=40)]
+    keywords.extend([keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words='english', use_mmr=True, diversity=0.4, top_n=40)])
+
+    # Extract a set of unique tokens
+    # tokens = [list(tokenize(keyword, to_lower=True, deacc = True)) for keyword in keywords]
+    # keywords = set(sum(tokens, []))
+    return keywords
+
+def main():
+    if len(sys.argv) >= 2:
+        terms = [" ".join([str(sys.argv[i]) for i in range(1, len(sys.argv))])]
+    else:
+        terms = EXPERIMENTAL_TERMS
+
+    for term in terms:
+        keywords = generate_keywords(term)
+        print(f'Keywords for {term} ===\n{keywords}')
+
+if __name__ == "__main__":
+    main()
