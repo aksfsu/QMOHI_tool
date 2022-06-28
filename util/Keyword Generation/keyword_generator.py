@@ -57,7 +57,7 @@ def preprocess_document(doc):
     doc = strip_multiple_whitespaces(doc)
     return doc
 
-def generate_keywords(term):
+def generate_keywords_with_keybert(term):
     from keybert import KeyBERT
 
     # Read the ideal document for the given term
@@ -66,13 +66,32 @@ def generate_keywords(term):
 
     # Extract keywords
     kb = KeyBERT()
-    keywords = [keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=0.4, top_n=40)]
-    keywords.extend([keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words='english', use_mmr=True, diversity=0.4, top_n=40)])
+    keywords = [keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=0.4, top_n=20)]
+    keywords.extend([keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words='english', use_mmr=True, diversity=0.4, top_n=20)])
 
     # Extract a set of unique tokens
-    # tokens = [list(tokenize(keyword, to_lower=True, deacc = True)) for keyword in keywords]
-    # keywords = set(sum(tokens, []))
+    tokens = [list(tokenize(keyword, to_lower=True, deacc = True)) for keyword in keywords]
+    keywords = set(sum(tokens, []))
     return keywords
+
+def generate_keywords_with_multipartilerank(term):
+    from pke.unsupervised import MultipartiteRank
+    from pke.lang import stopwords
+
+    doc = get_text_from_file("./../Ideal Document Generation/output/" + term + ".txt")
+    doc = preprocess_document(doc)
+    
+    # initialize keyphrase extraction model, here TopicRank
+    rank = MultipartiteRank()
+    rank.load_document(input=doc, language='en', stoplist=stopwords.get('english'), normalization=None)
+    rank.candidate_selection()
+    rank.candidate_weighting(alpha=1.1, threshold=0.7, method='average')
+
+    # Extract a set of unique tokens
+    tokens = [list(tokenize(keyword, to_lower=True, deacc = True)) for keyword, _ in rank.get_n_best(n=40)]
+    keywords = set(sum(tokens, []))
+    return keywords
+    # return [keyword for keyword, _ in rank.get_n_best(n=40)]
 
 def main():
     if len(sys.argv) >= 2:
@@ -81,8 +100,8 @@ def main():
         terms = EXPERIMENTAL_TERMS
 
     for term in terms:
-        keywords = generate_keywords(term)
-        print(f'Keywords for {term} ===\n{keywords}')
+        keywords = generate_keywords_with_multipartilerank(term)
+        print(f'Keywords for {term} ({len(keywords)}) ===\n{keywords}')
 
 if __name__ == "__main__":
     main()
