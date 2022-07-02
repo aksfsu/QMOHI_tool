@@ -225,7 +225,15 @@ def get_drugbank_indications(output_file, url):
         if generic_name:
             # Get the text data
             text += generic_name.get_text(separator=" ", strip=True) + " "
-    
+
+    # Get the brand names
+    background = soup.find('dt', {'id': 'background'})
+    if background:
+        background = background.find_next_sibling()
+        if background:
+            # Get the text data
+            text += background.get_text(separator=" ", strip=True) + " "
+
     # Get the brand names
     indication = soup.find('dt', {'id': 'indication'})
     if indication:
