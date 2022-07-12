@@ -2,7 +2,7 @@ import re
 import numpy as np
 import pandas as pd
 from os import listdir, makedirs
-from os.path import isdir, isfile, join, dirname, exists
+from os.path import isdir, isfile, join, dirname
 import csv
 from bs4 import BeautifulSoup
 from sklearn.metrics.pairwise import cosine_similarity
@@ -49,6 +49,21 @@ EXPERIMENTAL_TERMS = [
     "Sexual Health",
     "Safe Sex",
     "Urinary Tract Infections",
+]
+
+MEDICATED_ABORTION_KEYWORDS = [
+    "nonsurgical", "abortion",
+    "surgical",
+    "medical",
+    "medicated",
+    "medication",
+    "medications",
+    "mifepristone",
+    "misoprostol",
+    "mifeprex",
+    "ru",
+    "pill",
+    "pills"
 ]
 
 # Get text from the text file
@@ -114,18 +129,26 @@ def get_token_list(doc, doc_name=None):
     return list(tokenize(doc, to_lower=True, deacc = True))
 
 # Calculate the similarity based on the given word vector
-def calculate_similarity(word_vector, doc1, doc2, doc_name1=None, doc_name2=None):
+def calculate_similarity(word_vector, keywords, weight, doc1, doc2, doc_name1=None, doc_name2=None):
     # sum1 will hold the sum of all of its word's vectors
     sum1 = [0] * len(word_vector['word'])
     for token in get_token_list(doc1, doc_name1):
         if token in word_vector:
-            sum1 = np.sum([sum1, word_vector[token]], axis=0)
+            if token in keywords:
+                w = weight
+            else:
+                w = 1
+            sum1 = np.sum([sum1, word_vector[token] * w], axis=0)
 
     # sum2 will hold the sum of all of its word's vectors
     sum2 = [0] * len(word_vector['word'])
     for token in get_token_list(doc2, doc_name2):
         if token in word_vector:
-            sum2 = np.sum([sum2, word_vector[token]], axis=0)
+            if token in keywords:
+                w = weight
+            else:
+                w = 1
+            sum2 = np.sum([sum2, word_vector[token] * w], axis=0)
 
     # Calculate the cosine similarity
     similarity = cosine_similarity([sum1], [sum2])
@@ -192,6 +215,8 @@ def main():
                 
                 # Calculate similarity between the ideal document and a cached SHC website
                 similarity = calculate_similarity(word_vector, 
+                    MEDICATED_ABORTION_KEYWORDS,
+                    3,
                     get_text_from_file(join("./output", term + '.txt')), 
                     get_text_from_html_file(cache_file_path),
                     term,
