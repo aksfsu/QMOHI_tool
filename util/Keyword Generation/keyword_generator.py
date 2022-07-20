@@ -36,72 +36,80 @@ EXPERIMENTAL_TERMS = [
     "Urinary Tract Infections",
 ]
 
-# Get text from the text file
-def get_text_from_file(file_path):
-    # Open the output file
-    with open(file_path, 'r') as f:
-        text = f.read()
-    return text
+class KeywordGenerator:
+    def __init__(self):
+        return
 
-def preprocess_document(doc):
-    # Remove URLs
-    doc = re.sub(r"http\S+", "", doc, flags=re.MULTILINE)
-    doc = re.sub(r"www\S+", "", doc, flags=re.MULTILINE)
-    # Remove stop words
-    doc = remove_stopwords(doc)
-    # Remove non-alphanumeric characters
-    doc = strip_non_alphanum(doc)
-    # Remove numeric characters
-    doc = strip_numeric(doc)
-    # Remove redundant white spaces
-    doc = strip_multiple_whitespaces(doc)
-    return doc
+    # Get text from the text file
+    def __get_text_from_file(self, file_path):
+        # Open the output file
+        with open(file_path, 'r') as f:
+            text = f.read()
+        return text
 
-def generate_keywords_with_keybert(term):
-    from keybert import KeyBERT
+    def __preprocess_document(self, doc):
+        # Remove URLs
+        doc = re.sub(r"http\S+", "", doc, flags=re.MULTILINE)
+        doc = re.sub(r"www\S+", "", doc, flags=re.MULTILINE)
+        # Remove stop words
+        doc = remove_stopwords(doc)
+        # Remove non-alphanumeric characters
+        doc = strip_non_alphanum(doc)
+        # Remove numeric characters
+        doc = strip_numeric(doc)
+        # Remove redundant white spaces
+        doc = strip_multiple_whitespaces(doc)
+        return doc
 
-    # Read the ideal document for the given term
-    doc = get_text_from_file("./../Ideal Document Generation/output/" + term + ".txt")
-    doc = preprocess_document(doc)
+    def generate_keywords_with_keybert(self, file_path):
+        from keybert import KeyBERT
 
-    # Extract keywords
-    kb = KeyBERT()
-    keywords = [keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=0.4, top_n=20)]
-    keywords.extend([keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words='english', use_mmr=True, diversity=0.4, top_n=20)])
+        # Read the ideal document for the given term
+        doc = self.__get_text_from_file(file_path)
+        doc = self.__preprocess_document(doc)
 
-    # Extract a set of unique tokens
-    tokens = [list(tokenize(keyword, to_lower=True, deacc = True)) for keyword in keywords]
-    keywords = set(sum(tokens, []))
-    return keywords
+        # Extract keywords
+        kb = KeyBERT()
+        keywords = [keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=0.4, top_n=20)]
+        keywords.extend([keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words='english', use_mmr=True, diversity=0.4, top_n=20)])
 
-def generate_keywords_with_multipartilerank(term):
-    from pke.unsupervised import MultipartiteRank
-    from pke.lang import stopwords
+        # Extract a set of unique tokens
+        tokens = [list(tokenize(keyword, to_lower=True, deacc = True)) for keyword in keywords]
+        keywords = set(sum(tokens, []))
+        return keywords
 
-    doc = get_text_from_file("./../Ideal Document Generation/output/" + term + ".txt")
-    doc = preprocess_document(doc)
-    
-    # initialize keyphrase extraction model, here TopicRank
-    rank = MultipartiteRank()
-    rank.load_document(input=doc, language='en', stoplist=stopwords.get('english'), normalization=None)
-    rank.candidate_selection()
-    rank.candidate_weighting(alpha=1.1, threshold=0.7, method='average')
+    def generate_keywords_with_multipartilerank(self, file_path):
+        from pke.unsupervised import MultipartiteRank
+        from pke.lang import stopwords
 
-    # Extract a set of unique tokens
-    tokens = [list(tokenize(keyword, to_lower=True, deacc = True)) for keyword, _ in rank.get_n_best(n=40)]
-    keywords = set(sum(tokens, []))
-    return keywords
-    # return [keyword for keyword, _ in rank.get_n_best(n=40)]
+        doc = self.__get_text_from_file(file_path)
+        doc = self.__preprocess_document(doc)
+        
+        # initialize keyphrase extraction model, here TopicRank
+        rank = MultipartiteRank()
+        rank.load_document(input=doc, language='en', stoplist=stopwords.get('english'), normalization=None)
+        rank.candidate_selection()
+        rank.candidate_weighting(alpha=1.1, threshold=0.7, method='average')
 
+        # Extract a set of unique tokens
+        tokens = [list(tokenize(keyword, to_lower=True, deacc = True)) for keyword, _ in rank.get_n_best(n=40)]
+        keywords = set(sum(tokens, []))
+        return keywords
+
+
+'''
+# Unit test
 def main():
     if len(sys.argv) >= 2:
         terms = [" ".join([str(sys.argv[i]) for i in range(1, len(sys.argv))])]
     else:
         terms = EXPERIMENTAL_TERMS
 
+    kg = KeywordGenerator()
     for term in terms:
-        keywords = generate_keywords_with_multipartilerank(term)
-        print(f'Keywords for {term} ({len(keywords)}) ===\n{keywords}')
+        keywords = kg.generate_keywords_with_keybert("./../Ideal Document Generation/output/" + term + ".txt")
+        print(f'--- Keywords for {term} ({len(keywords)}) ---\n{keywords}')
 
 if __name__ == "__main__":
     main()
+'''
