@@ -10,13 +10,15 @@ import cse_handler
 import asyncio
 import pyppeteer
 
+from drugbank_db_handler import DrugBankDBHandler
+
 # Config constants
 API_KEY = config.MY_API_KEY
 CSE_ID = config.MY_CSE_ID
 MEDLINE_URL = "https://medlineplus.gov"
 MEDLINE_DRUGINFO_URL = "https://medlineplus.gov/druginfo"
 DRUGBANK_URL = "https://go.drugbank.com/drugs/"
-DEPTH = 2 # (>= 1)
+DEPTH = 1 # (>= 1)
 THERAPY_NUM = 10
 OUTPUT_DIR = "./output"
 
@@ -184,17 +186,16 @@ def get_document(output_file, url, depth, visited_urls):
             urls.extend(get_internal_links(side, url))
 
         # Export into a text file
-        if depth != DEPTH:
-            output_file.write("\n\n")
         output_file.writelines(["[", url, "]\n"])
         output_file.write(text)
+        output_file.write("\n\n")
 
     # Crawl internal links
     for url in urls:
         get_document(output_file, url, depth-1, visited_urls)
     return visited_urls
 
-def get_drugbank_indications(output_file, url):
+def get_drugbank_information(output_file, url):
     # Get the HTML based on URL
     html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
     # Parse the HTML
@@ -276,13 +277,19 @@ def generate_ideal_document(term):
     # for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
     #     visited_urls = get_document(output_file, link, depth=1, visited_urls=visited_urls)
 
-    ### Method 2: DrugBank Indications
-    therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, "summary " + term)
-    for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
-        get_drugbank_indications(output_file, link)
+    ### Method 2: DrugBank Information with Google API
+    # therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, "summary " + term)
+    # for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
+    #     get_drugbank_information(output_file, link)
 
     # Close the output file
     output_file.close()
+
+    ### Method 3: DrugBank Information with DrugBank Data in XML
+    drugbank = DrugBankDBHandler()
+    drugbank.search_drugbank(term)
+    drugbank.write_to_files(output_file_path)
+
 
 def main():
     # Build the search term string from commandline arguments 
