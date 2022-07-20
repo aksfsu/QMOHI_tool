@@ -46,6 +46,7 @@ def search_drugbank(search_term):
                         drug["indication"] = element.text
                         getIndication = False
                         # print(f'indication: {element.text}')
+
                 elif element.tag == "{http://www.drugbank.ca}products":
                     getProducts = True
         elif event == "end":
@@ -59,7 +60,9 @@ def search_drugbank(search_term):
                 getProducts = False
                 found = False
     
-    # Results
+    return drugs
+
+def print_results(drugs):
     print(f"[{len(drugs)} records found]")
     for record in drugs:
         print("--------------------------\n")
@@ -69,12 +72,29 @@ def search_drugbank(search_term):
         print(f'Products: {record["products"]}')
         print()
 
+def write_to_files(fp, drugs):
+    print(f"[{len(drugs)} records found]")
+    for drug in drugs:
+        if drug["name"]:
+            fp.write(drug["name"] + "\n")
+        if drug["description"]:
+            fp.write(drug["description"] + "\n")
+        if drug["indication"]:
+            fp.write(drug["indication"] + "\n")
+        if drug["products"]:
+            fp.write(", ".join([p for p in drug["products"] if p]) + "\n")
+        fp.write("\n")
+
 def main():
     if len(sys.argv) > 1:
         term = " ".join([str(sys.argv[i]) for i in range(1, len(sys.argv))])
     else:
         print("Search term required")
-    search_drugbank(term)
+    
+    drugs = search_drugbank(term)
+    
+    with open("./test.text", "w") as f:
+        write_to_files(f, drugs)
 
 if __name__ == "__main__":
 	main()
