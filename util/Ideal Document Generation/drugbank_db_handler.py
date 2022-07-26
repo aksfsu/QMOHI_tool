@@ -91,15 +91,19 @@ class DrugBankDBHandler:
 
 '''
 # Unit test
+import time
 def main():
     if len(sys.argv) > 1:
         term = " ".join([str(sys.argv[i]) for i in range(1, len(sys.argv))])
     else:
         print("Search term required")
     
+    st = time.time()
     drugbank = DrugBankDBHandler()
     drugbank.search_drugbank(term)
-    drugbank.write_to_files("./test.text")
+    drugbank.write_to_files("./test.txt")
+    et = time.time()
+    print(f'Runtime: {et - st}')
 
 if __name__ == "__main__":
 	main()
