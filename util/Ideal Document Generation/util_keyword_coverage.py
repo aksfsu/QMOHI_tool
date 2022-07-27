@@ -7,6 +7,7 @@ from gensim.utils import tokenize
 from gensim.parsing.porter import PorterStemmer
 
 from customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
+from util_text_summarizer import Summarizer
 
 INPUT_PATH = "./summarized"
 STOPWORD_FILE_PATH = "./stopwords"
@@ -137,6 +138,11 @@ def preprocess_document(doc):
 
 # Tokenize the document
 def get_token_list(doc, doc_name=None):
+    # Summarize
+    doc = Summarizer(doc, KEYWORDS).summarize()
+    with open(join("./summarized", TERM + ".txt"), 'w') as f:
+        f.write(doc)
+
     # Data cleaning
     doc = preprocess_document(doc)
 
