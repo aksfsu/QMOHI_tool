@@ -9,7 +9,7 @@ from gensim.parsing.porter import PorterStemmer
 from customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
 from util_text_summarizer import Summarizer
 
-INPUT_PATH = "./summarized"
+INPUT_PATH = "./output"
 STOPWORD_FILE_PATH = "./stopwords"
 
 CONTRACEPTION_KEYWORDS = [

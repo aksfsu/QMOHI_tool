@@ -142,7 +142,7 @@ def get_text_from_file(file_path):
 def main():
     for i, term in enumerate(EXPERIMENTAL_TERMS):
         doc = get_text_from_file(join("./output", term + '.txt'))
-        doc = Summarizer(doc).summarize(weight=1.2)
+        doc = Summarizer(doc).summarize(weight=0.4)
 
         # Export the preprocessed text
         summarized_dir = "./summarized"
