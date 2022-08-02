@@ -2,10 +2,12 @@ import sys
 import xml.etree.ElementTree as ET
 
 class DrugBankDBHandler:
-    def __init__(self):
+    def __init__(self, avoid_overlaps=True):
         self.drugs = []
+        self.avoid_overlaps = avoid_overlaps
+        self.found_drugs = set()
 
-    def __includes_search_term(self, text, search_term):
+    def __contains_search_term(self, text, search_term):
         if text:
             if search_term.lower() in text.lower():
                 return True
@@ -27,25 +29,25 @@ class DrugBankDBHandler:
                 if getRecord:
                     if element.tag == "{http://www.drugbank.ca}name":
                         if getProducts:
-                            found |= self.__includes_search_term(element.text, search_term)
+                            found |= self.__contains_search_term(element.text, search_term)
                             drug["products"].add(element.text)
                             # print(f'product: {element.text}')
                         else:
-                            found |= self.__includes_search_term(element.text, search_term)
+                            found |= self.__contains_search_term(element.text, search_term)
                             drug["name"] = element.text
                             # print(f'name: {element.text}')
                     elif element.tag == "{http://www.drugbank.ca}group":
-                        if self.__includes_search_term(element.text, "approved"):
+                        if self.__contains_search_term(element.text, "approved"):
                             approved = True
                     elif element.tag == "{http://www.drugbank.ca}description":
                         if getDescription:
-                            found |= self.__includes_search_term(element.text, search_term)
+                            found |= self.__contains_search_term(element.text, search_term)
                             drug["description"] = element.text
                             getDescription = False
                             # print(f'description: {element.text}')
                     elif element.tag == "{http://www.drugbank.ca}indication":
                         if getIndication:
-                            found |= self.__includes_search_term(element.text, search_term)
+                            found |= self.__contains_search_term(element.text, search_term)
                             drug["indication"] = element.text
                             getIndication = False
                             # print(f'indication: {element.text}')
@@ -55,7 +57,12 @@ class DrugBankDBHandler:
             elif event == "end":
                 if element.tag == "{http://www.drugbank.ca}products" or element.tag == "{http://www.drugbank.ca}drug":
                     if found and approved:
-                        self.drugs.append(drug)
+                        if self.avoid_overlaps:
+                            if not drug["name"] in self.found_drugs:
+                                self.found_drugs.add(drug["name"])
+                                self.drugs.append(drug)
+                        else:
+                            self.drugs.append(drug)
                     approved = False
                     getRecord = False
                     getDescription = False
@@ -75,7 +82,7 @@ class DrugBankDBHandler:
             print(f'Products: {record["products"]}')
             print()
 
-    def write_to_files(self, output_file_path):
+    def write_to_file(self, output_file_path):
         print(f"[{len(self.drugs)} records found]")
         with open(output_file_path, "a") as f:
             for drug in self.drugs:
@@ -88,6 +95,19 @@ class DrugBankDBHandler:
                 if drug["products"]:
                     f.write(", ".join([p for p in drug["products"] if p]) + "\n")
                 f.write("\n")
+
+    def write_to_opened_file(self, f):
+        print(f"[{len(self.drugs)} records found]")
+        for drug in self.drugs:
+            if "name" in drug and drug["name"]:
+                f.write(drug["name"] + "\n")
+            if "description" in drug and drug["description"]:
+                f.write(drug["description"] + "\n")
+            if "indication" in drug and drug["indication"]:
+                f.write(drug["indication"] + "\n")
+            if "products" in drug and drug["products"]:
+                f.write(", ".join([p for p in drug["products"] if p]) + "\n")
+            f.write("\n")
 
 '''
 # Unit test

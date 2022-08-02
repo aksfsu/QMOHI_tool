@@ -24,37 +24,48 @@ OUTPUT_DIR = "./output"
 
 # Experimental terms
 EXPERIMENTAL_TERMS = [
-    "Accidental Injury", #
-    "Broken Limbs",
-    "First Aid", #
-    "Allergy", #
-    "Asthma",
-    "Flu",
-    "Cold", #
-    "Standard Immunizations",
-    "Vaccines", #
-    "Tobacco",
-    "Alcohol",
-    "Drug Issues",
-    "Mental Health Depression",
-    "Anxiety",
-    "Stress",
-    "Time Management",
-    "Abortion",
-    "Medicated Abortion",
-    "Sexual Harrassment",
-    "Abuse",
-    "Assault",
-    "Violence",
-    "Body Image",
-    "Nutrition",
-    "Obesity",
-    "HIV",
-    "STD",
-    "Sexual Health",
-    "Safe Sex",
-    "Urinary Tract Infections",
+    [
+        "Contraception",
+        "Contraceptive", 
+        "Levonorgestrel", 
+        # "Progestin", 
+        # "Progesterone", 
+        # "IUD", 
+        # "Mifepristone", 
+        # "Implant",
+    ],
+    ["Accidental Injury"],
+    ["Broken Limbs"],
+    ["First Aid"],
+    ["Allergy"],
+    ["Asthma"],
+    ["Flu"],
+    ["Cold"],
+    ["Standard Immunizations"],
+    ["Vaccines"],
+    ["Tobacco"],
+    ["Alcohol"],
+    ["Drug Issues"],
+    ["Mental Health Depression"],
+    ["Anxiety"],
+    ["Stress"],
+    ["Time Management"],
+    ["Abortion"],
+    ["Medicated Abortion"],
+    ["Sexual Harrassment"],
+    ["Abuse"],
+    ["Assault"],
+    ["Violence"],
+    ["Body Image"],
+    ["Nutrition"],
+    ["Obesity"],
+    ["HIV"],
+    ["STD"],
+    ["Sexual Health"],
+    ["Safe Sex"],
+    ["Urinary Tract Infections"],
 ]
+
 
 # Access websites based on the given URL
 async def get_html_from_url(url):
@@ -67,6 +78,7 @@ async def get_html_from_url(url):
     html = await page.content()
     await browser.close()
     return html
+
 
 # Collect internal links within Medline
 def get_internal_links(soup, parent_url):
@@ -88,6 +100,7 @@ def get_internal_links(soup, parent_url):
                 internal_links.append(abs_link)
     return internal_links
 
+
 # Get text data and export in the output file
 def get_document(output_file, url, depth, visited_urls):
     if depth == 0:
@@ -101,7 +114,7 @@ def get_document(output_file, url, depth, visited_urls):
     # Retrieve information only once from the same websites
     urls = []
     if url not in visited_urls:
-        visited_urls.append(url)
+        visited_urls.add(url)
 
         text = ""
         # The term has a dedicated "Medical Encyclopedia" page
@@ -195,9 +208,14 @@ def get_document(output_file, url, depth, visited_urls):
         get_document(output_file, url, depth-1, visited_urls)
     return visited_urls
 
+
 def get_drugbank_information(output_file, url):
     # Get the HTML based on URL
-    html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
+    try:
+        html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
+    except:
+        return
+
     # Parse the HTML
     soup = BeautifulSoup(html, 'html.parser')
 
@@ -249,58 +267,65 @@ def get_drugbank_information(output_file, url):
     output_file.writelines(["[", url, "]\n"])
     output_file.write(text)
 
-def generate_ideal_document(term):
+
+def generate_ideal_document(keywords):
     # Instanciate the CSE handler
     search_obj = cse_handler.CSEHandler(API_KEY, CSE_ID)
 
-    # Search links
-    links = search_obj.get_links_by_query(MEDLINE_URL, term)
-    # print(links)
-
-    # Try next term if no website was found
-    if not len(links):
-        print("Not Found")
-        return
+    ### Method 3: DrugBank Information with DrugBank Data in XML
+    # drugbank = DrugBankDBHandler()
 
     # Open the output file
-    output_file_path = join(OUTPUT_DIR, term + ".txt")
-    makedirs(dirname(output_file_path), exist_ok=True)
+    makedirs(OUTPUT_DIR, exist_ok=True)
+    output_file_path = join(OUTPUT_DIR, keywords[0] + ".txt")
     output_file = open(output_file_path, 'w')
 
-    # Extract documents
-    #print(f'{term}:')
-    visited_urls = get_document(output_file, links[0], depth=DEPTH, visited_urls=[])
-    
-    # Collect therapy information
-    ### Method 1: MedlinePlus Drug, Herbs and Suppliments database
-    # therapy_links = search_obj.get_links_by_query(MEDLINE_DRUGINFO_URL, term)
-    # for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
-    #     visited_urls = get_document(output_file, link, depth=1, visited_urls=visited_urls)
+    visited_urls = set()
+    for keyword in keywords:
+        # Search URLs
+        links = search_obj.get_links_by_query(MEDLINE_URL, keyword)
+        # print(links)
 
-    ### Method 2: DrugBank Information with Google API
-    # therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, "summary " + term)
-    # for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
-    #     get_drugbank_information(output_file, link)
+        # Try next term if no website was found
+        if not len(links):
+            print("Not Found")
+            return
+
+        # Extract documents
+        #print(f'{keyword}:')
+        visited_urls.update(get_document(output_file, links[0], depth=DEPTH, visited_urls=visited_urls))
+        
+        # Collect therapy information
+        ### Method 1: MedlinePlus Drug, Herbs and Suppliments database
+        # therapy_links = search_obj.get_links_by_query(MEDLINE_DRUGINFO_URL, keyword)
+        # for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
+        #     visited_urls.update(get_document(output_file, link, depth=1, visited_urls=visited_urls))
+
+        ### Method 2: DrugBank Information with Google API
+        therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, "summary " + keyword)
+        for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
+            if link not in visited_urls:
+                visited_urls.add(link)
+                get_drugbank_information(output_file, link)
+
+        ### Method 3: DrugBank Information with DrugBank Data in XML
+        # drugbank.search_drugbank(keyword)
+        # drugbank.write_to_opened_file(output_file)
 
     # Close the output file
     output_file.close()
 
-    ### Method 3: DrugBank Information with DrugBank Data in XML
-    drugbank = DrugBankDBHandler()
-    drugbank.search_drugbank(term)
-    drugbank.write_to_files(output_file_path)
 
-
+# Input: A list of keywords where the first item is the topic
 def main():
     # Build the search term string from commandline arguments 
     if len(sys.argv) > 1:
-        terms = [" ".join([str(sys.argv[i]) for i in range(1, len(sys.argv))])]
+        terms = sys.argv[1]
+        generate_ideal_document(terms)
     else:
-        terms = EXPERIMENTAL_TERMS
+        for terms in EXPERIMENTAL_TERMS[:1]:
+            generate_ideal_document(terms)
 
-    # Search for the given terms 
-    for term in terms:
-        generate_ideal_document(term)
 
 if __name__ == "__main__":
     main()
