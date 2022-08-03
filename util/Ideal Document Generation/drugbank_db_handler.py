@@ -8,12 +8,12 @@ class DrugBankDBHandler:
         self.found_drugs = set()
 
     def __contains_search_term(self, text, search_term):
-        if text:
+        if text and search_term:
             if search_term.lower() in text.lower():
                 return True
         return False
 
-    def search_drugbank(self, search_term):
+    def search_drugbank(self, descriptive_search_term="", specific_search_term=""):
         getRecord = False
         for event, element in ET.iterparse("./drugbank_database.xml", events=("start", "end")):
             if event == "start":
@@ -29,11 +29,11 @@ class DrugBankDBHandler:
                 if getRecord:
                     if element.tag == "{http://www.drugbank.ca}name":
                         if getProducts:
-                            found |= self.__contains_search_term(element.text, search_term)
+                            found |= self.__contains_search_term(element.text, specific_search_term)
                             drug["products"].add(element.text)
                             # print(f'product: {element.text}')
                         else:
-                            found |= self.__contains_search_term(element.text, search_term)
+                            found |= self.__contains_search_term(element.text, specific_search_term)
                             drug["name"] = element.text
                             # print(f'name: {element.text}')
                     elif element.tag == "{http://www.drugbank.ca}group":
@@ -41,13 +41,13 @@ class DrugBankDBHandler:
                             approved = True
                     elif element.tag == "{http://www.drugbank.ca}description":
                         if getDescription:
-                            found |= self.__contains_search_term(element.text, search_term)
+                            found |= self.__contains_search_term(element.text, descriptive_search_term)
                             drug["description"] = element.text
                             getDescription = False
                             # print(f'description: {element.text}')
                     elif element.tag == "{http://www.drugbank.ca}indication":
                         if getIndication:
-                            found |= self.__contains_search_term(element.text, search_term)
+                            found |= self.__contains_search_term(element.text, descriptive_search_term)
                             drug["indication"] = element.text
                             getIndication = False
                             # print(f'indication: {element.text}')
@@ -109,7 +109,7 @@ class DrugBankDBHandler:
                 f.write(", ".join([p for p in drug["products"] if p]) + "\n")
             f.write("\n")
 
-'''
+
 # Unit test
 import time
 def main():
@@ -120,11 +120,10 @@ def main():
     
     st = time.time()
     drugbank = DrugBankDBHandler()
-    drugbank.search_drugbank(term)
-    drugbank.write_to_files("./test.txt")
+    drugbank.search_drugbank(specific_search_term=term)
+    drugbank.print_results()
     et = time.time()
     print(f'Runtime: {et - st}')
 
 if __name__ == "__main__":
 	main()
-'''
