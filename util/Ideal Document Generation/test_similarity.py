@@ -21,15 +21,15 @@ STOPWORD_FILE_PATH = "./stopwords"
 EXPERIMENTAL_TERMS = [
     "Medicated Abortion",
     "Abortion",
-    "Accidental Injury", #
+    "Accidental Injury",
     "Broken Limbs",
-    "First Aid", #
-    "Allergy", #
+    "First Aid",
+    "Allergy",
     "Asthma",
     "Flu",
-    "Cold", #
+    "Cold",
     "Standard Immunizations",
-    "Vaccines", #
+    "Vaccines",
     "Tobacco",
     "Alcohol",
     "Drug Issues",
@@ -102,7 +102,6 @@ def preprocess_document(doc):
     doc = re.sub(r"http\S+", "", doc, flags=re.MULTILINE)
     doc = re.sub(r"www\S+", "", doc, flags=re.MULTILINE)
     # Remove stop words
-    doc = remove_stopwords(doc)
     doc = remove_optional_stopwords(doc)
     # Remove punctuation
     doc = strip_punctuation(doc)
