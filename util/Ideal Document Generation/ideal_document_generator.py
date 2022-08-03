@@ -238,14 +238,6 @@ def get_drugbank_information(output_file, url):
             text += brand_names.get_text(separator=" ", strip=True) + " "
 
     # Get the brand names
-    generic_name = soup.find('dt', {'id': 'generic-name'})
-    if generic_name:
-        generic_name = generic_name.find_next_sibling()
-        if generic_name:
-            # Get the text data
-            text += generic_name.get_text(separator=" ", strip=True) + " "
-
-    # Get the brand names
     background = soup.find('dt', {'id': 'background'})
     if background:
         background = background.find_next_sibling()
