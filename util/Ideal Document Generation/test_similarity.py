@@ -7,7 +7,7 @@ import csv
 from bs4 import BeautifulSoup
 from sklearn.metrics.pairwise import cosine_similarity
 from gensim.models import KeyedVectors
-from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
+from gensim.parsing.preprocessing import strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
 from gensim.utils import tokenize
 
 from customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
