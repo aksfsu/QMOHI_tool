@@ -268,7 +268,7 @@ def get_drugbank_information(output_file, url):
     output_file.write(text)
 
 
-def generate_ideal_document(keywords):
+def generate_ideal_document(keywords, output_file_path):
     # Instanciate the CSE handler
     search_obj = cse_handler.CSEHandler(API_KEY, CSE_ID)
 
@@ -276,8 +276,7 @@ def generate_ideal_document(keywords):
     # drugbank = DrugBankDBHandler()
 
     # Open the output file
-    makedirs(OUTPUT_DIR, exist_ok=True)
-    output_file_path = join(OUTPUT_DIR, keywords[0] + ".txt")
+    makedirs(dirname(output_file_path), exist_ok=True)
     output_file = open(output_file_path, 'w')
 
     visited_urls = set()
@@ -321,10 +320,12 @@ def main():
     # Build the search term string from commandline arguments 
     if len(sys.argv) > 1:
         terms = sys.argv[1]
-        generate_ideal_document(terms)
+        output_file_path = join(OUTPUT_DIR, terms[0] + ".txt")
+        generate_ideal_document(terms, output_file_path)
     else:
         for terms in EXPERIMENTAL_TERMS[:1]:
-            generate_ideal_document(terms)
+            output_file_path = join(OUTPUT_DIR, terms[0] + ".txt")
+            generate_ideal_document(terms, output_file_path)
 
 
 if __name__ == "__main__":
