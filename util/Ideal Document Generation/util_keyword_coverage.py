@@ -124,7 +124,6 @@ def preprocess_document(doc):
     doc = re.sub(r"http\S+", "", doc, flags=re.MULTILINE)
     doc = re.sub(r"www\S+", "", doc, flags=re.MULTILINE)
     # Remove stop words
-    doc = remove_stopwords(doc)
     doc = remove_optional_stopwords(doc)
     # Remove punctuation
     doc = strip_punctuation(doc)
@@ -138,11 +137,6 @@ def preprocess_document(doc):
 
 # Tokenize the document
 def get_token_list(doc, doc_name=None):
-    # Summarize
-    doc = Summarizer(doc, KEYWORDS).summarize()
-    with open(join("./summarized", TERM + ".txt"), 'w') as f:
-        f.write(doc)
-
     # Data cleaning
     doc = preprocess_document(doc)
 

@@ -312,7 +312,7 @@ def generate_ideal_document(descriptive_keywords, specific_keywords, output_file
 def main():
     # Build the search term string from commandline arguments 
     if len(sys.argv) > 1:
-        terms = sys.argv[1]
+        terms = sys.argv[1:]
         output_file_path = join(OUTPUT_DIR, terms[0] + ".txt")
         generate_ideal_document(terms, "", output_file_path)
     else:
