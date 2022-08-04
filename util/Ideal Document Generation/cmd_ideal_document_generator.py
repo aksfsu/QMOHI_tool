@@ -6,6 +6,8 @@ from keyword_generator import KeywordGenerator
 OUTPUT_DIR = "./output"
 
 def main():
+    kg = KeywordGenerator()
+
     while True:
         descriptive_keywords = []
         specific_keywords = []
@@ -36,7 +38,7 @@ def main():
         print("\nGenerating ideal document...")
         output_file_path = join(OUTPUT_DIR, descriptive_keywords[0] + ".txt")
         generate_ideal_document(descriptive_keywords, specific_keywords, output_file_path)
-        kg = KeywordGenerator()
+
         keyword_suggestion = kg.generate_keywords_with_keybert(output_file_path)
         print(f"\nKeyword Suggestion for {descriptive_keywords[0]}:\n{keyword_suggestion}")
 

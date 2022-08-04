@@ -1,7 +1,13 @@
 import sys
+import os
 import re
 from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric
 from gensim.utils import tokenize
+
+from keybert import KeyBERT
+
+# from pke.unsupervised import MultipartiteRank
+# from pke.lang import stopwords
 
 EXPERIMENTAL_TERMS = [
     "Medicated Abortion",
@@ -38,6 +44,8 @@ EXPERIMENTAL_TERMS = [
 
 class KeywordGenerator:
     def __init__(self):
+        self.kb = KeyBERT()
+        os.environ["TOKENIZERS_PARALLELISM"] = "false"
         return
 
     # Get text from the text file
@@ -62,26 +70,21 @@ class KeywordGenerator:
         return doc
 
     def generate_keywords_with_keybert(self, file_path):
-        from keybert import KeyBERT
-
         # Read the ideal document for the given term
         doc = self.__get_text_from_file(file_path)
         doc = self.__preprocess_document(doc)
 
         # Extract keywords
-        kb = KeyBERT()
-        keywords = [keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=0.4, top_n=20)]
-        keywords.extend([keyword for keyword, _ in kb.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words='english', use_mmr=True, diversity=0.4, top_n=20)])
+        keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=0.4, top_n=20)]
+        keywords.extend([keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words='english', use_mmr=True, diversity=0.4, top_n=20)])
 
         # Extract a set of unique tokens
         # tokens = [list(tokenize(keyword, to_lower=True, deacc = True)) for keyword in keywords]
         # keywords = set(sum(tokens, []))
         return keywords
 
+    '''
     def generate_keywords_with_multipartilerank(self, file_path):
-        from pke.unsupervised import MultipartiteRank
-        from pke.lang import stopwords
-
         doc = self.__get_text_from_file(file_path)
         doc = self.__preprocess_document(doc)
         
@@ -95,6 +98,7 @@ class KeywordGenerator:
         tokens = [list(tokenize(keyword, to_lower=True, deacc = True)) for keyword, _ in rank.get_n_best(n=40)]
         keywords = set(sum(tokens, []))
         return keywords
+    '''
 
 
 '''
