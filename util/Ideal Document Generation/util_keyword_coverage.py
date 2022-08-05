@@ -4,10 +4,9 @@ from os.path import isdir, isfile, join, dirname
 from bs4 import BeautifulSoup
 from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
 from gensim.utils import tokenize
-from gensim.parsing.porter import PorterStemmer
+from nltk.stem import WordNetLemmatizer
 
 from customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
-from util_text_summarizer import Summarizer
 
 INPUT_PATH = "./output"
 STOPWORD_FILE_PATH = "./stopwords"
@@ -16,7 +15,6 @@ CONTRACEPTION_KEYWORDS = [
     "birth",
     "control",
     "iud",
-    "iuds",
     "progesterone",
     "progestin",
     "hormonal",
@@ -27,13 +25,9 @@ CONTRACEPTION_KEYWORDS = [
     "copper",
     "paragard",
     "implant",
-    "implants",
     "nexplanon",
     "injection",
-    "injections",
     "shot",
-    "shots",
-    "depo-provera",
     "depo",
     "emergency",
     "contraception",
@@ -45,23 +39,17 @@ CONTRACEPTION_KEYWORDS = [
     "ulipristal",
     "acetate",
     "pill",
-    "pills",
     "diaphragm",
     "spermicide",
-    "spermicides",
     "patch",
-    "patches",
     "vaginal",
     "ring",
-    "rings",
     "cervical", 
     "cap",
-    "caps",
 ]
 
 LARC_KEYWORDS = [
     "iud",
-    "iuds",
     "progesterone",
     "progestin",
     "hormonal",
@@ -72,20 +60,15 @@ LARC_KEYWORDS = [
     "copper",
     "non-hormonal",
     "paragard",
-    "contraceptive",
     "implant",
-    "implants",
     "nexplanon",
     "injection",
-    "injections",
     "shot",
-    "shots",
-    "depo-provera",
     "depo",
 ]
 
 # === Test Settings ====================
-TERM = "Long Acting Reversible Contraception"
+TERM = "Long-Acting Reversible Contraception"
 KEYWORDS = LARC_KEYWORDS
 # ======================================
 
@@ -152,13 +135,11 @@ def get_token_list(doc, doc_name=None):
 # Calculate the similarity based on the given word vector
 def count_true_positive(doc):
     tokens = get_token_list(doc)
-    token_set = set(tokens)
-    token_stems = PorterStemmer().stem_documents(token_set)
-    token_stems_set = set(token_stems)
-    tps = [token for token in token_set if token in KEYWORDS]
-    tp_token_stems = PorterStemmer().stem_documents(tps)
-    tp_token_stems_set = set(tp_token_stems)
-    return (len(token_stems_set), len(tp_token_stems_set))
+    lemmatizer = WordNetLemmatizer()
+    token_set = set([lemmatizer.lemmatize(token) for token in tokens])
+    tp_token_set = [token for token in token_set if token in KEYWORDS]
+    print(tp_token_set)
+    return (len(token_set), len(tp_token_set))
 
 def calculate_tfidf(tfidf_obj, term, cache_file_path=None):
     # Build TF corpus
