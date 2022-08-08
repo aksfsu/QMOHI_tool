@@ -1,6 +1,7 @@
 import re
 import numpy as np
 import pandas as pd
+import sys
 from os import listdir, makedirs
 from os.path import isdir, isfile, join, dirname
 import csv
@@ -153,11 +154,11 @@ def calculate_similarity(word_vector, keywords, weight, doc1, doc2, doc_name1=No
     similarity = cosine_similarity([sum1], [sum2])
     return similarity[0][0]
 
-def calculate_tfidf(tfidf_obj, term, cache_file_path=None):
+def calculate_tfidf(tfidf_obj, ideal_document_path, cache_file_path=None):
     # Build TF corpus
     tf_corpus = []
     tf_corpus.append(get_text_from_html_file(cache_file_path))
-    tf_corpus.append(get_text_from_file(join("./output", term + '.txt')))
+    tf_corpus.append(get_text_from_file(ideal_document_path))
     tfidf_obj.update(tf_corpus)
     # features = ctfidf.rank_tfidf(-50, print_=True)
     features = tfidf_obj.filter_tfidf(max=0.001, print_=False)
@@ -168,6 +169,85 @@ def calculate_tfidf(tfidf_obj, term, cache_file_path=None):
 
     return features
 
+def get_label(similarity):
+    if similarity >= 0.7:
+        return "High"
+    if similarity >= 0.6:
+        return "Moderate"
+    elif similarity >- 0.5:
+        return "Low"
+    return "No Similarity"
+
+def evaluate_similarity(ideal_document_path, output_file_path):
+    # Load the word vector
+    print("Loading model...")
+    word_vector = KeyedVectors.load_word2vec_format(WORD_VECTOR_PATH, binary=True)
+    print("Loaded")
+
+    # Precompute IDF corpus
+    health_topics_path = "./health_topics_summary"
+    health_topics_files = [f for f in listdir(health_topics_path) if isfile(join(health_topics_path, f))]
+    idf_corpus = []
+    for file in health_topics_files:
+        idf_corpus.append(get_text_from_file(join(health_topics_path, file)))
+
+    ctfidf = CustomizableTfidfVectorizer([], idf_corpus)
+
+    # Create a dataframe to export the result
+    results_df = pd.DataFrame(columns=['University', 'Website', 'Similarity', 'Label'])
+
+    # Run tests over the cache data of SHC websites
+    cache_dir_path = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/output/Second Run/saved_webpages"
+    cache_universities = [d for d in listdir(cache_dir_path) if isdir(join(cache_dir_path, d))]
+    for cache_university in cache_universities:
+        # Build the path to each university's cache data
+        cache_university_path = join(cache_dir_path, cache_university)
+        cache_files = [f for f in listdir(cache_university_path) if isfile(join(cache_university_path, f))]
+        if not cache_files:
+            continue
+
+        # Read cache files
+        for cache_file in cache_files:
+            # Specify the path to each cache file
+            cache_file_path = join(cache_university_path, cache_file)
+            
+            # Calculate TF-IDF
+            calculate_tfidf(ctfidf, ideal_document_path, cache_file_path)
+            
+            # Calculate similarity between the ideal document and a cached SHC website
+            similarity = calculate_similarity(word_vector, 
+                keywords=[],
+                weight=1,
+                doc1=get_text_from_file(ideal_document_path), 
+                doc2=get_text_from_html_file(cache_file_path)
+            )
+            # print(f'{cache_university}/{cache_file}: {round(similarity * 100, 3)}% ({similarity})')
+
+            similarity_data = {
+                'University': [cache_university],
+                'Website': [cache_file],
+                'Similarity': [similarity],
+                'Label': [get_label(similarity)]
+            }
+            
+            results_df = pd.concat([results_df, pd.DataFrame(similarity_data)], ignore_index=True)
+
+    makedirs(dirname(output_file_path), exist_ok=True)
+    results_df.to_csv(output_file_path)
+    # print(results_df.head())
+    return
+
+
+def main():
+    # Build the search term string from commandline arguments 
+    if len(sys.argv) > 1:
+        term = " ".join(sys.argv[1:])
+        ideal_document_path = join("./output", term + ".txt")
+        output_file_path = "./similarity_" + term + ".csv"
+        evaluate_similarity(ideal_document_path, output_file_path)
+
+
+'''
 def main():
     # Load the word vector
     print("Loading model...")
@@ -246,6 +326,7 @@ def main():
     plt.show()
 
     return
+'''
 
 if __name__ == "__main__":
     main()
