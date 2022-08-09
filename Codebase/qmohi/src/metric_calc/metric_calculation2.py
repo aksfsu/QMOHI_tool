@@ -12,6 +12,7 @@ from gensim.models import KeyedVectors
 from gensim.test.utils import datapath, get_tmpfile
 from gensim.utils import tokenize
 
+from qmohi.src.metric_calc.similarity import Similarity
 
 class University:
 
@@ -110,7 +111,7 @@ class University:
 def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path, model_path):
 
 	header = ['University name', 'Count of SHC webpages matching keywords', 'Keywords matched webpages on SHC',
-			  'Content on all pages', 'Similarity', 'Sentiment objectivity', 'Sentiment polarity', 'Timeliness',
+			  'Content on all pages', 'Similarity Score', 'Similarity Label', 'Sentiment objectivity', 'Sentiment polarity', 'Timeliness',
 			  'Navigation', 'Trace']
 	output_dataframe = pd.DataFrame(columns=header)
 
@@ -137,9 +138,12 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path, model
 
 		print("   - Similarity")
 		if (model_path != 0):
-			similarity = obj.calculate_similarity(wv, ideal_content)
+			# similarity = obj.calculate_similarity(wv, ideal_content)
+			similarity_obj = Similarity(wv)
+			similarity, similarity_label = similarity_obj.calculate_similarity(ideal_content, content)
 		else:
 			similarity = obj.calculate_similarity(None, ideal_content)
+			similarity_label = ""
 
 		print("   - Objectivity")
 		sentiment_objectivity = obj.calculate_sentiment_objectivity()
@@ -150,16 +154,15 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path, model
 		print("   - Timeliness")
 		timeliness = obj.calculate_timeliness()
 
-
 		print("   - Navigation")
 		navigation, trace = obj.calculate_navigation(driver_path)
-
 		
 		output_dataframe = output_dataframe.append({'University name': uni_name,
 													'Count of SHC webpages matching keywords': no_of_links,
 													'Keywords matched webpages on SHC': row['Keywords matched webpages on SHC'],
 													'Content on all pages': content,
-													'Similarity': similarity,
+													'Similarity Score': similarity,
+													'Similarity Label': similarity_label,
 													'Sentiment objectivity': sentiment_objectivity,
 													'Sentiment polarity': sentiment_polarity,
 													'Timeliness': timeliness,
