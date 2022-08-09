@@ -1,4 +1,5 @@
 import re
+import sys
 from os import listdir, makedirs
 from os.path import isdir, isfile, join, dirname
 from bs4 import BeautifulSoup
@@ -10,67 +11,9 @@ from customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
 
 INPUT_PATH = "./output"
 STOPWORD_FILE_PATH = "./stopwords"
-
-CONTRACEPTION_KEYWORDS = [
-    "birth",
-    "control",
-    "iud",
-    "progesterone",
-    "progestin",
-    "hormonal",
-    "mirena",
-    "skyla",
-    "kyleena",
-    "liletta",
-    "copper",
-    "paragard",
-    "implant",
-    "nexplanon",
-    "injection",
-    "shot",
-    "depo",
-    "emergency",
-    "contraception",
-    "contraceptive",
-    "morning",
-    "b",
-    "levonorgestrel",
-    "ella",
-    "ulipristal",
-    "acetate",
-    "pill",
-    "diaphragm",
-    "spermicide",
-    "patch",
-    "vaginal",
-    "ring",
-    "cervical", 
-    "cap",
-]
-
-LARC_KEYWORDS = [
-    "iud",
-    "progesterone",
-    "progestin",
-    "hormonal",
-    "mirena",
-    "skyla",
-    "kyleena",
-    "liletta",
-    "copper",
-    "non-hormonal",
-    "paragard",
-    "implant",
-    "nexplanon",
-    "injection",
-    "shot",
-    "depo",
-]
-
-# === Test Settings ====================
-TERM = "Long-Acting Reversible Contraception"
-KEYWORDS = LARC_KEYWORDS
-# ======================================
+HEALTH_TOPICS_PATH = "./health_topics_summary"
+CACHE_DIR_PATH = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/output/Second Run/saved_webpages"
+KEYWORD_DIR_PATH = "./keywords"
 
 # Get text from the text file
 def get_text_from_file(file_path):
@@ -125,21 +68,12 @@ def get_token_list(doc, doc_name=None):
 
     # Export the preprocessed text
     if doc_name:
-        preprocessed_dir = "./preprocessed"
+        preprocessed_dir = "./../preprocessed"
         makedirs(dirname(join(preprocessed_dir, doc_name + ".txt")), exist_ok=True)
         with open(join(preprocessed_dir, doc_name + ".txt"), 'w') as f:
             f.write(doc)
 
     return list(tokenize(doc, to_lower=True, deacc = True))
-
-# Calculate the similarity based on the given word vector
-def count_true_positive(doc):
-    tokens = get_token_list(doc)
-    lemmatizer = WordNetLemmatizer()
-    token_set = set([lemmatizer.lemmatize(token) for token in tokens])
-    tp_token_set = [token for token in token_set if token in KEYWORDS]
-    print(tp_token_set)
-    return (len(token_set), len(tp_token_set))
 
 def calculate_tfidf(tfidf_obj, term, cache_file_path=None):
     # Build TF corpus
@@ -156,9 +90,20 @@ def calculate_tfidf(tfidf_obj, term, cache_file_path=None):
 
     return features
 
-def main():
+# Calculate the similarity based on the given word vector
+def count_true_positive(doc, keywords):
+    tokens = get_token_list(doc)
+    lemmatizer = WordNetLemmatizer()
+    lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens]
+    token_set = set(lemmatized_tokens)
+    str_lemmatized_tokens = " ".join(lemmatized_tokens)
+    tp = [keyword for keyword in keywords if keyword in str_lemmatized_tokens]
+    print(tp)
+    return (len(token_set), len(tp))
+
+def calculate_keyword_cocerage(term, keywords):
     # Precompute IDF corpus
-    health_topics_path = "./health_topics_summary"
+    health_topics_path = HEALTH_TOPICS_PATH
     health_topics_files = [f for f in listdir(health_topics_path) if isfile(join(health_topics_path, f))]
     idf_corpus = []
     for file in health_topics_files:
@@ -167,11 +112,10 @@ def main():
     ctfidf = CustomizableTfidfVectorizer([], idf_corpus)
 
     # Run tests over the cache data of SHC websites
-    cache_dir_path = "./../../Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/output/Second Run/saved_webpages"
-    cache_universities = [d for d in listdir(cache_dir_path) if isdir(join(cache_dir_path, d))]
+    cache_universities = [d for d in listdir(CACHE_DIR_PATH) if isdir(join(CACHE_DIR_PATH, d))]
     for cache_university in cache_universities:
         # Build the path to each university's cache data
-        cache_university_path = join(cache_dir_path, cache_university)
+        cache_university_path = join(CACHE_DIR_PATH, cache_university)
         cache_files = [f for f in listdir(cache_university_path) if isfile(join(cache_university_path, f))]
         if not cache_files:
             continue
@@ -185,10 +129,10 @@ def main():
             cache_file_path = join(cache_university_path, cache_file)
             
             # Calculate TF-IDF
-            calculate_tfidf(ctfidf, TERM, cache_file_path)
+            calculate_tfidf(ctfidf, term, cache_file_path)
 
             # Calculate similarity between the ideal document and a cached SHC website
-            len_token_stems, len_tp_token_stems = count_true_positive(get_text_from_file(join(INPUT_PATH, TERM + '.txt')))
+            len_token_stems, len_tp_token_stems = count_true_positive(get_text_from_file(join(INPUT_PATH, term + '.txt')), keywords)
             sum_token_stems += len_token_stems
             sum_tp_token_stems += len_tp_token_stems
             count += 1
@@ -196,6 +140,12 @@ def main():
     sum_token_stems /= count
     sum_tp_token_stems /= count
     print(f'[TP]{sum_tp_token_stems} / [TP+FP]{sum_token_stems}')
+
+def main():
+    if len(sys.argv) > 1:
+        term = " ".join(sys.argv[1:])
+    with open(join(KEYWORD_DIR_PATH, term + ".txt")) as f:
+        calculate_keyword_cocerage(term, [keyword.strip().lower() for keyword in f.readlines()])
 
 if __name__ == "__main__":
     main()
