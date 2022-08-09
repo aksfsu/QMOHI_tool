@@ -11,16 +11,18 @@ Argument - Input file in form of csv sheet along with absolute path with below c
 6. Output directory for storing results
 7. Ideal document name with absolute path
 """
+import os
 import sys
 # sys.path.append(r'./qmomi')
 import time
 import datetime
-
-from qmohi.src.input_parser import parse_input, get_uni_shc, sentence_extraction
-from qmohi.src.data_prep import filter_relevant_data, webpage_crawling, store_webpages, \
+import csv # MW: Remove this line for production
+from pprint import pprint # MW: Remove this line for production
+import pandas as pd # MW: Remove this line for production
+from qmomi.src.input_parser import parse_input, get_uni_shc
+from qmomi.src.data_prep import filter_relevant_data, webpage_crawling, store_webpages, \
 	get_shc_webpages_with_keywords
-from qmohi.src.metric_calc import reading_level, combine_results, metric_calculation1, metric_calculation2
-
+from qmomi.src.metric_calc import reading_level, combine_results, metric_calculation1, metric_calculation2
 
 # Execute complete pipeline
 def execute(input_file_path):
@@ -36,7 +38,11 @@ def execute(input_file_path):
 
 	# Set output directory for storing results
 	print("- Setting up output directory: ", end="")
-	output_dir = parse_input.set_output_directory(file)
+	# output_dir = parse_input.set_output_directory(file) # MW: Uncomment this line for production
+	output_dir = '/Users/mikewong899/Dropbox/work-ccls/qmohi/experiments/2021/08-30 similarity/output/latest'; # MW: Remove this line for production
+	if not os.path.exists( output_dir ):
+		print( "Symbolically link (i.e. ln -s) the latest successful run's output as \"latest\" to use that run's cache" )
+		sys.exit()
 
 	# Get university names from user input
 	print("- Collecting input university names")
@@ -50,13 +56,15 @@ def execute(input_file_path):
 	num_of_words, query_keywords = parse_input.divide_query_keywords(keyword_list)
 
 	# Calculate minimum number of keys required
-	no_of_keys_for_shc, no_of_keys_for_site_specific_search = parse_input.calculate_num_keys_required(no_of_universities, num_of_words)
+	no_of_keys_for_shc, no_of_keys_for_site_specific_search = parse_input.calculate_num_keys_required(
+		no_of_universities,
+		num_of_words)
 
 	# Get API keys from user input
 	print("- Collecting input API keys")
 	keys_list, no_of_input_keys = parse_input.get_input_api_keys(file)
 
-	# Check if API keys in the user's input are sufficient (Only when using Google API free tier)
+	# Check if API keys in the user's input are sufficient
 	parse_input.are_input_api_keys_sufficient(no_of_keys_for_shc, no_of_keys_for_site_specific_search, no_of_input_keys)
 
 	# Get Selenium web driver path from user input
@@ -75,26 +83,21 @@ def execute(input_file_path):
 	print("- Collecting input model", end="")
 	model_path = parse_input.get_model(file)
 
-	# Get the margin for the sentence extraction. If not provided, the function returns the default value (=2)
-	print("- Collecting sentence extraction margin", end="")
-	sentence_extraction_margin = parse_input.get_sentence_extraction_margin(file)
-
 	# Get university SHC from university name
 	print("\n###### Finding university SHC websites ######")
-	result_dataframe3 = get_uni_shc.get_shc_urls_from_uni_name(universities_list, keys_list[:no_of_keys_for_shc], driver_path, cse_id, output_dir)
+	# result_dataframe3 = get_uni_shc.get_shc_urls_from_uni_name(universities_list, keys_list[:no_of_keys_for_shc], driver_path, cse_id, output_dir)
+	result_dataframe3 = pd.read_csv( output_dir + '/University_SHC.csv', index_col=0 ) # MW: Remove this line for production
 
 	# Get related web pages under SHC website having presence of input keywords
 	print("\n============ PHASE 2 =============\n")
 	print("###### Searching SHC web pages having presence of keywords ######")
-	result_dataframe4 = get_shc_webpages_with_keywords.get_links(result_dataframe3, query_keywords, keys_list[0:no_of_keys_for_shc + no_of_keys_for_site_specific_search], cse_id, output_dir)
+	# result_dataframe4 = get_shc_webpages_with_keywords.get_links(result_dataframe3, query_keywords, keys_list[0:no_of_keys_for_shc + no_of_keys_for_site_specific_search], cse_id, output_dir) # MW: Uncomment for production
+	result_dataframe4 = pd.read_csv( output_dir + '/keywords_matched_webpages_on_SHC.csv', index_col=0 ) # MW: Remove this line for production
 
 	# Store web pages in html format
 	print("\n###### Saving web pages locally in HTML format ######")
-	store_webpages.save_webpage_content(result_dataframe4, output_dir)
+	# store_webpages.save_webpage_content(result_dataframe4, output_dir) # MW: Uncomment for production
 
-	# Find anchor sentences and highlight them in html format
-	sentence_extraction.get_search_results(output_dir, keyword_list, sentence_extraction_margin)
-	
 	# Get data from the urls found under shc
 	print("\n###### Collecting all text data from SHC web pages found ######")
 	result_dataframe5 = webpage_crawling.retrieve_content_from_urls(result_dataframe4, keyword_list, output_dir, driver_path)

@@ -56,9 +56,6 @@ def execute(input_file_path):
 	print("- Collecting input API keys")
 	keys_list, no_of_input_keys = parse_input.get_input_api_keys(file)
 
-	# Check if API keys in the user's input are sufficient (Only when using Google API free tier)
-	parse_input.are_input_api_keys_sufficient(no_of_keys_for_shc, no_of_keys_for_site_specific_search, no_of_input_keys)
-
 	# Get Selenium web driver path from user input
 	print("\n- Collecting input Selenium Web Driver", end="")
 	driver_path = parse_input.get_input_webdriver(file)
