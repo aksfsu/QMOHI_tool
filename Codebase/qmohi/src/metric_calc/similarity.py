@@ -38,7 +38,7 @@ class Similarity:
         soup = BeautifulSoup(html, 'html.parser')
         return soup.get_text(separator=" ", strip=True)
 
-    def remove_optional_stopwords(self, doc):
+    def remove_stopwords(self, doc):
         stopword_file_paths = [join(STOPWORD_FILE_PATH, f) for f in listdir(STOPWORD_FILE_PATH) if isfile(join(STOPWORD_FILE_PATH, f)) and f.startswith("stopwords")]
         doc = list(tokenize(doc, to_lower=True, deacc = True))
         # Read stopword files
@@ -54,7 +54,7 @@ class Similarity:
         doc = re.sub(r"http\S+", "", doc, flags=re.MULTILINE)
         doc = re.sub(r"www\S+", "", doc, flags=re.MULTILINE)
         # Remove stop words
-        doc = self.remove_optional_stopwords(doc)
+        doc = self.remove_stopwords(doc)
         # Remove punctuation
         doc = strip_punctuation(doc)
         # Remove non-alphanumeric characters
