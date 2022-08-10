@@ -3,9 +3,10 @@ import sys
 from os import listdir, makedirs
 from os.path import isdir, isfile, join, dirname
 from bs4 import BeautifulSoup
-from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
+from gensim.parsing.preprocessing import strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
 from gensim.utils import tokenize
 from nltk.stem import WordNetLemmatizer
+import pandas as pd
 
 from customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
 
@@ -32,7 +33,7 @@ def get_text_from_html_file(file_path):
     soup = BeautifulSoup(html, 'html.parser')
     return soup.get_text(separator=" ", strip=True)
 
-def remove_optional_stopwords(doc):
+def remove_stopwords(doc):
     stopword_file_paths = [join(STOPWORD_FILE_PATH, f) for f in listdir(STOPWORD_FILE_PATH) if isfile(join(STOPWORD_FILE_PATH, f)) and f.startswith("stopwords")]
 
     doc = list(tokenize(doc, to_lower=True, deacc = True))
@@ -45,12 +46,13 @@ def remove_optional_stopwords(doc):
     return " ".join(doc)
 
 # Preprocess the document
-def preprocess_document(doc):
+def preprocess_document(doc, stopwords):
     # Remove URLs
     doc = re.sub(r"http\S+", "", doc, flags=re.MULTILINE)
     doc = re.sub(r"www\S+", "", doc, flags=re.MULTILINE)
     # Remove stop words
-    doc = remove_optional_stopwords(doc)
+    if stopwords:
+        doc = remove_stopwords(doc)
     # Remove punctuation
     doc = strip_punctuation(doc)
     # Remove non-alphanumeric characters
@@ -62,9 +64,9 @@ def preprocess_document(doc):
     return doc
 
 # Tokenize the document
-def get_token_list(doc, doc_name=None):
+def get_token_list(doc, stopwords, doc_name=None):
     # Data cleaning
-    doc = preprocess_document(doc)
+    doc = preprocess_document(doc, stopwords)
 
     # Export the preprocessed text
     if doc_name:
@@ -91,61 +93,84 @@ def calculate_tfidf(tfidf_obj, term, cache_file_path=None):
     return features
 
 # Calculate the similarity based on the given word vector
-def count_true_positive(doc, keywords):
-    tokens = get_token_list(doc)
+def count_true_positive(doc, keywords, stopwords=False):
+    if stopwords:
+        tokens = get_token_list(doc, stopwords)
+    else:
+        tokens = get_token_list(doc, stopwords)
     lemmatizer = WordNetLemmatizer()
     lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens]
     token_set = set(lemmatized_tokens)
     str_lemmatized_tokens = " ".join(lemmatized_tokens)
-    tp = [keyword for keyword in keywords if keyword in str_lemmatized_tokens]
+    tp = [[k for k in keyword if k in str_lemmatized_tokens] for keyword in keywords]
+    tp = [item for item in tp if item]
     print(tp)
     return (len(token_set), len(tp))
 
-def calculate_keyword_cocerage(term, keywords):
-    # Precompute IDF corpus
-    health_topics_path = HEALTH_TOPICS_PATH
-    health_topics_files = [f for f in listdir(health_topics_path) if isfile(join(health_topics_path, f))]
-    idf_corpus = []
-    for file in health_topics_files:
-        idf_corpus.append(get_text_from_file(join(health_topics_path, file)))
+def calculate_keyword_coverage(term, keywords, stopwords):
+    if stopwords:
+        # Precompute IDF corpus
+        health_topics_path = HEALTH_TOPICS_PATH
+        health_topics_files = [f for f in listdir(health_topics_path) if isfile(join(health_topics_path, f))]
+        idf_corpus = []
+        for file in health_topics_files:
+            idf_corpus.append(get_text_from_file(join(health_topics_path, file)))
 
-    ctfidf = CustomizableTfidfVectorizer([], idf_corpus)
+        ctfidf = CustomizableTfidfVectorizer([], idf_corpus)
 
-    # Run tests over the cache data of SHC websites
-    cache_universities = [d for d in listdir(CACHE_DIR_PATH) if isdir(join(CACHE_DIR_PATH, d))]
-    for cache_university in cache_universities:
-        # Build the path to each university's cache data
-        cache_university_path = join(CACHE_DIR_PATH, cache_university)
-        cache_files = [f for f in listdir(cache_university_path) if isfile(join(cache_university_path, f))]
-        if not cache_files:
-            continue
+        # Run tests over the cache data of SHC websites
+        cache_universities = [d for d in listdir(CACHE_DIR_PATH) if isdir(join(CACHE_DIR_PATH, d))]
+        for cache_university in cache_universities:
+            # Build the path to each university's cache data
+            cache_university_path = join(CACHE_DIR_PATH, cache_university)
+            cache_files = [f for f in listdir(cache_university_path) if isfile(join(cache_university_path, f))]
+            if not cache_files:
+                continue
 
-        # Read cache files
-        sum_token_stems = 0
-        sum_tp_token_stems = 0
-        count = 0
-        for cache_file in cache_files:
-            # Specify the path to each cache file
-            cache_file_path = join(cache_university_path, cache_file)
-            
-            # Calculate TF-IDF
-            calculate_tfidf(ctfidf, term, cache_file_path)
+            # Read cache files
+            sum_token_stems = 0
+            sum_tp_token_stems = 0
+            count = 0
+            for cache_file in cache_files:
+                # Specify the path to each cache file
+                cache_file_path = join(cache_university_path, cache_file)
+                
+                # Calculate TF-IDF
+                calculate_tfidf(ctfidf, term, cache_file_path)
 
-            # Calculate similarity between the ideal document and a cached SHC website
-            len_token_stems, len_tp_token_stems = count_true_positive(get_text_from_file(join(INPUT_PATH, term + '.txt')), keywords)
-            sum_token_stems += len_token_stems
-            sum_tp_token_stems += len_tp_token_stems
-            count += 1
+                # Calculate similarity between the ideal document and a cached SHC website
+                len_token_stems, len_tp_token_stems = count_true_positive(get_text_from_file(join(INPUT_PATH, term + '.txt')), keywords, stopwords)
+                sum_token_stems += len_token_stems
+                sum_tp_token_stems += len_tp_token_stems
+                count += 1
 
-    sum_token_stems /= count
-    sum_tp_token_stems /= count
-    print(f'[TP]{sum_tp_token_stems} / [TP+FP]{sum_token_stems}')
+        len_token_stems = sum_token_stems / count
+        len_tp_token_stems = sum_tp_token_stems / count
+    
+    else:
+        len_token_stems, len_tp_token_stems = count_true_positive(get_text_from_file(join(INPUT_PATH, term + '.txt')), keywords, stopwords)
+                
+    # print(f'[TP]{len_token_stems} / [TP+FP]{len_tp_token_stems}')
+    precision = round(len_tp_token_stems / len_token_stems, 3)
+    recall = round(len_tp_token_stems / len(keywords), 3)
+    f1 = round((2 * precision * recall) / (precision + recall), 3)
+    df = pd.DataFrame(data={
+        "Term": [term],
+        "Precision": [precision],
+        "Recall": [recall],
+        "F1-score": [f1]
+    })
+    print(f'Precision: {precision} Recall: {recall} F1-score: {f1}')
+    df.to_csv("Keyword Coverage_" + term + ".csv")
+
 
 def main():
     if len(sys.argv) > 1:
         term = " ".join(sys.argv[1:])
-    with open(join(KEYWORD_DIR_PATH, term + ".txt")) as f:
-        calculate_keyword_cocerage(term, [keyword.strip().lower() for keyword in f.readlines()])
+        with open(join(KEYWORD_DIR_PATH, term + ".txt")) as f:
+            calculate_keyword_coverage(term, [[keyword.strip().lower() for keyword in keywords.split(",")] for keywords in f.readlines()], stopwords=False)
+    else:
+        print("Term is missing.")
 
 if __name__ == "__main__":
     main()
