@@ -2,16 +2,12 @@ import urllib.request
 import urllib.error
 import urllib.parse
 import os
-import re
+from os.path import join
 
 
 def save_webpage_content(input_dataframe, output_dir):
 	# Create new directory inside output_directory for saving web pages
-	if output_dir.endswith('/'):
-		save_output_path = output_dir + "saved_webpages"
-	else:
-		save_output_path = output_dir + "/saved_webpages"
-
+	save_output_path = join(output_dir, "saved_webpages")
 	os.makedirs(save_output_path)
 	print("- Storing web pages at location: ", save_output_path)
 
@@ -19,30 +15,21 @@ def save_webpage_content(input_dataframe, output_dir):
 	for index, row in input_dataframe.iterrows():
 
 		university = row['University name']
-		links = row['Keywords matched webpages on SHC']
+		link_data = row['Keywords matched webpages on SHC']
 
 		# Assigning directory location path every time
-		save_output = save_output_path
-
-		if save_output.endswith('/'):
-			save_output = save_output + university
-		else:
-			save_output = save_output + '/' + university
+		save_output = join(save_output_path, university)
 
 		# Creating new directory for storing web pages of every university
 		os.makedirs(save_output)
 
-		# Only in case if you are reading input from a csv file
-		if isinstance(links, str):
-			links = re.findall(r"'(.*?)'", links)
-
-		for i in range(len(links)):
+		for i in range(len(link_data)):
 			try:
 				opener = urllib.request.build_opener()
 				opener.addheaders = [('User-Agent', 'Mozilla/5.0')] #chromedirver/selenuim
 				urllib.request.install_opener(opener)
-				webpage_index_name = save_output + '/' + str(i) + '.html'
-				urllib.request.urlretrieve(links[i], webpage_index_name)
+				webpage_index_name = join(save_output, str(i) + '.' + link_data[i]["format"])
+				urllib.request.urlretrieve(link_data[i]["url"], webpage_index_name)
 			except Exception as e:
 				print("Error in saving one of the web page for ", university)
-				print(links[i], " : ", e)
+				print(link_data[i]["url"], " : ", e)

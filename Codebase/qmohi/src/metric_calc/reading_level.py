@@ -95,7 +95,7 @@ def get_reading_level(input_dataframe, output_dir):
 		university = row["University name"]
 		shc = row['University SHC URL']
 		no_of_links = row['Count of SHC webpages matching keywords']
-		links = row['Keywords matched webpages on SHC']
+		link_data = row['Keywords matched webpages on SHC']
 		content = row["Relevant content on all pages"]
 		total_words = row["Total word count on all pages"]
 
@@ -111,7 +111,7 @@ def get_reading_level(input_dataframe, output_dir):
 						'University name': university,
 						'University SHC URL': shc,
 						'Count of SHC webpages matching keywords': no_of_links,
-						'Keywords matched webpages on SHC': links,
+						'Keywords matched webpages on SHC': link_data,
 						'Total word count on all pages': total_words,
 						'Num of sentences': 0,
 						'Num of syllables': 0,
@@ -127,7 +127,7 @@ def get_reading_level(input_dataframe, output_dir):
 						'University name': university,
 						'University SHC URL': shc,
 						'Count of SHC webpages matching keywords': no_of_links,
-						'Keywords matched webpages on SHC': links,
+						'Keywords matched webpages on SHC': link_data,
 						'Total word count on all pages': total_words,
 						'Num of sentences': "NA",
 						'Num of syllables': "NA",
@@ -158,7 +158,7 @@ def get_reading_level(input_dataframe, output_dir):
 						'University SHC URL': shc,
 						'Relevant content on all pages': content,
 						'Count of SHC webpages matching keywords': no_of_links,
-						'Keywords matched webpages on SHC': links,
+						'Keywords matched webpages on SHC': link_data,
 						'Total word count on all pages': total_words,
 						'Num of sentences': n_sentences,
 						'Num of syllables': n_syllables,
@@ -175,13 +175,13 @@ def get_reading_level(input_dataframe, output_dir):
 					'University SHC URL': shc,
 					'Relevant content on all pages': content,
 					'Count of SHC webpages matching keywords': no_of_links,
-					'Keywords matched webpages on SHC': links,
+					'Keywords matched webpages on SHC': link_data,
 					'Total word count on all pages': total_words,
 					'Reading ease': "Error in reading content!",
 					'Grade level': "Error in reading content!"
 				}, ignore_index=True)
 
 	# Storing results
-	output_dataframe.to_csv(output_dir + '/Reading_level_of_content_without_pdf.csv')
+	output_dataframe.to_csv(output_dir + '/Reading_level_of_content.csv')
 
 	return output_dataframe

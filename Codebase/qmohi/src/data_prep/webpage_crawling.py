@@ -1,39 +1,84 @@
 """
-Get all the data from the URLs retrieved except pdf and document urls
+Get all the data from the URLs retrieved except document urls
 Input - Relevant URLs (having presence of keywords)
 Output - All the text content on those URLs
 """
 
+from os import link
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.common import exceptions
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from urllib.request import Request, urlopen
-from bs4.element import Comment
 import re
 import pandas as pd
 
+from os.path import join
+import requests
+from tempfile import TemporaryDirectory
+import io
+import pytesseract
+from pdf2image import convert_from_path
+from PIL import Image
 
-class UrlContent:
+def text_from_image(input_image):
+    image = Image.open(input_image)
+    text = str(pytesseract.image_to_string(image))
+    return text
 
-	def __init__(self, url):
-		self.url = url
+def get_text_in_images_from_html(html):
+	soup = BeautifulSoup(html, 'html.parser')
+	images = soup.find_all('img')
+	texts = ""
+	if len(images) > 0:
+		for image in images:
+			try:
+				image_link = image["data-srcset"]
+			except:
+				try:
+					image_link = image["data-src"]
+				except:
+					try:
+						image_link = image["data-fallback-src"]
+					except:
+						try:
+							image_link = image["src"]
+						except:
+							pass
 
+			try:
+				response = requests.get(image_link)   
+				text = text_from_image(io.BytesIO(response.content))
+				texts += " " + text
+			except:
+				pass
+	
+	return texts
 
-# Remove styling tags
-def tag_visible(element):
-	if element.parent.name in ['style', 'script']:
-		return False
-	if isinstance(element, Comment):
-		return False
-	return True
+def text_from_pdf(url):
+	with TemporaryDirectory() as tempdir:
+		# Converting PDF to images
+		pdf_pages = convert_from_path(url, 500)
+		image_file_list = []
+		for i, page in enumerate(pdf_pages, start=1):
+			filename = join(tempdir, f"page_{i}.jpg")
+			page.save(filename, "JPEG")
+			image_file_list.append(filename)
 
+		# Recognizing text from the images using OCR
+		print(f'Extracting text from PDF: {url} ...')
+		texts = ""
+		for image_file in image_file_list:
+			text = str(pytesseract.image_to_string(Image.open(image_file)))
+			text = text.replace("-\n", "")
+			texts += " " + text
+		return texts
 
 # Access web page content with Selenium
-def html_from_selenium(url_obj, driver_path):
+def html_from_selenium(url, driver_path):
 	try:
-		print("   - Issues in accessing URL content, trying with Selenium for ", url_obj.url)
+		print("   - Issues in accessing URL content, trying with Selenium for ", url)
 		options = Options()
 		options.add_argument("--no-sandbox")
 		options.add_argument("--headless")  # Runs Chrome in headless mode.
@@ -41,7 +86,7 @@ def html_from_selenium(url_obj, driver_path):
 
 		# run web driver with the driver_path provided by user
 		driver = webdriver.Chrome(driver_path, chrome_options=options)
-		driver.get(url_obj.url)
+		driver.get(url)
 		html = driver.page_source
 		return html
 
@@ -50,27 +95,27 @@ def html_from_selenium(url_obj, driver_path):
 		return -1
 
 	# If there is some error in URL redirection
-	except exceptions as e:
+	except Exception as e:
 		print("Error in URL redirection!")
 		print(e.msg)
 		return -1
 
 
 # Retrieving data from URL
-def data_from_url(url_obj, driver_path):
+def text_from_url(url, driver_path):
 	try:
 		# Normal user put restrictions on web scraping hence changed user agent
 		headers = {'User-Agent': 'Mozilla/5.0'}
-		request = Request(url_obj.url, headers=headers)
+		request = Request(url, headers=headers)
 		html = urlopen(request, timeout=100).read()
 
 	# if problem in accessing URL
 	except Exception as e:
 		print("Exception : ", e)
-		html = html_from_selenium(url_obj, driver_path)
-
+		html = html_from_selenium(url, driver_path)
 		if html == -1:
-			return " "
+			return ""
+
 	try:
 		# Using html parser for retrieving text
 		soup = BeautifulSoup(html, 'html.parser')
@@ -81,12 +126,16 @@ def data_from_url(url_obj, driver_path):
 
 		# Get text with beautiful soup
 		text = soup.get_text()
+
+		# Get text in images
+		text_in_images = get_text_in_images_from_html(html)
+
 		return text
 
 	# If problem in accessing URL
 	except Exception as e:
 		print("Exception : ", e)
-		return " "
+		return ""
 
 
 # Remove tags and unwanted data here
@@ -94,67 +143,65 @@ def remove_unwanted_data(complete_data, keywords):
 	complete_data_series = pd.Series(complete_data.split("\n"))
 
 	for index, row in complete_data_series.iteritems():
-
 		# Keywords not in row and length of row is less than 4
 		if (len(row.split()) < 4) and (all(x not in row for x in keywords)):
 			complete_data_series.drop(labels=[index], inplace=True)
 
 	# Join final data with new line character
-	content_after_removing_unwanted_data = '\n'.join(complete_data_series)
+	cleaned_content = '\n'.join(complete_data_series)
+	cleaned_content = cleaned_content.replace('\n', '. \n')
+	cleaned_content = cleaned_content.replace('..', '. ')
 
-	return content_after_removing_unwanted_data
+	return cleaned_content
 
 
 # Collect content from the given URLs
 def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_path):
 	header = ['University name', 'University SHC URL', 'Count of SHC webpages matching keywords',
-			  'Keywords matched webpages on SHC', 'Content on all retrieved webpages', 'Total word count on all pages']
+			  '', 'Content on all retrieved webpages', 'Total word count on all pages']
 	output_dataframe = pd.DataFrame(columns=header)
 
 	# For every university
 	for index, row in input_dataframe.iterrows():
-
 		complete_data = ""
 		university = row['University name']
 		shc = row['University SHC URL']
 		no_of_links = row['Count of SHC webpages matching keywords']
-		links = row['Keywords matched webpages on SHC']
+		link_data = row['Keywords matched webpages on SHC']
 		print("- ", university)
 
-		if isinstance(links, str):
-			links = re.findall(r"'(.*?)'", links)
-
 		# If links with keywords related content are present
-		if len(links) != 0:
-
-			#  Remove duplicate sentences from data
-			unique_links = set()
-			for link in links:
-				unique_links.add(link)
-
-			for each_link in unique_links:
-				url_obj = UrlContent(each_link)
-				url_content = data_from_url(url_obj, driver_path)
-				complete_data = complete_data + " " + str(url_content)
+		if len(link_data) != 0:
+			visited_links = set()
+			for data in link_data:
+				link = data["url"]
+				content_format = data["format"]
+				if link not in visited_links:
+					visited_links.add(link)
+					if content_format == "pdf":
+						text = text_from_pdf(link)
+						if text:
+							complete_data = complete_data + " " + text
+					else:
+						text = text_from_url(link, driver_path)
+						if text:
+							complete_data = complete_data + " " + text
 
 			complete_data = re.sub(r'\n\s*\n', '\n\n', complete_data)
 
 			# Calculating total number of words on all web pages
 			total_words = complete_data
 			total_words = len(total_words.split())
-
-			content_after_removing_unwanted_data = remove_unwanted_data(complete_data, keywords)
-			final_content = content_after_removing_unwanted_data.replace('\n', '. \n')
-			final_content = final_content.replace('..', '. ')
+			final_content = remove_unwanted_data(complete_data, keywords)
 
 			output_dataframe = output_dataframe.append({'University name': university,
 														'University SHC URL': shc,
 														'Count of SHC webpages matching keywords': no_of_links,
-														'Keywords matched webpages on SHC': links,
+														'Keywords matched webpages on SHC': link_data,
 														'Content on all retrieved webpages': final_content,
 														'Total word count on all pages': total_words,
 														}, ignore_index=True)
 	# Storing result
-	output_dataframe.to_csv(output_dir + '/get_data_from_url_output_without_pdf_links.csv')
+	output_dataframe.to_csv(output_dir + '/get_data_from_url_output_links.csv')
 
 	return output_dataframe

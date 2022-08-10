@@ -129,7 +129,8 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path, model
 
 		uni_name = row['University name']
 		no_of_links = row['Count of SHC webpages matching keywords']
-		links = row['Keywords matched webpages on SHC']
+		link_data = row['Keywords matched webpages on SHC']
+		links = [data["url"] for data in link_data]
 		content = row['Relevant content on all pages']
 		shc_url = row['University SHC URL']
 		print("\n- ", uni_name)

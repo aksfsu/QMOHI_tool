@@ -86,7 +86,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 		content = row["Relevant content on all pages"]
 		shc = row['University SHC URL']
 		no_of_links = row['Count of SHC webpages matching keywords']
-		links = row['Keywords matched webpages on SHC']
+		link_data = row['Keywords matched webpages on SHC']
 		no_of_sentences = row['Num of sentences']
 		no_of_syllables = row['Num of syllables']
 		no_of_words = row['Num of words']
@@ -125,7 +125,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 					'University name': university,
 					'University SHC URL': shc,
 					'Count of SHC webpages matching keywords': no_of_links,
-					'Keywords matched webpages on SHC': links,
+					'Keywords matched webpages on SHC': link_data,
 					'Total word count on all pages': total_words,
 					'Num of sentences': no_of_sentences,
 					'Num of syllables': no_of_syllables,
@@ -148,7 +148,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 					'University name': university,
 					'University SHC URL': shc,
 					'Count of SHC webpages matching keywords': no_of_links,
-					'Keywords matched webpages on SHC': links,
+					'Keywords matched webpages on SHC': link_data,
 					'Total word count on all pages': total_words,
 					'Num of sentences': no_of_sentences,
 					'Num of syllables': no_of_syllables,

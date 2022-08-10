@@ -20,8 +20,7 @@ class ShcUrl:
 		self.cse_id = cse_id
 
 	# Get links with given keywords
-	def get_links_with_keywords(self, keywords):
-
+	def get_link_data_with_keywords(self, keywords):
 		links = []
 
 		# Preparing query with the given keywords
@@ -48,28 +47,27 @@ class ShcUrl:
 
 				else:
 					for item in response['items']:
-						# Exclude URLs to PDF
-						if 'mime' in item:
-							if 'pdf' in item['mime'].lower():
-								continue
-						if 'fileFormat' in item:
-							if 'pdf' in item['fileFormat'].lower():
-								continue
+						if item['link'].endswith(".pdf"):
+							content_format = 'pdf'
+						elif 'mime' in item and 'pdf' in item['mime'].lower():
+							content_format = 'pdf'
+						elif 'fileFormat' in item and 'pdf' in item['fileFormat'].lower():
+							content_format = 'pdf'
+						else:
+							content_format = 'html'
+						
 						# Links from the items contain URLs
-						links.append(item['link'])
+						links.append({'url': item['link'], 'format': content_format})
 
 			except Exception as e:
 				print("Caught exception for Custom Search engine!", e)
 
-		links = list(dict.fromkeys(links))
 		return links
 
 
 # Building custom search engine with given keys
 def get_service(api_key):
-	service = build("customsearch", "v1", developerKey=api_key)
-
-	return service
+	return build("customsearch", "v1", developerKey=api_key)
 
 
 # Get relevant URLs by custom search with keywords and SHC site
@@ -88,7 +86,6 @@ def get_links(input_dataframe, keywords, keys, cse_id, output_dir):
 
 		# For every university in the split
 		for index, row in every_split.iterrows():
-
 			start_timestamp = datetime.datetime.now()
 			output_dataframe_splitted = pd.DataFrame(columns=header)
 			university = row['University_name']
@@ -98,12 +95,12 @@ def get_links(input_dataframe, keywords, keys, cse_id, output_dir):
 			# If SHC URL was found
 			if shc:
 				url_obj = ShcUrl(shc, my_api_key, cse_id)
-				links_shc_website = url_obj.get_links_with_keywords(keywords)
-				valid_links_shc_website = [link for link in links_shc_website if not link.endswith(".pdf") and not link.endswith(".docx") and not link.endswith(".doc")]
+				link_data = url_obj.get_link_data_with_keywords(keywords)
+				link_data = [link for link in url_obj.get_link_data_with_keywords(keywords) if not link["url"].endswith(".docx") and not link["url"].endswith(".doc")]
 				end_timestamp = datetime.datetime.now()
-				output_dataframe_splitted.loc[i] = [university, shc, int(len(valid_links_shc_website)), valid_links_shc_website, start_timestamp, end_timestamp]
+				output_dataframe_splitted.loc[i] = [university, shc, int(len(link_data)), link_data, start_timestamp, end_timestamp]
 
-			i = i + 1
+			i += 1
 
 			# Concatenating current dataframe with overall result
 			output_dataframe = pd.concat([output_dataframe, output_dataframe_splitted], sort=False)

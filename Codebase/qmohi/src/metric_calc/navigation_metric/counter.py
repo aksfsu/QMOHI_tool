@@ -38,13 +38,13 @@ def clean_target_urls(target_urls):
     if isinstance(target_urls, str):
         target_urls = re.findall(r"'(.*?)'", target_urls)
 
-    # Check for pdf, doc and remove them
-    url_filter = ['.pdf', '.doc', '.docx']
+    # Check for　doc and remove them
+    url_filter = ['.doc', '.docx']
     cleaned_urls = []
     for check in url_filter:
         for url in target_urls:
             if url.find(check) == -1:
-                # Doesn't contain a given substring of pdf/doc
+                # Doesn't contain a given substring of doc
                 cleaned_urls.append(url)
 
     return cleaned_urls
