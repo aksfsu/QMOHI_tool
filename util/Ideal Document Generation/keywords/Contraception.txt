@@ -9,10 +9,10 @@ Kyleena
 Liletta
 Copper IUD, Copper device, Non-Hormonal IUD, Nonhormonal IUD
 Paragard
-contraceptive implant
+contraceptive implant, implant
 Nexplanon
-contraceptive injection
-control shot, contraceptive shot
+contraceptive injection, injection
+control shot, contraceptive shot, shot
 Depo-Provera, Depo
 emergency contraception, emergency contraceptives
 morning after pill, morning after
@@ -23,6 +23,6 @@ ulipristal acetate
 contraceptive pill, control pill
 diaphragm
 spermicide
-contraceptive patch, control patch
+contraceptive patch, control patch, patch
 vaginal ring, control ring, contraceptive ring
 cervical cap
