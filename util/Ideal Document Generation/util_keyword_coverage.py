@@ -150,7 +150,7 @@ def calculate_keyword_coverage(term, keywords, stopwords):
     else:
         len_token_stems, len_tp_token_stems = count_true_positive(get_text_from_file(join(INPUT_PATH, term + '.txt')), keywords, stopwords)
                 
-    # print(f'[TP]{len_token_stems} / [TP+FP]{len_tp_token_stems}')
+    print(f'[TP]{len_tp_token_stems} / [TP+FP]{len_token_stems}')
     precision = round(len_tp_token_stems / len_token_stems, 3)
     recall = round(len_tp_token_stems / len(keywords), 3)
     f1 = round((2 * precision * recall) / (precision + recall), 3)
