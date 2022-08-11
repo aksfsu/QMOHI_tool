@@ -105,7 +105,7 @@ def count_true_positive(doc, keywords, stopwords=False):
     tp = [[k for k in keyword if k in str_lemmatized_tokens] for keyword in keywords]
     tp = [item for item in tp if item]
     print(tp)
-    return (len(token_set), len(tp))
+    return len(token_set), len(tp), tp
 
 def calculate_keyword_coverage(term, keywords, stopwords):
     if stopwords:
@@ -139,29 +139,30 @@ def calculate_keyword_coverage(term, keywords, stopwords):
                 calculate_tfidf(ctfidf, term, cache_file_path)
 
                 # Calculate similarity between the ideal document and a cached SHC website
-                len_token_stems, len_tp_token_stems = count_true_positive(get_text_from_file(join(INPUT_PATH, term + '.txt')), keywords, stopwords)
-                sum_token_stems += len_token_stems
-                sum_tp_token_stems += len_tp_token_stems
+                len_token, len_tp_token, tp = count_true_positive(get_text_from_file(join(INPUT_PATH, term + '.txt')), keywords, stopwords)
+                sum_token_stems += len_token
+                sum_tp_token_stems += len_tp_token
                 count += 1
 
-        len_token_stems = sum_token_stems / count
-        len_tp_token_stems = sum_tp_token_stems / count
+        len_tp_token = sum_token_stems / count
+        len_tp_token = sum_tp_token_stems / count
     
     else:
-        len_token_stems, len_tp_token_stems = count_true_positive(get_text_from_file(join(INPUT_PATH, term + '.txt')), keywords, stopwords)
+        len_token, len_tp_token, tp = count_true_positive(get_text_from_file(join(INPUT_PATH, term + '.txt')), keywords, stopwords)
                 
-    print(f'[TP]{len_tp_token_stems} / [TP+FP]{len_token_stems}')
-    precision = round(len_tp_token_stems / len_token_stems, 3)
-    recall = round(len_tp_token_stems / len(keywords), 3)
+    print(f'[TP]{len_tp_token} / [TP+FP]{len_token}')
+    precision = round(len_tp_token / len_token, 3)
+    recall = round(len_tp_token / len(keywords), 3)
     f1 = round((2 * precision * recall) / (precision + recall), 3)
     df = pd.DataFrame(data={
         "Term": [term],
         "Precision": [precision],
         "Recall": [recall],
-        "F1-score": [f1]
+        "F1-score": [f1],
+        "Found Keywords": [tp]
     })
     print(f'Precision: {precision} Recall: {recall} F1-score: {f1}')
-    df.to_csv("Keyword Coverage_" + term + ".csv")
+    # df.to_csv("Keyword Coverage_" + term + ".csv")
 
 
 def main():

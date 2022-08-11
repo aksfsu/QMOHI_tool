@@ -1,16 +1,15 @@
-iud
-progesterone
-progestin
-hormonal
-mirena
-skyla
-kyleena
-liletta
-copper
-non-hormonal
-paragard
-implant
-nexplanon
-injection
-shot
-depo
+IUD 
+Progesterone IUD, Progesterone 
+Progestin 
+Hormonal IUD　
+Mirena 
+Skyla 
+Kyleena 
+Liletta 
+Copper IUD, Copper, Non-Hormonal IUD, Nonhormonal IUD
+Paragard 
+contraceptive implant, implant
+Nexplanon 
+contraceptive injection, injection
+Shot 
+Depo-Provera, Depo

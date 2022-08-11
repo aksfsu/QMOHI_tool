@@ -19,20 +19,29 @@ MEDLINE_URL = "https://medlineplus.gov"
 MEDLINE_DRUGINFO_URL = "https://medlineplus.gov/druginfo"
 DRUGBANK_URL = "https://go.drugbank.com/drugs/"
 DEPTH = 1 # (>= 1)
-THERAPY_NUM = 10
+THERAPY_NUM = 5
 OUTPUT_DIR = "./output"
 
 # Experimental terms
 EXPERIMENTAL_TERMS = [
     [
         "Contraception",
-        "Contraceptive", 
-        "Levonorgestrel", 
+        # "Contraceptive", 
+        # "Levonorgestrel", 
         # "Progestin", 
         # "Progesterone", 
         # "IUD", 
         # "Mifepristone", 
         # "Implant",
+    ],
+    [
+        "LARC",
+        # "Progesterone",
+        # "Hormonal IUD",
+        # "Copper IUD",
+        # "Paragard",
+        # "Nexplanon",
+        # "Depo-Provera"
     ],
     ["Accidental Injury"],
     ["Broken Limbs"],
@@ -265,7 +274,7 @@ def generate_ideal_document(descriptive_keywords, specific_keywords, output_file
     search_obj = cse_handler.CSEHandler(API_KEY, CSE_ID)
 
     ### Method 3: DrugBank Information with DrugBank Data in XML
-    drugbank = DrugBankDBHandler()
+    # drugbank = DrugBankDBHandler()
 
     # Open the output file
     makedirs(dirname(output_file_path), exist_ok=True)
@@ -293,21 +302,21 @@ def generate_ideal_document(descriptive_keywords, specific_keywords, output_file
         #     visited_urls.update(get_document(output_file, link, depth=1, visited_urls=visited_urls))
 
         ### Method 2: DrugBank Information with Google API
-        # therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, "summary " + keyword)
-        # for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
-        #     if link not in visited_urls:
-        #         visited_urls.add(link)
-        #         get_drugbank_information(output_file, link)
+        therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, "summary " + keyword)
+        for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
+            if link not in visited_urls:
+                visited_urls.add(link)
+                get_drugbank_information(output_file, link)
 
     ### Method 3: DrugBank Information with DrugBank Data in XML
-    drugbank.search_drugbank(descriptive_keywords, specific_keywords)
-    drugbank.write_to_opened_file(output_file)
+    # drugbank.search_drugbank(descriptive_keywords, specific_keywords)
+    # drugbank.write_to_opened_file(output_file)
 
     # Close the output file
     output_file.close()
 
 
-'''
+
 # Input: A list of keywords where the first item is the topic
 def main():
     # Build the search term string from commandline arguments 
@@ -316,11 +325,10 @@ def main():
         output_file_path = join(OUTPUT_DIR, terms[0] + ".txt")
         generate_ideal_document(terms, "", output_file_path)
     else:
-        for terms in EXPERIMENTAL_TERMS[:1]:
+        for terms in EXPERIMENTAL_TERMS[1:2]:
             output_file_path = join(OUTPUT_DIR, terms[0] + ".txt")
             generate_ideal_document(terms, "", output_file_path)
 
 
 if __name__ == "__main__":
     main()
-'''
