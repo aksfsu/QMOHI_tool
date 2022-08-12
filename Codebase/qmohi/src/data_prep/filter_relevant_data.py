@@ -5,7 +5,6 @@ Output - data relevant to the keywords
 """
 from nltk.text import Text
 from nltk import tokenize
-from nltk.corpus import stopwords
 from nltk.stem.snowball import SnowballStemmer
 import nltk
 import nltk.corpus
@@ -111,33 +110,11 @@ class RelevantContent:
 		return list_of_sentences, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary
 
 
-# Converting words into sentences from left and right margin
-def convert_words_sentences(words_content):
-	sentences_array = tokenize.sent_tokenize(words_content)
-	# remove duplicate sentences from data
-	seen = set()
-	unique_sentences = []
-	for sentence in sentences_array:
-		if sentence not in seen:
-			seen.add(sentence)
-			unique_sentences.append(sentence)
-
-	return unique_sentences
-
-
 # Removing unwanted characters from data
 def remove_circumflex_a(input_str):
 	input_str = input_str.replace('Â', '')
 	output_str = input_str.replace('â', '')
-
 	return output_str
-
-
-# Join array together with new line character
-def join_array(sentences_array):
-	complete_content = "\n".join(sentences_array)
-
-	return complete_content
 
 
 def add_space_in_keywords(keywords):
@@ -161,7 +138,6 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 	for index, row in input_dataframe.iterrows():
 		found_per_stem_dictionary = []
 		stem_found_phrase_dictionary = []
-		seen_content = set()
 		unique_content = []
 		university = row['University name']
 		content = row['Content on all retrieved webpages']
@@ -184,17 +160,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 				words_content_list, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary = uni_object.relevant_content_words(keywords)
 				# Joining lists together with full stop
 				for words_content in words_content_list:
-
-					joined_words_content = ". ".join(words_content)
-					sentences_array = convert_words_sentences(joined_words_content)
-
-					# Checking for duplicate content
-					for each_sentence in sentences_array:
-						if each_sentence not in seen_content:
-							seen_content.add(each_sentence)
-							unique_content.append(each_sentence)
-
-					sentences_content = join_array(unique_content)
+					unique_content += list(set(tokenize.sent_tokenize(". ".join(words_content))))
 
 				# Deleting relevant_file.txt
 				os.remove(relevant_content_file)

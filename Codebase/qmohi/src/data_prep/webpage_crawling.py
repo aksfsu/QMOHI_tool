@@ -190,8 +190,7 @@ def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_pat
 			complete_data = re.sub(r'\n\s*\n', '\n\n', complete_data)
 
 			# Calculating total number of words on all web pages
-			total_words = complete_data
-			total_words = len(total_words.split())
+			total_words = len(complete_data.split())
 			final_content = remove_unwanted_data(complete_data, keywords)
 
 			output_dataframe = output_dataframe.append({'University name': university,

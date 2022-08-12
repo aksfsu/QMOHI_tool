@@ -98,7 +98,7 @@ class Similarity:
             return "High"
         if similarity >= 0.6:
             return "Moderate"
-        elif similarity >- 0.5:
+        elif similarity >= 0.5:
             return "Low"
         return "No Similarity"
 

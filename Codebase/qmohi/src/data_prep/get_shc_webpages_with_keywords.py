@@ -49,10 +49,16 @@ class ShcUrl:
 					for item in response['items']:
 						if item['link'].endswith(".pdf"):
 							content_format = 'pdf'
+							# Mask this feature for now
+							continue
 						elif 'mime' in item and 'pdf' in item['mime'].lower():
 							content_format = 'pdf'
+							# Mask this feature for now
+							continue
 						elif 'fileFormat' in item and 'pdf' in item['fileFormat'].lower():
 							content_format = 'pdf'
+							# Mask this feature for now
+							continue
 						else:
 							content_format = 'html'
 						
