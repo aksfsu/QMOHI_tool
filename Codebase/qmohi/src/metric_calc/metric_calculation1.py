@@ -97,7 +97,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 		print("- ", university)
 
 		try:
-			if content.isspace() or content == "No content":
+			if content.isspace():
 				print("   - No content found!")
 			# Check if content is available
 			else:

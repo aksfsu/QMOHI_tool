@@ -120,22 +120,6 @@ def get_reading_level(input_dataframe, output_dir):
 						'Grade level': 0
 					}, ignore_index=True)
 
-			# If no links found with keywords under SHC
-			elif content == "No content":
-				output_dataframe = output_dataframe.append(
-					{
-						'University name': university,
-						'University SHC URL': shc,
-						'Count of SHC webpages matching keywords': no_of_links,
-						'Keywords matched webpages on SHC': link_data,
-						'Total word count on all pages': total_words,
-						'Num of sentences': "NA",
-						'Num of syllables': "NA",
-						'Num of words': "NA",
-						'Reading ease': "NA",
-						'Grade level': "NA"
-					}, ignore_index=True)
-
 			# If content is present
 			else:
 				content_obj = Readability(content)

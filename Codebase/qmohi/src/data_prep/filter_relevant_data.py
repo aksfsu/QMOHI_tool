@@ -147,54 +147,44 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 		total_words = row['Total word count on all pages']
 		print("- ", university)
 
-		if content != "No content":
-			# Try writing content in the text file
-			try:
-				relevant_content_file = output_dir + "/relevant_content.txt"
-				out_file = open(relevant_content_file, 'w')
-				out_file.write(content)
-				out_file.close()
-				# Creating object per university
-				uni_object = RelevantContent(university, relevant_content_file)
-				# Words_content here is list of lists
-				words_content_list, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary = uni_object.relevant_content_words(keywords)
-				# Joining lists together with full stop
-				for words_content in words_content_list:
-					unique_content += list(set(tokenize.sent_tokenize(". ".join(words_content))))
+		# Try writing content in the text file
+		try:
+			relevant_content_file = output_dir + "/relevant_content.txt"
+			out_file = open(relevant_content_file, 'w')
+			out_file.write(content)
+			out_file.close()
+			# Creating object per university
+			uni_object = RelevantContent(university, relevant_content_file)
+			# Words_content here is list of lists
+			words_content_list, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary = uni_object.relevant_content_words(keywords)
+			# Joining lists together with full stop
+			for words_content in words_content_list:
+				unique_content += list(set(tokenize.sent_tokenize(". ".join(words_content))))
 
-				# Deleting relevant_file.txt
-				os.remove(relevant_content_file)
+			# Deleting relevant_file.txt
+			os.remove(relevant_content_file)
 
-			except Exception as e:
-				print(e)
+		except Exception as e:
+			print(e)
 
-			# All the content on all pages for 1 university
-			joined_final_relevant_content = "\n".join(unique_content)
+		# All the content on all pages for 1 university
+		joined_final_relevant_content = "\n".join(unique_content)
 
-			# Removing unwanted characters (circumflex a)
-			removed_unicode = remove_circumflex_a(joined_final_relevant_content)
-			# Check if final content is only space
-			if removed_unicode.isspace() or not removed_unicode:
-				# If data is white space
-				pass
-			# Writing to dataframe
-			else:
-				list_of_found_per_stem_dictionary.append(found_per_stem_dictionary)
-				list_of_stem_found_phrase_dictionary.append(stem_found_phrase_dictionary)
-				output_dataframe = output_dataframe.append({'University name': university,
-															'University SHC URL': shc,
-															'Count of SHC webpages matching keywords': no_of_links,
-															'Keywords matched webpages on SHC': link_data,
-															'Relevant content on all pages': removed_unicode,
-															'Total word count on all pages': total_words
-															}, ignore_index=True)
+		# Removing unwanted characters (circumflex a)
+		removed_unicode = remove_circumflex_a(joined_final_relevant_content)
+		# Check if final content is only space
+		if removed_unicode.isspace() or not removed_unicode:
+			# If data is white space
+			pass
+		# Writing to dataframe
 		else:
+			list_of_found_per_stem_dictionary.append(found_per_stem_dictionary)
+			list_of_stem_found_phrase_dictionary.append(stem_found_phrase_dictionary)
 			output_dataframe = output_dataframe.append({'University name': university,
 														'University SHC URL': shc,
 														'Count of SHC webpages matching keywords': no_of_links,
 														'Keywords matched webpages on SHC': link_data,
-														'Relevant content on all pages': content,
-														# Content contains "No content here!
+														'Relevant content on all pages': removed_unicode,
 														'Total word count on all pages': total_words
 														}, ignore_index=True)
 
