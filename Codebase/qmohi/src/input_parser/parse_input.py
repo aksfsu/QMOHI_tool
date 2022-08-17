@@ -8,12 +8,12 @@ def read_input_file(path):
 	# Read the content from user's input file
 	try:
 		file = pd.read_csv(path,
-							 usecols=['University_name', 'Keywords', 'API_keys', 'CSE_id', 'Selenium_Chrome_webdriver',
+							 usecols=['University_name', 'Keywords', 'API_keys', 'Paid_API_key', 'CSE_id', 'Selenium_Chrome_webdriver',
 									  'Output_directory', 'Ideal_document', 'Word_vector_model', 'Sentence_extraction_margin'])
 	except Exception as e:
 		print(e)
 		print("Problem with input file! Make sure the location of the file is correct and columns are "
-			  "'University_name', 'Keywords', 'API_keys', 'CSE_id', 'Selenium_Chrome_webdriver', 'Output_directory', 'Ideal_document', 'Word_vector_model'. ")
+			  "'University_name', 'Keywords', 'API_keys', 'Paid_API_key', 'CSE_id', 'Selenium_Chrome_webdriver', 'Output_directory', 'Ideal_document', 'Word_vector_model'. ")
 		sys.exit()
 
 	return file
@@ -117,18 +117,29 @@ def calculate_num_keys_required(no_of_universities, num_of_words):
 	return no_of_keys_for_shc, no_of_keys_for_site_specific_search
 
 
-def get_input_api_keys(file):
+def get_input_api_keys(file, no_of_keys_for_shc, no_of_keys_for_site_specific_search):
 	# Reading API keys provided by user
-	keys = file[['API_keys']].copy()
+	keys = file[['Paid_API_key']].copy()
 	# Dropping rows with NaN values
 	keys = keys.dropna(axis=0, how='any')
-	no_of_keys = keys.API_keys.count()
+	no_of_keys = keys.Paid_API_key.count()
 
-	print(keys['API_keys'])
+	if no_of_keys > 0:
+		print(keys['Paid_API_key'])
+		# Creating list of keys to pass it as required
+		return keys['Paid_API_key'].tolist()
+
+	else:
+		# Reading API keys provided by user
+		keys = file[['API_keys']].copy()
+		# Dropping rows with NaN values
+		keys = keys.dropna(axis=0, how='any')
+		no_of_keys = keys.API_keys.count()
+		are_input_api_keys_sufficient(no_of_keys_for_shc, no_of_keys_for_site_specific_search, no_of_keys)
+		print(keys['API_keys'])
+
 	# Creating list of keys to pass it as required
-	keys_list = keys['API_keys'].tolist()
-
-	return keys_list, no_of_keys
+	return keys['API_keys'].tolist()
 
 
 def are_input_api_keys_sufficient(no_of_keys_for_shc,
@@ -194,8 +205,8 @@ def get_model(file):
 	model_dir = model_dir.dropna(axis=0, how='any')
 
 	if model_dir.empty:
-		print("Please provide a model for calculating similarity! Will use old metric.")
-		return 0
+		print("Please provide a model for calculating similarity!")
+		sys.exit()
 
 	model_dir = model_dir['Word_vector_model'].values[0]
 
