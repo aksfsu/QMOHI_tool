@@ -1,16 +1,14 @@
-from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
 from textblob import TextBlob
 import requests
 import re
+from os import listdir
+from os.path import isfile, join
 from urllib.parse import urlparse
 from qmohi.src.metric_calc.navigation_metric.counter import get_min_click_count
-from gensim.models.word2vec import Word2Vec
+from bs4 import BeautifulSoup
 from gensim.models import KeyedVectors
-from gensim.test.utils import datapath, get_tmpfile
-from gensim.utils import tokenize
+from gensim.test.utils import datapath
 
 from qmohi.src.metric_calc.similarity import Similarity
 
@@ -64,41 +62,32 @@ class University:
 
 		return timeliness
 
-	def calculate_similarity(self, word_vector, ideal_content):
+	def calculate_similarity(self, word_vector, ideal_doc_path, output_dir):
+		# Load the ideal document
+		file = open(ideal_doc_path)
+		ideal_content = file.read()
+		file.close()
+		
+		# Load the cached SHC website contents 
+		cache_university_path = join(output_dir, "saved_webpages/" + self.uni_name)
+		cache_file_paths = [join(cache_university_path, f) for f in listdir(cache_university_path) if isfile(join(cache_university_path, f))]
+		if not cache_file_paths:
+			return 0, ""
 
-		university_content = self.content
+		cache_file_content = ""
+		for cache_file_path in cache_file_paths:
+			with open(cache_file_path, 'r') as f:
+				html_content = f.read()
+				# Parse the HTML
+				soup = BeautifulSoup(html_content, 'html.parser')
+				content = soup.get_text(separator=" ", strip=True)
+				cache_file_content += " " + content
 
-		# Because ideal content should match with the relevant content
-		non_alphabets_list = ['_', '-', ':']
-		for every_item in non_alphabets_list:
-			replacing_item = " " + every_item + " "
-			ideal_content = re.sub(every_item, replacing_item, ideal_content)
+		# Calculate similarity
+		similarity_obj = Similarity(word_vector)
+		similarity, similarity_label = similarity_obj.calculate_similarity(ideal_content, cache_file_content)
 
-		# if we were provided a word vector, we will use it, otherwise we will use tfidf
-		if (word_vector):
-		    # summed_ideal will hold the sum of all of its word's vectors
-			summed_ideal = [0] * len(word_vector['word'])
-			for token in ideal_content:
-				if token in word_vector:
-					summed_ideal = np.sum([summed_ideal, word_vector[token]], axis=0)
-
-		    # summed_main will hold the sum of all of its word's vectors
-			summed_main = [0] * len(word_vector['word'])
-			for token in university_content:
-				if token in word_vector:
-					summed_main = np.sum([summed_main, word_vector[token]], axis=0)
-			similarity = cosine_similarity([summed_ideal], [summed_main])
-			return round(similarity[0][0], 3)
-		else:
-			corpus = [ideal_content, university_content]
-
-			vectorizer = TfidfVectorizer()
-			trsfm = vectorizer.fit_transform(corpus)
-
-			similarity = cosine_similarity(trsfm[0], trsfm[1])
-
-			# To get the similarity with the content with fake document
-			return round(similarity[0][0], 3)
+		return round(similarity, 3), similarity_label
 
 	def calculate_navigation(self, driver_path):
 
@@ -108,16 +97,12 @@ class University:
 		return min_clicks, trace
 
 
-def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path, model_path):
+def calculate_metrics(input_dataframe, output_dir, ideal_doc_path, driver_path, model_path):
 
 	header = ['University name', 'Count of SHC webpages matching keywords', 'Keywords matched webpages on SHC',
 			  'Content on all pages', 'Similarity Score', 'Similarity Label', 'Sentiment objectivity', 'Sentiment polarity', 'Timeliness',
 			  'Navigation', 'Trace']
 	output_dataframe = pd.DataFrame(columns=header)
-
-	file = open(ideal_doc)
-	ideal_content = file.read()
-	file.close()
 
 	# If the model_path is 0, that means a model was not provided. Old method for similarity will be used.
 	if (model_path != 0):
@@ -138,13 +123,7 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc, driver_path, model
 		obj = University(uni_name, shc_url, content, links, no_of_links)
 
 		print("   - Similarity")
-		if (model_path != 0):
-			# similarity = obj.calculate_similarity(wv, ideal_content)
-			similarity_obj = Similarity(wv)
-			similarity, similarity_label = similarity_obj.calculate_similarity(ideal_content, content)
-		else:
-			similarity = obj.calculate_similarity(None, ideal_content)
-			similarity_label = ""
+		similarity, similarity_label = obj.calculate_similarity(wv, ideal_doc_path, output_dir)
 
 		print("   - Objectivity")
 		sentiment_objectivity = obj.calculate_sentiment_objectivity()

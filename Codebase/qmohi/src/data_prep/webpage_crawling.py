@@ -4,23 +4,24 @@ Input - Relevant URLs (having presence of keywords)
 Output - All the text content on those URLs
 """
 
-from os import link
+from os.path import join
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.options import Options
-from selenium.common import exceptions
 from selenium import webdriver
 from bs4 import BeautifulSoup
 from urllib.request import Request, urlopen
 import re
 import pandas as pd
 
-from os.path import join
+'''
+# Requirements for PDF/image support
 import requests
 from tempfile import TemporaryDirectory
 import io
 import pytesseract
 from pdf2image import convert_from_path
 from PIL import Image
+
 
 def text_from_image(input_image):
     image = Image.open(input_image)
@@ -74,6 +75,7 @@ def text_from_pdf(url):
 			text = text.replace("-\n", "")
 			texts += " " + text
 		return texts
+'''
 
 # Access web page content with Selenium
 def html_from_selenium(url, driver_path):
@@ -99,7 +101,6 @@ def html_from_selenium(url, driver_path):
 		print("Error in URL redirection!")
 		print(e.msg)
 		return -1
-
 
 # Retrieving data from URL
 def text_from_url(url, driver_path):
@@ -128,7 +129,7 @@ def text_from_url(url, driver_path):
 		text = soup.get_text()
 
 		# Get text in images
-		text_in_images = get_text_in_images_from_html(html)
+		# text += " " + get_text_in_images_from_html(html) # Disabled for now
 
 		return text
 
@@ -136,24 +137,6 @@ def text_from_url(url, driver_path):
 	except Exception as e:
 		print("Exception : ", e)
 		return ""
-
-
-# Remove tags and unwanted data here
-def remove_unwanted_data(complete_data, keywords):
-	complete_data_series = pd.Series(complete_data.split("\n"))
-
-	for index, row in complete_data_series.iteritems():
-		# Keywords not in row and length of row is less than 4
-		if (len(row.split()) < 4) and (all(x not in row for x in keywords)):
-			complete_data_series.drop(labels=[index], inplace=True)
-
-	# Join final data with new line character
-	cleaned_content = '\n'.join(complete_data_series)
-	cleaned_content = cleaned_content.replace('\n', '. \n')
-	cleaned_content = cleaned_content.replace('..', '. ')
-
-	return cleaned_content
-
 
 # Collect content from the given URLs
 def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_path):
@@ -179,25 +162,28 @@ def retrieve_content_from_urls(input_dataframe, keywords, output_dir, driver_pat
 				if link not in visited_links:
 					visited_links.add(link)
 					if content_format == "pdf":
+						pass
+						'''
+						# PDF/image support disabled for now
 						text = text_from_pdf(link)
 						if text:
 							complete_data = complete_data + " " + text
+						'''
 					else:
 						text = text_from_url(link, driver_path)
 						if text:
 							complete_data = complete_data + " " + text
 
-			complete_data = re.sub(r'\n\s*\n', '\n\n', complete_data)
+			complete_data = re.sub(r'\n\s*\n', '\n', complete_data)
 
 			# Calculating total number of words on all web pages
 			total_words = len(complete_data.split())
-			final_content = remove_unwanted_data(complete_data, keywords)
 
 			output_dataframe = output_dataframe.append({'University name': university,
 														'University SHC URL': shc,
 														'Count of SHC webpages matching keywords': no_of_links,
 														'Keywords matched webpages on SHC': link_data,
-														'Content on all retrieved webpages': final_content,
+														'Content on all retrieved webpages': complete_data,
 														'Total word count on all pages': total_words,
 														}, ignore_index=True)
 	# Storing result

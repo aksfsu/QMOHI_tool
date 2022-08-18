@@ -11,6 +11,7 @@ from nltk.stem import WordNetLemmatizer
 from qmohi.src.metric_calc.customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
 
 STOPWORD_FILE_PATH = "./qmohi/src/metric_calc/stopwords"
+HEALTH_TOPICS_CORPUS_PATH = "./qmohi/src/metric_calc/medlineplus_health_topics_corpus.txt"
 
 class Similarity:
     def __init__(self, word_vector, keywords=[], weight=1):
@@ -20,23 +21,6 @@ class Similarity:
         lemmatizer = WordNetLemmatizer()
         self.keywords = [lemmatizer.lemmatize(keyword) for keyword in keywords]
         self.weight = weight
-
-    # Get text from the text file
-    def __get_text_from_file(self, file_path):
-        # Open the output file
-        with open(file_path, 'r') as f:
-            text = f.read()
-        return text
-
-    # Get text from the HTML file
-    def __get_text_from_html_file(self, file_path):
-        # Open the output file
-        with open(file_path, 'r') as f:
-            html = f.read()
-
-        # Parse the HTML
-        soup = BeautifulSoup(html, 'html.parser')
-        return soup.get_text(separator=" ", strip=True)
 
     def remove_stopwords(self, doc):
         stopword_file_paths = [join(STOPWORD_FILE_PATH, f) for f in listdir(STOPWORD_FILE_PATH) if isfile(join(STOPWORD_FILE_PATH, f)) and f.startswith("stopwords")]
@@ -66,19 +50,18 @@ class Similarity:
         return doc
 
     # Tokenize the document
-    def get_token_list(self, doc):
+    def get_token_list(self, doc, _print=False):
         # Data cleaning
         doc = self.preprocess_document(doc)
+        if _print:
+            print(doc)
         # Return token list
         return list(tokenize(doc, to_lower=True, deacc = True))
 
     def calculate_tfidf(self, ideal_document, shc_content):
         # Precompute IDF corpus
-        health_topics_path = "./../util/Ideal Document Generation/health_topics_summary"
-        health_topics_files = [f for f in listdir(health_topics_path) if isfile(join(health_topics_path, f))]
-        idf_corpus = []
-        for file in health_topics_files:
-            idf_corpus.append(self.__get_text_from_file(join(health_topics_path, file)))
+        with open(HEALTH_TOPICS_CORPUS_PATH, "r") as f:
+            idf_corpus = f.readlines()
 
         # Build TF corpus
         tf_corpus = [ideal_document, shc_content]
@@ -98,9 +81,7 @@ class Similarity:
             return "High"
         if similarity >= 0.6:
             return "Moderate"
-        elif similarity >= 0.5:
-            return "Low"
-        return "No Similarity"
+        return "Low"
 
     # Calculate the similarity based on the given word vector
     def calculate_similarity(self, ideal_document, shc_content):

@@ -26,9 +26,7 @@ class RelevantContent:
 	def relevant_content_words(self, keywords):
 		# Concordance referred from https://simplypython.wordpress.com/2014/03/14/saving-output-of-nltk-text-concordance/
 		list_of_sentences = []
-		tokens = []
-		for each_token in self.content.tokens:
-			tokens.append(remove_circumflex_a(each_token))
+		tokens = self.content.tokens
 
 		# Stemming tokens before finding relevant content. Assumption: keywords have/will be been stemmed
 		stemmer = SnowballStemmer("english")
@@ -55,7 +53,6 @@ class RelevantContent:
 				phrase_stem_dictionary[stemmed_phrase].append(phrase_list)
 			else:
 				phrase_stem_dictionary[stemmed_phrase] = [phrase_list]
-
 
 		# found_per_stem_dictionary is structured as such: {'stem': [index1, index2, index3]}
 		found_per_stem_dictionary = {}
@@ -117,6 +114,23 @@ def remove_circumflex_a(input_str):
 	return output_str
 
 
+# Remove tags and unwanted data here
+def clean_text(input_str, keywords):
+	complete_data_series = pd.Series(input_str.split("\n"))
+
+	for index, row in complete_data_series.iteritems():
+		# Drop sentences that do not contain any keyword
+		if all(x not in row.lower() for x in keywords):
+			complete_data_series.drop(labels=[index], inplace=True)
+
+	# Join final data with new line character
+	cleaned_content = '\n'.join(complete_data_series)
+	cleaned_content = cleaned_content.replace('\n', '. \n')
+	cleaned_content = cleaned_content.replace('..', '. ')
+	cleaned_content = remove_circumflex_a(cleaned_content)
+	return cleaned_content
+
+
 def add_space_in_keywords(keywords):
 	non_alphabets_list = ['_', '-', ':']
 	for every_item in non_alphabets_list:
@@ -130,7 +144,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 	header = ['University name', 'University SHC URL', 'Count of SHC webpages matching keywords',
 			  'Keywords matched webpages on SHC', 'Total word count on all pages', 'Relevant content on all pages']
 	output_dataframe = pd.DataFrame(columns=header)
-	keywords = add_space_in_keywords(keywords)
+	spaced_keywords = add_space_in_keywords(keywords)
 	phrase_stem_dictionary = []
 	list_of_found_per_stem_dictionary = []
 	list_of_stem_found_phrase_dictionary = []
@@ -150,16 +164,17 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 		# Try writing content in the text file
 		try:
 			relevant_content_file = output_dir + "/relevant_content.txt"
+			content = clean_text(content, keywords)
 			out_file = open(relevant_content_file, 'w')
 			out_file.write(content)
 			out_file.close()
 			# Creating object per university
 			uni_object = RelevantContent(university, relevant_content_file)
 			# Words_content here is list of lists
-			words_content_list, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary = uni_object.relevant_content_words(keywords)
+			words_content_list, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary = uni_object.relevant_content_words(spaced_keywords)
 			# Joining lists together with full stop
 			for words_content in words_content_list:
-				unique_content += list(set(tokenize.sent_tokenize(". ".join(words_content))))
+				unique_content += list(tokenize.sent_tokenize(". ".join(words_content)))
 
 			# Deleting relevant_file.txt
 			os.remove(relevant_content_file)
@@ -168,12 +183,10 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 			print(e)
 
 		# All the content on all pages for 1 university
-		joined_final_relevant_content = "\n".join(unique_content)
+		relevant_content = "\n".join(set(unique_content))
 
-		# Removing unwanted characters (circumflex a)
-		removed_unicode = remove_circumflex_a(joined_final_relevant_content)
 		# Check if final content is only space
-		if removed_unicode.isspace() or not removed_unicode:
+		if relevant_content.isspace() or not relevant_content:
 			# If data is white space
 			pass
 		# Writing to dataframe
@@ -184,7 +197,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 														'University SHC URL': shc,
 														'Count of SHC webpages matching keywords': no_of_links,
 														'Keywords matched webpages on SHC': link_data,
-														'Relevant content on all pages': removed_unicode,
+														'Relevant content on all pages': relevant_content,
 														'Total word count on all pages': total_words
 														}, ignore_index=True)
 
@@ -192,4 +205,4 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 	output_dataframe.to_csv(output_dir + '/get_relevant_data_from_collected_data.csv')
 
 	# Returning output dataframe and space added keywords for metric calculation
-	return output_dataframe, keywords, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary
+	return output_dataframe, spaced_keywords, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary

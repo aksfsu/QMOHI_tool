@@ -7,30 +7,25 @@ Output - Getting prevalence metric as per keywords provided
 import pandas as pd
 
 
-class QuantityMetrics:
+# Getting keyword count for given content
+def metric_count(found_per_stem_dictionary, phrase_stem_dictionary, keywords):
+	count_dict = {}
+	print("   - Keywords quantity")
 
-	def __init__(self, content):
-		self.content = content
-
-	# Getting keyword count for given content
-	def metric_count(self, found_per_stem_dictionary, phrase_stem_dictionary, keywords):
-		count_dict = {}
-		print("   - Keywords quantity")
-
-		# For every keyword given
-		for each_keyword in keywords:
-			matched_stem = ''
-			for stem in phrase_stem_dictionary:
-				for phrase in phrase_stem_dictionary[stem]:
-					joined_phrase = ' '.join(phrase)
-					if joined_phrase == each_keyword:
-						matched_stem = stem
-						break
-				else:
-					continue
-				break
-			count_dict[each_keyword] = len(found_per_stem_dictionary[matched_stem])
-		return count_dict
+	# For every keyword given
+	for each_keyword in keywords:
+		matched_stem = ''
+		for stem in phrase_stem_dictionary:
+			for phrase in phrase_stem_dictionary[stem]:
+				joined_phrase = ' '.join(phrase)
+				if joined_phrase == each_keyword:
+					matched_stem = stem
+					break
+			else:
+				continue
+			break
+		count_dict[each_keyword] = len(found_per_stem_dictionary[matched_stem])
+	return count_dict
 
 
 def get_prevalence(metric_dataframe):
@@ -101,9 +96,8 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 				print("   - No content found!")
 			# Check if content is available
 			else:
-				content_obj = QuantityMetrics(content)
 				# Getting dictionary of keywords with count of keywords
-				metric_array = content_obj.metric_count(list_of_found_per_stem_dictionary[index], phrase_stem_dictionary, keywords)
+				metric_array = metric_count(list_of_found_per_stem_dictionary[index], phrase_stem_dictionary, keywords)
 				# Replacing dict keys to reflect headers
 				index = 0
 				modified_metric_array = {}
@@ -139,7 +133,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 				result = pd.concat([uni_dataframe, metric_dataframe], axis=1)
 				result = result[output_dataframe.columns]
 				# Appending current dataframe to output dataframe
-				output_dataframe = output_dataframe.append(result)
+				output_dataframe = pd.concat([output_dataframe, result], sort=False)
 
 		except Exception as e:
 			print(e)

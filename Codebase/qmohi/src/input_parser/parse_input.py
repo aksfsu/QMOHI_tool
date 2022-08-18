@@ -79,6 +79,9 @@ def get_input_keywords(file):
 	# Stripping extra spaces between keywords
 	keywords = keywords.apply(lambda x:x.str.replace(' +', ' '))
 
+	# Convert keywords into lower case
+	keywords = keywords.apply(lambda x:x.str.lower())
+
 	# Creating list of keywords to pass it as required
 	keyword_list = keywords['Keywords'].tolist()
 
