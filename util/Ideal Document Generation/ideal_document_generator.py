@@ -18,7 +18,7 @@ CSE_ID = config.MY_CSE_ID
 MEDLINE_URL = "https://medlineplus.gov"
 MEDLINE_DRUGINFO_URL = "https://medlineplus.gov/druginfo"
 DRUGBANK_URL = "https://go.drugbank.com/drugs/"
-DEPTH = 1 # (>= 1)
+DEPTH = 2 # (>= 1)
 THERAPY_NUM = 5
 OUTPUT_DIR = "./output"
 
@@ -269,7 +269,7 @@ def get_drugbank_information(output_file, url):
     output_file.write(text)
 
 
-def generate_ideal_document(descriptive_keywords, specific_keywords, output_file_path):
+def generate_ideal_document(output_file_path, topics, keywords=[], drug_names=[]):
     # Instanciate the CSE handler
     search_obj = cse_handler.CSEHandler(API_KEY, CSE_ID)
 
@@ -281,8 +281,21 @@ def generate_ideal_document(descriptive_keywords, specific_keywords, output_file
     output_file = open(output_file_path, 'w')
 
     visited_urls = set()
-    for keyword in descriptive_keywords:
-        # Search URLs
+    
+    # Search URLs
+    links = search_obj.get_links_by_query(MEDLINE_URL, " OR ".join(topics))
+    # print(links)
+
+    # Try next term if no website was found
+    if not len(links):
+        print("Not Found")
+        return
+
+    # Extract documents
+    #print(f'{topics}:')
+    visited_urls.update(get_document(output_file, links[0], depth=DEPTH, visited_urls=visited_urls))
+
+    for keyword in keywords:
         links = search_obj.get_links_by_query(MEDLINE_URL, keyword)
         # print(links)
 
@@ -292,24 +305,33 @@ def generate_ideal_document(descriptive_keywords, specific_keywords, output_file
             return
 
         # Extract documents
-        #print(f'{keyword}:')
+        #print(f'{topics}:')
         visited_urls.update(get_document(output_file, links[0], depth=DEPTH, visited_urls=visited_urls))
-        
-        # Collect therapy information
-        ### Method 1: MedlinePlus Drug, Herbs and Suppliments database
-        # therapy_links = search_obj.get_links_by_query(MEDLINE_DRUGINFO_URL, keyword)
-        # for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
-        #     visited_urls.update(get_document(output_file, link, depth=1, visited_urls=visited_urls))
 
-        ### Method 2: DrugBank Information with Google API
-        therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, "summary " + keyword)
-        for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
-            if link not in visited_urls:
-                visited_urls.add(link)
-                get_drugbank_information(output_file, link)
+    # Collect therapy information
+    ### Method 1: MedlinePlus Drug, Herbs and Suppliments database
+    # therapy_links = search_obj.get_links_by_query(MEDLINE_DRUGINFO_URL, topics)
+    # for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
+    #     visited_urls.update(get_document(output_file, link, depth=1, visited_urls=visited_urls))
+
+    ### Method 2: DrugBank Information with Google API
+    #### Method 2-1: Use topics
+    therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, '"summary" ' + " OR ".join(topics))
+    for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
+        if link not in visited_urls:
+            visited_urls.add(link)
+            get_drugbank_information(output_file, link)
+
+    #### Method 2-2: Use drug names
+    for drug_name in drug_names:
+        therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, '"summary" ' + drug_name)
+        link = therapy_links[0]
+        if link not in visited_urls:
+            visited_urls.add(link)
+            get_drugbank_information(output_file, link)
 
     ### Method 3: DrugBank Information with DrugBank Data in XML
-    # drugbank.search_drugbank(descriptive_keywords, specific_keywords)
+    # drugbank.search_drugbank(keywords, drug_names)
     # drugbank.write_to_opened_file(output_file)
 
     # Close the output file
@@ -323,11 +345,11 @@ def main():
     if len(sys.argv) > 1:
         terms = sys.argv[1:]
         output_file_path = join(OUTPUT_DIR, terms[0] + ".txt")
-        generate_ideal_document(terms, "", output_file_path)
+        generate_ideal_document(output_file_path, terms)
     else:
         for terms in EXPERIMENTAL_TERMS[1:2]:
             output_file_path = join(OUTPUT_DIR, terms[0] + ".txt")
-            generate_ideal_document(terms, "", output_file_path)
+            generate_ideal_document(output_file_path, terms)
 
 
 if __name__ == "__main__":
