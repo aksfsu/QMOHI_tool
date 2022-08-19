@@ -10,6 +10,7 @@ import nltk
 import nltk.corpus
 import pandas as pd
 import os
+import re
 
 nltk.download('gutenberg')  # Can be run only once in the beginning
 
@@ -26,7 +27,7 @@ class RelevantContent:
 	def relevant_content_words(self, keywords):
 		# Concordance referred from https://simplypython.wordpress.com/2014/03/14/saving-output-of-nltk-text-concordance/
 		list_of_sentences = []
-		tokens = self.content.tokens
+		tokens = [remove_circumflex_a(token) for token in self.content.tokens if remove_circumflex_a(token)]
 
 		# Stemming tokens before finding relevant content. Assumption: keywords have/will be been stemmed
 		stemmer = SnowballStemmer("english")
@@ -92,7 +93,7 @@ class RelevantContent:
 			intersects = set(offsets_norm[0]).intersection(*offsets_norm[1:])
 
 			# Getting text as per left and right margin provided
-			concordance_txt = ([self.content.tokens[
+			concordance_txt = ([tokens[
 								list(
 									map(lambda x: x - self.left_margin if (x - self.left_margin) > 0 else 0, [offset]))[
 									0]:offset + len(
@@ -125,9 +126,8 @@ def clean_text(input_str, keywords):
 
 	# Join final data with new line character
 	cleaned_content = '\n'.join(complete_data_series)
-	cleaned_content = cleaned_content.replace('\n', '. \n')
-	cleaned_content = cleaned_content.replace('..', '. ')
-	cleaned_content = remove_circumflex_a(cleaned_content)
+	cleaned_content = re.sub(r"\n+", ". \n", cleaned_content, flags=re.MULTILINE)
+	cleaned_content = re.sub(r"\.+", ". ", cleaned_content, flags=re.MULTILINE)
 	return cleaned_content
 
 
@@ -152,7 +152,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 	for index, row in input_dataframe.iterrows():
 		found_per_stem_dictionary = []
 		stem_found_phrase_dictionary = []
-		unique_content = []
+		relevant_content = []
 		university = row['University name']
 		content = row['Content on all retrieved webpages']
 		shc = row['University SHC URL']
@@ -174,7 +174,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 			words_content_list, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary = uni_object.relevant_content_words(spaced_keywords)
 			# Joining lists together with full stop
 			for words_content in words_content_list:
-				unique_content += list(tokenize.sent_tokenize(". ".join(words_content)))
+				relevant_content += tokenize.sent_tokenize(". ".join(words_content))
 
 			# Deleting relevant_file.txt
 			os.remove(relevant_content_file)
@@ -183,10 +183,10 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 			print(e)
 
 		# All the content on all pages for 1 university
-		relevant_content = "\n".join(set(unique_content))
+		unique_relevant_content = "\n".join(set(relevant_content))
 
 		# Check if final content is only space
-		if relevant_content.isspace() or not relevant_content:
+		if unique_relevant_content.isspace() or not unique_relevant_content:
 			# If data is white space
 			pass
 		# Writing to dataframe
@@ -197,7 +197,7 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 														'University SHC URL': shc,
 														'Count of SHC webpages matching keywords': no_of_links,
 														'Keywords matched webpages on SHC': link_data,
-														'Relevant content on all pages': relevant_content,
+														'Relevant content on all pages': unique_relevant_content,
 														'Total word count on all pages': total_words
 														}, ignore_index=True)
 
