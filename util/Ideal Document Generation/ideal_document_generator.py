@@ -315,12 +315,19 @@ def generate_ideal_document(output_file_path, topics, keywords=[], drug_names=[]
     #     visited_urls.update(get_document(output_file, link, depth=1, visited_urls=visited_urls))
 
     ### Method 2: DrugBank Information with Google API
-    #### Method 2-1: Use topics
+    #### Method 2-1: Use topics and keywords
     therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, '"summary" ' + " OR ".join(topics))
     for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
         if link not in visited_urls:
             visited_urls.add(link)
             get_drugbank_information(output_file, link)
+
+    for keyword in keywords:
+        therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, '"summary" ' + keyword)
+        for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
+            if link not in visited_urls:
+                visited_urls.add(link)
+                get_drugbank_information(output_file, link)
 
     #### Method 2-2: Use drug names
     for drug_name in drug_names:

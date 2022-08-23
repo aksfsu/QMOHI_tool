@@ -17,7 +17,7 @@ def main():
 
         i = 1
         while True:
-            term = input(f"Keyword {i} : ")
+            term = input(f"Topics {i} : ")
             if not term:
                 break
             topics.append(term)
@@ -40,11 +40,11 @@ def main():
             i += 1
 
         print("\nGenerating ideal document...")
-        output_file_path = join(OUTPUT_DIR, keywords[0] + ".txt")
+        output_file_path = join(OUTPUT_DIR, topics[0] + ".txt")
         generate_ideal_document(output_file_path, topics, keywords, drugs)
 
         keyword_suggestion = kg.generate_keywords_with_keybert(output_file_path)
-        print(f"\nKeyword Suggestion for {keywords[0]}:\n{keyword_suggestion}")
+        print(f"\nKeyword Suggestion for {topics[0]}:\n{keyword_suggestion}")
 
         while True:
             cont = input(f"Continue to next iteration? (Y/n) : ")
