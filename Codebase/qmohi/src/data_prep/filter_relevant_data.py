@@ -11,22 +11,18 @@ import nltk.corpus
 import pandas as pd
 import os
 import re
+from gensim.parsing.preprocessing import strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
 
 nltk.download('gutenberg')  # Can be run only once in the beginning
 
 
 class RelevantContent:
-	# Number of words in the margin
-	left_margin = 20
-	right_margin = 20
-
 	def __init__(self, uni_name, relevant_content_file):
 		self.uni_name = uni_name
 		self.content = Text(nltk.corpus.gutenberg.words(relevant_content_file))
 
 	def relevant_content_words(self, keywords):
 		# Concordance referred from https://simplypython.wordpress.com/2014/03/14/saving-output-of-nltk-text-concordance/
-		list_of_sentences = []
 		tokens = [remove_circumflex_a(token) for token in self.content.tokens if remove_circumflex_a(token)]
 
 		# Stemming tokens before finding relevant content. Assumption: keywords have/will be been stemmed
@@ -64,7 +60,6 @@ class RelevantContent:
 			stemmed_phrase_list = phrase.split(' ')
 			# Find the offset for each token in the phrase
 			offsets = [c.offsets(x) for x in stemmed_phrase_list]
-			offsets_norm = []
 			temp_list = offsets[0][:]
 			found_per_stem_dictionary[phrase] = offsets[0][:]
 			for i in range(len(temp_list)):
@@ -85,27 +80,7 @@ class RelevantContent:
 					phrase = ' '.join(phrase_list)
 					phrases_list.append(phrase)
 				stem_found_phrase_dictionary[stem] = phrases_list
-			# For each token in the phrase list, find the offsets tokenize and rebase them to the start of the phrase
-			for i in range(len(stemmed_phrase_list)):
-				offsets_norm.append([x - i for x in offsets[i]])
-
-			# Storing content in the set so that, overlapping/ duplicate content can be removed
-			intersects = set(offsets_norm[0]).intersection(*offsets_norm[1:])
-
-			# Getting text as per left and right margin provided
-			concordance_txt = ([tokens[
-								list(
-									map(lambda x: x - self.left_margin if (x - self.left_margin) > 0 else 0, [offset]))[
-									0]:offset + len(
-									stemmed_phrase_list) + self.right_margin]
-								for offset in intersects])
-
-			# Combining all lists together as single content
-			outputs = [''.join([x + ' ' for x in con_sub]) for con_sub in concordance_txt]
-			# Ignore if no content was retrieved
-			if outputs:
-				list_of_sentences.append(outputs)
-		return list_of_sentences, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary
+		return found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary
 
 
 # Removing unwanted characters from data
@@ -116,18 +91,33 @@ def remove_circumflex_a(input_str):
 
 
 # Remove tags and unwanted data here
-def clean_text(input_str, keywords):
+def get_topical_contents(input_str, keywords):
 	complete_data_series = pd.Series(input_str.split("\n"))
+	topical_indices = set()
 
 	for index, row in complete_data_series.iteritems():
 		# Drop sentences that do not contain any keyword
-		if all(x not in row.lower() for x in keywords):
+		if not all(x not in row.lower() for x in keywords):
+			for i in range(min(0, index - 5), max(len(complete_data_series), index + 5)):
+				topical_indices.add(i)
+
+	for index, row in complete_data_series.iteritems():
+		if index not in topical_indices:
 			complete_data_series.drop(labels=[index], inplace=True)
+		else:
+			# Remove punctuation
+			row = strip_punctuation(row)
+			# Remove non-alphanumeric characters
+			row = strip_non_alphanum(row)
+			# Remove numeric characters
+			row = strip_numeric(row)
+			# Remove redundant white spaces
+			row = strip_multiple_whitespaces(row)
+			complete_data_series[index] = row
 
 	# Join final data with new line character
 	cleaned_content = '\n'.join(complete_data_series)
-	cleaned_content = re.sub(r"\n+", ". \n", cleaned_content, flags=re.MULTILINE)
-	cleaned_content = re.sub(r"\.+", ". ", cleaned_content, flags=re.MULTILINE)
+	cleaned_content = re.sub(r"\s*\.+\s*\.*", ". ", cleaned_content, flags=re.MULTILINE)
 	return cleaned_content
 
 
@@ -164,40 +154,28 @@ def find_relevant_content(input_dataframe, keywords, output_dir):
 		# Try writing content in the text file
 		try:
 			relevant_content_file = output_dir + "/relevant_content.txt"
-			content = clean_text(content, keywords)
+			content = get_topical_contents(content, keywords)
 			out_file = open(relevant_content_file, 'w')
 			out_file.write(content)
 			out_file.close()
 			# Creating object per university
 			uni_object = RelevantContent(university, relevant_content_file)
 			# Words_content here is list of lists
-			words_content_list, found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary = uni_object.relevant_content_words(spaced_keywords)
-			# Joining lists together with full stop
-			for words_content in words_content_list:
-				relevant_content += tokenize.sent_tokenize(". ".join(words_content))
-
+			found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary = uni_object.relevant_content_words(spaced_keywords)
 			# Deleting relevant_file.txt
 			os.remove(relevant_content_file)
 
 		except Exception as e:
 			print(e)
 
-		# All the content on all pages for 1 university
-		unique_relevant_content = "\n".join(set(relevant_content))
-
-		# Check if final content is only space
-		if unique_relevant_content.isspace() or not unique_relevant_content:
-			# If data is white space
-			pass
-		# Writing to dataframe
-		else:
+		if content:
 			list_of_found_per_stem_dictionary.append(found_per_stem_dictionary)
 			list_of_stem_found_phrase_dictionary.append(stem_found_phrase_dictionary)
 			output_dataframe = output_dataframe.append({'University name': university,
 														'University SHC URL': shc,
 														'Count of SHC webpages matching keywords': no_of_links,
 														'Keywords matched webpages on SHC': link_data,
-														'Relevant content on all pages': unique_relevant_content,
+														'Relevant content on all pages': content,
 														'Total word count on all pages': total_words
 														}, ignore_index=True)
 

@@ -67,26 +67,10 @@ class University:
 		file = open(ideal_doc_path)
 		ideal_content = file.read()
 		file.close()
-		
-		# Load the cached SHC website contents 
-		cache_university_path = join(output_dir, "saved_webpages/" + self.uni_name)
-		cache_file_paths = [join(cache_university_path, f) for f in listdir(cache_university_path) if isfile(join(cache_university_path, f))]
-		if not cache_file_paths:
-			return 0, ""
-
-		cache_file_content = ""
-		for cache_file_path in cache_file_paths:
-			with open(cache_file_path, 'r') as f:
-				html_content = f.read()
-				# Parse the HTML
-				soup = BeautifulSoup(html_content, 'html.parser')
-				content = soup.get_text(separator=" ", strip=True)
-				cache_file_content += " " + content
 
 		# Calculate similarity
 		similarity_obj = Similarity(word_vector)
-		similarity, similarity_label = similarity_obj.calculate_similarity(ideal_content, cache_file_content)
-
+		similarity, similarity_label = similarity_obj.calculate_similarity(ideal_content, self.content)
 		return round(similarity, 3), similarity_label
 
 	def calculate_navigation(self, driver_path):
