@@ -75,13 +75,13 @@ class KeywordGenerator:
         doc = self.__preprocess_document(doc)
 
         # Extract keywords
-        keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=0.4, top_n=20)]
-        keywords.extend([keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words='english', use_mmr=True, diversity=0.4, top_n=20)])
+        unigram_keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=0.4, top_n=1000)]
+        bigram_keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words='english', use_mmr=True, diversity=0.4, top_n=1000)]
 
         # Extract a set of unique tokens
         # tokens = [list(tokenize(keyword, to_lower=True, deacc = True)) for keyword in keywords]
         # keywords = set(sum(tokens, []))
-        return keywords
+        return unigram_keywords, bigram_keywords
 
     '''
     def generate_keywords_with_multipartilerank(self, file_path):

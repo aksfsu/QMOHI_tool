@@ -269,7 +269,7 @@ def get_drugbank_information(output_file, url):
     output_file.write(text)
 
 
-def generate_ideal_document(output_file_path, topics, keywords=[], drug_names=[]):
+def generate_ideal_document(output_file_path, keywords=[], drug_names=[]):
     # Instanciate the CSE handler
     search_obj = cse_handler.CSEHandler(API_KEY, CSE_ID)
 
@@ -281,19 +281,6 @@ def generate_ideal_document(output_file_path, topics, keywords=[], drug_names=[]
     output_file = open(output_file_path, 'w')
 
     visited_urls = set()
-    
-    # Search URLs
-    links = search_obj.get_links_by_query(MEDLINE_URL, " OR ".join(topics))
-    # print(links)
-
-    # Try next term if no website was found
-    if not len(links):
-        print("Not Found")
-        return
-
-    # Extract documents
-    #print(f'{topics}:')
-    visited_urls.update(get_document(output_file, links[0], depth=DEPTH, visited_urls=visited_urls))
 
     for keyword in keywords:
         links = search_obj.get_links_by_query(MEDLINE_URL, keyword)
@@ -316,12 +303,6 @@ def generate_ideal_document(output_file_path, topics, keywords=[], drug_names=[]
 
     ### Method 2: DrugBank Information with Google API
     #### Method 2-1: Use topics and keywords
-    therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, '"summary" ' + " OR ".join(topics))
-    for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
-        if link not in visited_urls:
-            visited_urls.add(link)
-            get_drugbank_information(output_file, link)
-
     for keyword in keywords:
         therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, '"summary" ' + keyword)
         for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
@@ -354,7 +335,7 @@ def main():
         output_file_path = join(OUTPUT_DIR, terms[0] + ".txt")
         generate_ideal_document(output_file_path, terms)
     else:
-        for terms in EXPERIMENTAL_TERMS[1:2]:
+        for terms in EXPERIMENTAL_TERMS:
             output_file_path = join(OUTPUT_DIR, terms[0] + ".txt")
             generate_ideal_document(output_file_path, terms)
 
