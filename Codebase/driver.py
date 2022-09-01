@@ -16,9 +16,8 @@ import sys
 import time
 import datetime
 
-from qmohi.src.input_parser import parse_input, get_uni_shc, sentence_extraction
-from qmohi.src.data_prep import filter_relevant_data, webpage_crawling, store_webpages, \
-	get_shc_webpages_with_keywords
+from qmohi.src.input_parser import parse_input, get_uni_shc
+from qmohi.src.data_prep import filter_relevant_data, store_webpages, get_shc_webpages_with_keywords
 from qmohi.src.metric_calc import reading_level, combine_results, metric_calculation1, metric_calculation2
 
 
@@ -74,7 +73,7 @@ def execute(input_file_path):
 
 	# Get the margin for the sentence extraction. If not provided, the function returns the default value (=2)
 	print("- Collecting sentence extraction margin", end="")
-	sentence_extraction_margin = parse_input.get_sentence_extraction_margin(file)
+	margin = parse_input.get_sentence_extraction_margin(file)
 
 	# Get university SHC from university name
 	print("\n###### Finding university SHC websites ######")
@@ -89,16 +88,9 @@ def execute(input_file_path):
 	print("\n###### Saving web pages locally in HTML format ######")
 	store_webpages.save_webpage_content(result_dataframe4, output_dir)
 
-	# Find anchor sentences and highlight them in html format
-	sentence_extraction.get_search_results(output_dir, keyword_list, sentence_extraction_margin)
-	
-	# Get data from the urls found under shc
-	print("\n###### Collecting all text data from SHC web pages found ######")
-	result_dataframe5 = webpage_crawling.retrieve_content_from_urls(result_dataframe4, keyword_list, output_dir, driver_path)
-
 	# Find relevant content from retrieved website data
 	print("\n###### Filtering information relevant to keywords ######")
-	result_dataframe6, keyword_list, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary = filter_relevant_data.find_relevant_content(result_dataframe5, keyword_list, output_dir)
+	result_dataframe6, keyword_list, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary = filter_relevant_data.find_relevant_content(result_dataframe4, keyword_list, margin, output_dir)
 
 	print("\n###### Universities where keywords relevant information was found ######")
 	print(result_dataframe6["University name"])

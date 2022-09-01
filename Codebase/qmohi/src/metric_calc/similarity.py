@@ -2,11 +2,9 @@ import re
 import numpy as np
 from os import listdir
 from os.path import isfile, join
-from bs4 import BeautifulSoup
 from sklearn.metrics.pairwise import cosine_similarity
 from gensim.parsing.preprocessing import strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
 from gensim.utils import tokenize
-from nltk.stem import WordNetLemmatizer
 
 from qmohi.src.metric_calc.customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
 
@@ -14,13 +12,10 @@ STOPWORD_FILE_PATH = "./qmohi/src/metric_calc/stopwords"
 HEALTH_TOPICS_CORPUS_PATH = "./qmohi/src/metric_calc/medlineplus_health_topics_corpus.txt"
 
 class Similarity:
-    def __init__(self, word_vector, keywords=[], weight=1):
+    def __init__(self, word_vector):
         print("Loading model...")
         self.word_vector = word_vector
         print("Loaded")
-        lemmatizer = WordNetLemmatizer()
-        self.keywords = [lemmatizer.lemmatize(keyword) for keyword in keywords]
-        self.weight = weight
 
     def remove_stopwords(self, doc):
         stopword_file_paths = [join(STOPWORD_FILE_PATH, f) for f in listdir(STOPWORD_FILE_PATH) if isfile(join(STOPWORD_FILE_PATH, f)) and f.startswith("stopwords")]
@@ -92,21 +87,13 @@ class Similarity:
         sum1 = [0] * len(self.word_vector['word'])
         for token in self.get_token_list(ideal_document):
             if token in self.word_vector:
-                if token in self.keywords:
-                    w = self.weight
-                else:
-                    w = 1
-                sum1 = np.sum([sum1, self.word_vector[token] * w], axis=0)
+                sum1 = np.sum([sum1, self.word_vector[token]], axis=0)
 
         # sum2 will hold the sum of all of its word's vectors
         sum2 = [0] * len(self.word_vector['word'])
         for token in self.get_token_list(shc_content):
             if token in self.word_vector:
-                if token in self.keywords:
-                    w = self.weight
-                else:
-                    w = 1
-                sum2 = np.sum([sum2, self.word_vector[token] * w], axis=0)
+                sum2 = np.sum([sum2, self.word_vector[token]], axis=0)
 
         # Calculate the cosine similarity
         similarity = cosine_similarity([sum1], [sum2])[0][0]

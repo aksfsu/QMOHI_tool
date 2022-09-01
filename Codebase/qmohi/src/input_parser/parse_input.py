@@ -223,7 +223,7 @@ def get_sentence_extraction_margin(file):
 
 	if margin.empty:
 		# Set the default value
-		margin = 2
+		margin = 5
 
 	margin = int(margin['Sentence_extraction_margin'].values[0])
 
