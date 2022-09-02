@@ -41,9 +41,17 @@ def execute(input_file_path):
 	print("- Collecting input university names")
 	universities_list, no_of_universities = parse_input.get_input_university_names(file)
 
+	# Get API keys from user input
+	print("- Collecting input API keys")
+	keys_list = parse_input.get_input_api_keys(file, 0, 0, force_pass=True)
+
+	# Get CSE ID from user input
+	print("- Collecting input CSE id", end="")
+	cse_id = parse_input.get_input_cse(file)
+
 	# Get keywords from user input
 	print("- Collecting input keywords")
-	keyword_list = parse_input.get_input_keywords(file)
+	keyword_list = parse_input.review_input_keywords(input_file_path, file, keys_list, cse_id)
 
 	# Divide the keywords in sets to make query
 	num_of_words, query_keywords = parse_input.divide_query_keywords(keyword_list)
@@ -53,15 +61,11 @@ def execute(input_file_path):
 
 	# Get API keys from user input
 	print("- Collecting input API keys")
-	keys_list = parse_input.get_input_api_keys(file, no_of_keys_for_shc, no_of_keys_for_site_specific_search)
+	keys_list_for_shc, keys_list_for_site_specific_search = parse_input.get_input_api_keys(file, no_of_keys_for_shc, no_of_keys_for_site_specific_search)
 
 	# Get Selenium web driver path from user input
 	print("\n- Collecting input Selenium Web Driver", end="")
 	driver_path = parse_input.get_input_webdriver(file)
-
-	# Get CSE ID from user input
-	print("- Collecting input CSE id", end="")
-	cse_id = parse_input.get_input_cse(file)
 
 	# Get ideal document path for ideal information on given keyword's topic
 	print("- Collecting ideal document name", end="")
@@ -77,12 +81,12 @@ def execute(input_file_path):
 
 	# Get university SHC from university name
 	print("\n###### Finding university SHC websites ######")
-	result_dataframe3 = get_uni_shc.get_shc_urls_from_uni_name(universities_list, keys_list[:no_of_keys_for_shc], driver_path, cse_id, output_dir)
+	result_dataframe3 = get_uni_shc.get_shc_urls_from_uni_name(universities_list, keys_list_for_shc, driver_path, cse_id, output_dir)
 
 	# Get related web pages under SHC website having presence of input keywords
 	print("\n============ PHASE 2 =============\n")
 	print("###### Searching SHC web pages having presence of keywords ######")
-	result_dataframe4 = get_shc_webpages_with_keywords.get_links(result_dataframe3, query_keywords, keys_list[0:no_of_keys_for_shc + no_of_keys_for_site_specific_search], cse_id, output_dir)
+	result_dataframe4 = get_shc_webpages_with_keywords.get_links(result_dataframe3, query_keywords, keys_list_for_site_specific_search, cse_id, output_dir)
 
 	# Store web pages in html format
 	print("\n###### Saving web pages locally in HTML format ######")

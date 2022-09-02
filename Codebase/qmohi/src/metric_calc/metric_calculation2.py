@@ -2,11 +2,8 @@ import pandas as pd
 from textblob import TextBlob
 import requests
 import re
-from os import listdir
-from os.path import isfile, join
 from urllib.parse import urlparse
 from qmohi.src.metric_calc.navigation_metric.counter import get_min_click_count
-from bs4 import BeautifulSoup
 from gensim.models import KeyedVectors
 from gensim.test.utils import datapath
 

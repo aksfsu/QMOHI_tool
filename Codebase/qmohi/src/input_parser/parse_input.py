@@ -2,7 +2,7 @@ import sys
 import datetime
 import os
 import pandas as pd
-
+from qmohi.src.input_parser.input_helper.keyword_suggestion_helper import suggest_keywords
 
 def read_input_file(path):
 	# Read the content from user's input file
@@ -63,6 +63,25 @@ def get_input_university_names(file):
 	return universities_list, no_of_universities
 
 
+def review_input_keywords(input_file_path, file, api_keys, cse_id):
+	# Get input keyword
+	keywords = get_input_keywords(file)
+	
+	# Iteration of keywords review
+	new_keywords = suggest_keywords(api_keys, cse_id, keywords)
+
+	# Stripping extra leading and trailing spaces in the keywords
+	new_keywords = [keyword.strip().replace(' +', ' ').lower() for keyword in new_keywords]
+
+	# Update keyword in input file
+	file['Keywords'] = new_keywords[:len(file)]
+	if len(new_keywords) > len(file):
+		for i in range(len(file), len(new_keywords)):
+			file.loc[i] = ["", new_keywords[i], "", "", "", "", "", "", "", ""]
+	file.to_csv(input_file_path, index=False)
+	return new_keywords
+
+
 def get_input_keywords(file):
 	# Reading keywords provided by user
 	keywords = file[['Keywords']].copy()
@@ -113,14 +132,15 @@ def divide_query_keywords(keyword_list):
 
 def calculate_num_keys_required(no_of_universities, num_of_words):
 	# Assuming daily limit of 90 queries per API key just to be on safer side
-	no_of_keys_for_shc = (no_of_universities // 90) + 1
+	# + 1 because one of the keys used for keyword suggestion
+	no_of_keys_for_shc = (no_of_universities // 90)
 
 	# Assuming daily limit of 90 queries per API key and maximum 6 words in university name
 	no_of_keys_for_site_specific_search = ((((num_of_words // 26) + 1) * no_of_universities) // 90) + 1
 	return no_of_keys_for_shc, no_of_keys_for_site_specific_search
 
 
-def get_input_api_keys(file, no_of_keys_for_shc, no_of_keys_for_site_specific_search):
+def get_input_api_keys(file, no_of_keys_for_shc, no_of_keys_for_site_specific_search, force_pass=False):
 	# Reading API keys provided by user
 	keys = file[['Paid_API_key']].copy()
 	# Dropping rows with NaN values
@@ -130,25 +150,29 @@ def get_input_api_keys(file, no_of_keys_for_shc, no_of_keys_for_site_specific_se
 	if no_of_keys > 0:
 		print(keys['Paid_API_key'])
 		# Creating list of keys to pass it as required
-		return keys['Paid_API_key'].tolist()
+		keys_list = keys['Paid_API_key'].tolist()
+		return keys_list, keys_list
 
 	else:
 		# Reading API keys provided by user
 		keys = file[['API_keys']].copy()
 		# Dropping rows with NaN values
 		keys = keys.dropna(axis=0, how='any')
-		no_of_keys = keys.API_keys.count()
-		are_input_api_keys_sufficient(no_of_keys_for_shc, no_of_keys_for_site_specific_search, no_of_keys)
+		if not force_pass:
+			no_of_keys = keys.API_keys.count()
+			are_input_api_keys_sufficient(no_of_keys_for_shc, no_of_keys_for_site_specific_search, no_of_keys)
 		print(keys['API_keys'])
 
 	# Creating list of keys to pass it as required
-	return keys['API_keys'].tolist()
+	keys_list = keys['API_keys'].tolist()
+	return keys_list[:no_of_keys_for_shc], keys_list[no_of_keys_for_shc:no_of_keys_for_shc + no_of_keys_for_site_specific_search]
 
 
 def are_input_api_keys_sufficient(no_of_keys_for_shc,
 								  no_of_keys_for_site_specific_search,
 								  no_of_input_keys):
-	no_of_keys_required = max(no_of_keys_for_shc, no_of_keys_for_site_specific_search)
+	# + 1 because one of the keys was used for keyword suggestion
+	no_of_keys_required = max(no_of_keys_for_shc, no_of_keys_for_site_specific_search) + 1
 	# Checking if number of API keys provided by user are sufficient
 	if no_of_input_keys < no_of_keys_required:
 		print(f"For given universities and keywords, we need {no_of_keys_required} Google API keys. In the given input "
