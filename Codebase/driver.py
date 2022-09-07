@@ -25,32 +25,32 @@ from qmohi.src.metric_calc import reading_level, combine_results, metric_calcula
 def execute(input_file_path):
 	timestamp = time.time()
 	date = datetime.datetime.fromtimestamp(timestamp)
-	print("Start Overall:", date.strftime('%H:%M:%S.%f'))
+	print("Start: ", date.strftime('%H:%M:%S.%f'))
 
 	# Get user's input
 	print("\n============ PHASE 1 =============\n")
-	print("###### Reading input file ######")
-	print("- Input file given by user: ", input_file_path)
+	print("Collecting the parameters from the input file...")
+	# print("- Input file given by user: ", input_file_path)
 	file = parse_input.read_input_file(input_file_path)
 
 	# Set output directory for storing results
-	print("- Setting up output directory: ", end="")
+	# print("- Setting up output directory: ", end="")
 	output_dir = parse_input.set_output_directory(file)
 
 	# Get university names from user input
-	print("- Collecting input university names")
+	# print("- Collecting input university names")
 	universities_list, no_of_universities = parse_input.get_input_university_names(file)
 
 	# Get API keys from user input
-	print("- Collecting input API keys")
+	# print("- Collecting input API keys")
 	keys_list = parse_input.get_input_api_keys(file, 0, 0, force_pass=True)
 
 	# Get CSE ID from user input
-	print("- Collecting input CSE id", end="")
+	# print("- Collecting input CSE id", end="")
 	cse_id = parse_input.get_input_cse(file)
 
 	# Get keywords from user input
-	print("- Collecting input keywords")
+	# print("- Collecting input keywords")
 	keyword_list = parse_input.review_input_keywords(input_file_path, file, keys_list, cse_id)
 
 	# Divide the keywords in sets to make query
@@ -60,64 +60,61 @@ def execute(input_file_path):
 	no_of_keys_for_shc, no_of_keys_for_site_specific_search = parse_input.calculate_num_keys_required(no_of_universities, num_of_words)
 
 	# Get API keys from user input
-	print("- Collecting input API keys")
+	# print("- Collecting input API keys")
 	keys_list_for_shc, keys_list_for_site_specific_search = parse_input.get_input_api_keys(file, no_of_keys_for_shc, no_of_keys_for_site_specific_search)
 
 	# Get Selenium web driver path from user input
-	print("\n- Collecting input Selenium Web Driver", end="")
+	# print("\n- Collecting input Selenium Web Driver", end="")
 	driver_path = parse_input.get_input_webdriver(file)
 
 	# Get ideal document path for ideal information on given keyword's topic
-	print("- Collecting ideal document name", end="")
+	# print("- Collecting ideal document name", end="")
 	ideal_doc = parse_input.get_ideal_document_with_path(file)
 
 	# Get the pre-trained model for calculating similarity. If not provided, old method is used.
-	print("- Collecting input model", end="")
+	# print("- Collecting input model", end="")
 	model_path = parse_input.get_model(file)
 
 	# Get the margin for the sentence extraction. If not provided, the function returns the default value (=2)
-	print("- Collecting sentence extraction margin", end="")
+	# print("- Collecting sentence extraction margin", end="")
 	margin = parse_input.get_sentence_extraction_margin(file)
 
 	# Get university SHC from university name
-	print("\n###### Finding university SHC websites ######")
+	print("\nFinding university SHC websites...")
 	result_dataframe3 = get_uni_shc.get_shc_urls_from_uni_name(universities_list, keys_list_for_shc, driver_path, cse_id, output_dir)
 
 	# Get related web pages under SHC website having presence of input keywords
 	print("\n============ PHASE 2 =============\n")
-	print("###### Searching SHC web pages having presence of keywords ######")
+	print("Searching SHC web pages having presence of keywords...")
 	result_dataframe4 = get_shc_webpages_with_keywords.get_links(result_dataframe3, query_keywords, keys_list_for_site_specific_search, cse_id, output_dir)
 
 	# Store web pages in html format
-	print("\n###### Saving web pages locally in HTML format ######")
+	print("\nSaving web pages locally in HTML format...")
 	store_webpages.save_webpage_content(result_dataframe4, output_dir)
 
 	# Find relevant content from retrieved website data
-	print("\n###### Filtering information relevant to keywords ######")
+	print("\nFiltering information relevant to keywords...")
 	result_dataframe6, keyword_list, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary = filter_relevant_data.find_relevant_content(result_dataframe4, keyword_list, margin, output_dir)
-
-	print("\n###### Universities where keywords relevant information was found ######")
-	print(result_dataframe6["University name"])
 
 	# Calculate overall reading level of relevant content retrieved from the urls
 	print("\n============ PHASE 3 =============\n")
-	print("###### Calculating Readability metric ######")
+	print("Calculating Readability metric...")
 	result_dataframe7 = reading_level.get_reading_level(result_dataframe6, output_dir)
 
 	# Calculate quantity of keywords, Prevalence metric, Coverage metric
-	print("\n###### Calculating quantity of keywords, Prevalence metric, Coverage metric ######")
+	print("\nCalculating quantity of keywords, Prevalence metric, Coverage metric...")
 	result_dataframe8 = metric_calculation1.metric_calculation(result_dataframe7, keyword_list, output_dir, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary)
 
 	# Calculate Similarity metric, Objectivity metric, Polarity metric, Timeliness metric, Navigation metric
-	print("\n###### Calculating Similarity metric, Objectivity metric, Polarity metric, Timeliness metric, Navigation metric ######")
+	print("\nCalculating Similarity metric, Objectivity metric, Polarity metric, Timeliness metric, Navigation metric...")
 	result_dataframe9 = metric_calculation2.calculate_metrics(result_dataframe6, output_dir, ideal_doc, driver_path, model_path)
 
 	# Consolidating final result together
-	print("\n###### Consolidating all metric values together ######")
+	print("\nConsolidating all metric values together...")
 	combine_results.combine_all_results_together(result_dataframe8, result_dataframe9, result_dataframe3, output_dir)
 	timestamp = time.time()
 	date = datetime.datetime.fromtimestamp(timestamp)
-	print("End Overall:", date.strftime('%H:%M:%S.%f'))
+	print("End: ", date.strftime('%H:%M:%S.%f'))
 
 	print("\n============ FINISHED =============\n")
 

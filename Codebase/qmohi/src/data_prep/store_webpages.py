@@ -9,7 +9,7 @@ def save_webpage_content(input_dataframe, output_dir):
 	# Create new directory inside output_directory for saving web pages
 	save_output_path = join(output_dir, "saved_webpages")
 	os.makedirs(save_output_path)
-	print("- Storing web pages at location: ", save_output_path)
+	print(f"Path to the saved web pages: {save_output_path}")
 
 	# For every university
 	for index, row in input_dataframe.iterrows():

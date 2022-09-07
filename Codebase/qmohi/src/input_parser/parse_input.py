@@ -57,7 +57,7 @@ def get_input_university_names(file):
 		print("Please provide university names!")
 		sys.exit()
 
-	print(universities_list, "\n")
+	# print(universities_list, "\n")
 	no_of_universities = universities_list.University_name.count()
 
 	return universities_list, no_of_universities
@@ -104,7 +104,7 @@ def get_input_keywords(file):
 	# Creating list of keywords to pass it as required
 	keyword_list = keywords['Keywords'].tolist()
 
-	print(keywords, "\n")
+	# print(keywords, "\n")
 	return keyword_list
 
 
@@ -148,7 +148,7 @@ def get_input_api_keys(file, no_of_keys_for_shc, no_of_keys_for_site_specific_se
 	no_of_keys = keys.Paid_API_key.count()
 
 	if no_of_keys > 0:
-		print(keys['Paid_API_key'])
+		# print(keys['Paid_API_key'])
 		# Creating list of keys to pass it as required
 		keys_list = keys['Paid_API_key'].tolist()
 		return keys_list, keys_list
@@ -161,7 +161,7 @@ def get_input_api_keys(file, no_of_keys_for_shc, no_of_keys_for_site_specific_se
 		if not force_pass:
 			no_of_keys = keys.API_keys.count()
 			are_input_api_keys_sufficient(no_of_keys_for_shc, no_of_keys_for_site_specific_search, no_of_keys)
-		print(keys['API_keys'])
+		# print(keys['API_keys'])
 
 	# Creating list of keys to pass it as required
 	keys_list = keys['API_keys'].tolist()
@@ -192,7 +192,7 @@ def get_input_webdriver(file):
 		sys.exit()
 
 	driver_path = webdriver['Selenium_Chrome_webdriver'].values[0]
-	print(": ", driver_path)
+	# print(": ", driver_path)
 	return driver_path
 
 
@@ -207,7 +207,7 @@ def get_input_cse(file):
 		sys.exit()
 
 	cse_id = cse['CSE_id'].values[0]
-	print(": ", cse_id)
+	# print(": ", cse_id)
 	return cse_id
 
 
@@ -222,7 +222,7 @@ def get_ideal_document_with_path(file):
 		sys.exit()
 
 	ideal_doc = cse['Ideal_document'].values[0]
-	print(": ", ideal_doc)
+	# print(": ", ideal_doc)
 	return ideal_doc
 
 def get_model(file):

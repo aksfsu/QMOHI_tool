@@ -11,8 +11,6 @@ import pyppeteer
 # Config constants
 MEDLINE_URL = "https://medlineplus.gov"
 DRUGBANK_URL = "https://go.drugbank.com/drugs/"
-DEPTH = 2 # (>= 1)
-THERAPY_NUM = 5
 
 
 # Access websites based on the given URL
@@ -208,7 +206,7 @@ def get_drugbank_information(output_file, url):
     output_file.write(text)
 
 
-def generate_ideal_document(output_file_path, api_keys, cse_id, keywords=[], drug_names=[]):
+def generate_ideal_document(output_file_path, api_keys, cse_id, depth=2, num_of_therapy=5, keywords=[], drug_names=[]):
     # Instanciate the CSE handler
     search_obj = CSEHandler(api_keys[0], cse_id)
 
@@ -228,13 +226,13 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, keywords=[], dru
             return
 
         # Extract documents
-        visited_urls.update(get_document(output_file, links[0], depth=DEPTH, visited_urls=visited_urls))
+        visited_urls.update(get_document(output_file, links[0], depth, visited_urls=visited_urls))
 
     ### Method 2: DrugBank Information with Google API
     #### Method 2-1: Use topics and keywords
     for keyword in keywords:
         therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, '"summary" ' + keyword)
-        for link in therapy_links[:min(len(therapy_links), THERAPY_NUM)]:
+        for link in therapy_links[:min(len(therapy_links), num_of_therapy)]:
             if link not in visited_urls:
                 visited_urls.add(link)
                 get_drugbank_information(output_file, link)

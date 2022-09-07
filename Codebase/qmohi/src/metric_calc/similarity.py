@@ -13,9 +13,7 @@ HEALTH_TOPICS_CORPUS_PATH = "./qmohi/src/metric_calc/medlineplus_health_topics_c
 
 class Similarity:
     def __init__(self, word_vector):
-        print("Loading model...")
         self.word_vector = word_vector
-        print("Loaded")
 
     def remove_stopwords(self, doc):
         stopword_file_paths = [join(STOPWORD_FILE_PATH, f) for f in listdir(STOPWORD_FILE_PATH) if isfile(join(STOPWORD_FILE_PATH, f)) and f.startswith("stopwords")]

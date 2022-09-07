@@ -228,6 +228,8 @@ def find_relevant_content(input_dataframe, keywords, margin, output_dir):
 	keywords.extend([lemmatizer.lemmatize(keyword) for keyword in keywords if lemmatizer.lemmatize(keyword) not in keywords])
 	spaced_keywords = add_space_in_keywords(keywords)
 
+	print("Universities where keywords relevant information was found:")
+
 	# For every university in the dataframe
 	for index, row in input_dataframe.iterrows():
 		found_per_stem_dictionary = []
@@ -236,31 +238,31 @@ def find_relevant_content(input_dataframe, keywords, margin, output_dir):
 		shc = row['University SHC URL']
 		no_of_links = row['Count of SHC webpages matching keywords']
 		link_data = row['Keywords matched webpages on SHC']
-		print("- ", university)
 
 		# Collect topical information
 		content = get_topical_contents(output_dir, university, keywords, margin)
 
-		# Calculating total number of words on all web pages
-		total_words = len(content.split())
-	
-		# Try writing content in the text file
-		try:
-			relevant_content_file = output_dir + "/relevant_content.txt"
-			out_file = open(relevant_content_file, 'w')
-			out_file.write(content)
-			out_file.close()
-
-			# Words_content here is list of lists
-			found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary = relevant_content_words(spaced_keywords, relevant_content_file)
-
-			# Deleting relevant_file.txt
-			os.remove(relevant_content_file)
-
-		except Exception as e:
-			print(e)
-
 		if content:
+			# Calculating total number of words on all web pages
+			total_words = len(content.split())
+	
+			# Try writing content in the text file
+			try:
+				relevant_content_file = output_dir + "/relevant_content.txt"
+				out_file = open(relevant_content_file, 'w')
+				out_file.write(content)
+				out_file.close()
+
+				# Words_content here is list of lists
+				found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary = relevant_content_words(spaced_keywords, relevant_content_file)
+
+				# Deleting relevant_file.txt
+				os.remove(relevant_content_file)
+
+			except Exception as e:
+				print(e)
+
+			print("- ", university)
 			list_of_found_per_stem_dictionary.append(found_per_stem_dictionary)
 			list_of_stem_found_phrase_dictionary.append(stem_found_phrase_dictionary)
 			output_dataframe = output_dataframe.append({'University name': university,
