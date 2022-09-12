@@ -63,12 +63,12 @@ def get_input_university_names(file):
 	return universities_list, no_of_universities
 
 
-def review_input_keywords(input_file_path, file, api_keys, cse_id):
+def review_input_keywords(input_file_path, file, api_keys, cse_id, ideal_doc_path):
 	# Get input keyword
 	keywords = get_input_keywords(file)
 	
 	# Iteration of keywords review
-	new_keywords = suggest_keywords(api_keys, cse_id, keywords)
+	new_keywords = suggest_keywords(api_keys, cse_id, keywords, ideal_doc_path)
 
 	# Stripping extra leading and trailing spaces in the keywords
 	new_keywords = [keyword.strip().replace(' +', ' ').lower() for keyword in new_keywords]

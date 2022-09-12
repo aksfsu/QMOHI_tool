@@ -1,5 +1,5 @@
 import os
-from os.path import join
+from os.path import join, dirname
 from qmohi.src.input_parser.input_helper.ideal_document_generator import generate_ideal_document
 from qmohi.src.input_parser.input_helper.keyword_generator import KeywordGenerator
 
@@ -12,21 +12,19 @@ def get_topic(query):
         return query
     return query[:idx]
 
-def suggest_keywords(api_keys, cse_id, keywords):
+def suggest_keywords(api_keys, cse_id, keywords, ideal_doc_path):
     iteration = True
     kg = KeywordGenerator()
-    suggested_keywords = set()
+    suggested_keywords = set(keywords)
 
     while iteration:
         # Generate comparison document
         print("\nGenerating keywords...")
-        output_file_path = join(COMPARISON_DOCUMENT_PATH, get_topic(keywords[0]) + ".txt")
+        output_file_path = join(dirname(ideal_doc_path), get_topic(keywords[0]) + ".txt")
         generate_ideal_document(output_file_path, api_keys, cse_id, depth=1, keywords=keywords)
 
         # Extract keywords
         unigram_keywords, bigram_keywords = kg.generate_keywords_with_keybert(output_file_path)
-
-        os.remove(output_file_path)
 
         # Collect new keywords
         unigram_suggestions = []
@@ -48,11 +46,12 @@ def suggest_keywords(api_keys, cse_id, keywords):
         # Let users select keywords to add
         print(f"\nCurrent Keywords: ", end="")
         for i, keyword in enumerate(keywords):
-            print(keyword, end="")
-            if i < len(keywords) - 1:
-                print(", ", end="")
+            if i == len(keywords) - 1:
+                print(keyword)
+            else:
+                print(f"{keyword}, ", end="")
         keyword_suggestions = unigram_suggestions + bigram_suggestions
-        print(f"\nKeyword Suggestion:")
+        print(f"\nHere Are the Suggested Keywords:")
         for i, keyword in enumerate(keyword_suggestions):
             print(f"{i + 1}: {keyword} ")
 
@@ -74,9 +73,10 @@ def suggest_keywords(api_keys, cse_id, keywords):
                 iteration = False
                 print(f"\nCurrent Keywords: ", end="")
                 for i, keyword in enumerate(keywords):
-                    print(keyword, end="")
-                    if i < len(keywords) - 1:
-                        print(", ", end="")
+                    if i == len(keywords) - 1:
+                        print(keyword)
+                    else:
+                        print(f"{keyword}, ", end="")
                 break
 
     return keywords
