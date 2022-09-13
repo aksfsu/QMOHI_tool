@@ -2,7 +2,7 @@ import sys
 import datetime
 import os
 import pandas as pd
-from qmohi.src.input_parser.input_helper.keyword_suggestion_helper import suggest_keywords
+from qmohi.src.input_parser.input_helper.keyword_suggestion_helper import KeywordSuggestionHelper
 
 def read_input_file(path):
 	# Read the content from user's input file
@@ -68,7 +68,8 @@ def review_input_keywords(input_file_path, file, api_keys, cse_id, ideal_doc_pat
 	keywords = get_input_keywords(file)
 	
 	# Iteration of keywords review
-	new_keywords = suggest_keywords(api_keys, cse_id, keywords, ideal_doc_path)
+	helper = KeywordSuggestionHelper(api_keys, cse_id, ideal_doc_path, keywords)
+	new_keywords = helper.suggest_keywords()
 
 	# Stripping extra leading and trailing spaces in the keywords
 	new_keywords = [keyword.strip().replace(' +', ' ').lower() for keyword in new_keywords]
