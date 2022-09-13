@@ -217,7 +217,8 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth=2, num_of_
     visited_urls = set()
 
     for keyword in keywords:
-        links = search_obj.get_links_by_query(MEDLINE_URL, keyword)
+        links = search_obj.get_links_by_query(MEDLINE_URL, '"' + keyword + '"')
+        links = [link["url"] for link in links]
         # print(links)
 
         # Try next term if no website was found
@@ -232,6 +233,7 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth=2, num_of_
     #### Method 2-1: Use topics and keywords
     for keyword in keywords:
         therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, '"summary" ' + keyword)
+        therapy_links = [link["url"] for link in therapy_links]
         for link in therapy_links[:min(len(therapy_links), num_of_therapy)]:
             if link not in visited_urls:
                 visited_urls.add(link)
@@ -240,6 +242,7 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth=2, num_of_
     #### Method 2-2: Use drug names
     for drug_name in drug_names:
         therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, '"summary" ' + drug_name)
+        therapy_links = [link["url"] for link in therapy_links]
         link = therapy_links[0]
         if link not in visited_urls:
             visited_urls.add(link)

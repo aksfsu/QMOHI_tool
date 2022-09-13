@@ -23,13 +23,34 @@ class CSEHandler:
 				cx=self.cse_id,
 				lr='lang_en',
 			).execute()
+			
+			# Output received in the form of json
+			with open('data.json', 'w') as outfile:
+				json.dump(response, outfile)
 
-			# Add the retrieved results to the return list
+			# Items contain all the retrieved results
 			if 'items' not in response:
-				print("   - Not found")
+				print("   - No web pages found!")
+
 			else:
 				for item in response['items']:
-					links.append(item['link'])
+					if item['link'].endswith(".pdf"):
+						content_format = 'pdf'
+						# Mask this feature for now
+						continue
+					elif 'mime' in item and 'pdf' in item['mime'].lower():
+						content_format = 'pdf'
+						# Mask this feature for now
+						continue
+					elif 'fileFormat' in item and 'pdf' in item['fileFormat'].lower():
+						content_format = 'pdf'
+						# Mask this feature for now
+						continue
+					else:
+						content_format = 'html'
+					
+					# Links from the items contain URLs
+					links.append({'url': item['link'], 'format': content_format})
 
 		except Exception as e:
 			print("Caught exception for Custom Search engine!", e)
