@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 from gensim.models import KeyedVectors
 from gensim.test.utils import datapath
 
-from qmohi.src.metric_calc.similarity import Similarity
+from qmohi.src.metric_calc.similarity_metric.similarity import Similarity
 
 class University:
 

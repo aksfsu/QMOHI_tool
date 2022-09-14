@@ -6,10 +6,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 from gensim.parsing.preprocessing import strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
 from gensim.utils import tokenize
 
-from qmohi.src.metric_calc.customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
+from qmohi.src.metric_calc.similarity_metric.customizable_tfidf_vectorizer import CustomizableTfidfVectorizer
 
-STOPWORD_FILE_PATH = "./qmohi/src/metric_calc/stopwords"
-HEALTH_TOPICS_CORPUS_PATH = "./qmohi/src/metric_calc/medlineplus_health_topics_corpus.txt"
+STOPWORD_FILE_PATH = "./qmohi/src/metric_calc/similarity_metric/stopwords"
+HEALTH_TOPICS_CORPUS_PATH = "./qmohi/src/metric_calc/similarity_metric/medlineplus_health_topics_corpus.txt"
 
 class Similarity:
     def __init__(self, word_vector):
