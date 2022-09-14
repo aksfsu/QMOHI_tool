@@ -217,7 +217,7 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth=2, num_of_
     visited_urls = set()
 
     for keyword in keywords:
-        links = search_obj.get_links_by_query(MEDLINE_URL, '"' + keyword + '"')
+        links = search_obj.get_links_by_query(MEDLINE_URL, keyword)
         links = [link["url"] for link in links]
         # print(links)
 
