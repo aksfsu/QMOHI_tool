@@ -94,10 +94,8 @@ def clean_text(text):
 	# Remove URLs
 	text = re.sub(r"http\S+", "", text, flags=re.MULTILINE)
 	text = re.sub(r"www\S+", "", text, flags=re.MULTILINE)
-	# Remove punctuation
-	text = strip_punctuation(text)
-	# Remove non-alphanumeric characters
-	text = strip_non_alphanum(text)
+	# Remove special characters
+	text = re.sub(r"[()\"#/@;:<>{}`_+=~|\[\]]", "", text)
 	# Remove redundant white spaces
 	text = strip_multiple_whitespaces(text)
 	return text.strip()
@@ -211,7 +209,7 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 
 
 def add_space_in_keywords(keywords):
-	return [clean_text(keyword) for keyword in keywords]
+	return [keyword.replace("-", " - ") for keyword in keywords]
 
 
 # Find relevant content from the data provided on the basis of keywords

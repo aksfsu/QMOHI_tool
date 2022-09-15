@@ -1,4 +1,4 @@
-import os
+import re
 from os.path import join, dirname
 from qmohi.src.input_parser.input_helper.ideal_document_generator import generate_ideal_document
 from qmohi.src.input_parser.input_helper.keyword_generator import KeywordGenerator
@@ -31,7 +31,7 @@ class KeywordSuggestionHelper:
 
 
     def suggest_keywords(self):
-        iteration = True
+        iteration = 1
         kg = KeywordGenerator()
         suggested_keywords = set(self.keywords)
         prev_keywords = []
@@ -39,50 +39,51 @@ class KeywordSuggestionHelper:
         self.display_current_keywords()
 
         while iteration:
+            # print(f'\n__Iteration {iteration}__')
             # Generate comparison document
             if prev_keywords != self.keywords:
                 print("\nGenerating keywords...")
                 output_file_path = join(dirname(self.ideal_doc_path), self.get_topic(self.keywords[0]) + ".txt")
                 generate_ideal_document(output_file_path, self.api_keys, self.cse_id, depth=1, keywords=self.keywords)
             
-            prev_keywords = self.keywords[:] # Deepcopy
+                prev_keywords = self.keywords[:] # Deepcopy
 
-            # Extract keywords
-            # unigram_keywords, bigram_keywords = kg.generate_keywords_with_keybert(output_file_path)
-
-            '''
+                # Extract keywords
+                unigram_keywords, bigram_keywords, trigram_keywords = kg.generate_keywords_with_keybert(output_file_path)
+            
             # Collect new keywords
-            unigram_suggestions = []
-            for keyword in unigram_keywords:
-                if keyword not in suggested_keywords:
-                    unigram_suggestions.append(keyword)
-                    suggested_keywords.add(keyword)
-                if len(unigram_suggestions) == NUM_SUGGESTIONS:
-                    break
-
-            bigram_suggestions = []
-            for keyword in bigram_keywords:
-                if keyword not in suggested_keywords:
-                    bigram_suggestions.append(keyword)
-                    suggested_keywords.add(keyword)
-                if len(bigram_suggestions) == NUM_SUGGESTIONS:
-                    break
-            '''
-
-            generated_keywords = kg.generate_keywords_with_keybert(output_file_path)
             keyword_suggestions = []
-            for keyword in generated_keywords:
-                if keyword not in suggested_keywords:
-                    keyword_suggestions.append(keyword)
-                    suggested_keywords.add(keyword)
-                if len(keyword_suggestions) == NUM_SUGGESTIONS:
-                    break
-            suggested_keywords.update(keyword_suggestions)
+            for i, keywords in enumerate([unigram_keywords, bigram_keywords, trigram_keywords]):
+                for keyword in keywords:
+                    if keyword not in suggested_keywords:
+                        digit_indices = [(m.start(), m.end()) for m in re.finditer("\d+", keyword, re.IGNORECASE)]
+                        if digit_indices:
+                            keyword_variation1 = keyword
+                            keyword_variation2 = keyword
+                            padding = 0
+                            for start, end in digit_indices:
+                                if start != 0:
+                                    keyword_variation1 = keyword[:start + padding] + "-" + keyword[start + padding:]
+                                    keyword_variation2 = keyword[:start + padding] + " " + keyword[start + padding:]
+                                    padding += 0
+                                if end != len(keyword) and keyword[end + padding] != " ":
+                                    keyword_variation1 = keyword[:end + padding] + "-" + keyword[end + padding:]
+                                    keyword_variation2 = keyword[:end + padding] + " " + keyword[end + padding:]
+                                    padding += 0
+                            keyword_suggestions.append(keyword_variation1)
+                            keyword_suggestions.append(keyword_variation2) 
+                            suggested_keywords.add(keyword_variation1)
+                            suggested_keywords.add(keyword_variation2)   
+                        keyword_suggestions.append(keyword)
+                        suggested_keywords.add(keyword)
+                    if i == 0 and len(keyword_suggestions) >= 10 or\
+                       i == 1 and len(keyword_suggestions) >= 15 or\
+                       i == 2 and len(keyword_suggestions) >= 20:
+                        break
 
             # Let users select keywords to add
             self.display_current_keywords()
 
-            # keyword_suggestions = unigram_suggestions + bigram_suggestions
             print(f"\nHere Are the Suggested Keywords:")
             for i, keyword in enumerate(keyword_suggestions):
                 print(f"{i + 1}: {keyword} ")
@@ -100,9 +101,10 @@ class KeywordSuggestionHelper:
             while True:
                 cont = input(f"Would you like QMOHI to suggest more keywords? (Y/n) : ")
                 if cont.lower() in ["y", "yes"]:
+                    iteration += 1
                     break
                 elif cont.lower() in ["n", "no"]:
-                    iteration = False
+                    iteration = 0
                     self.display_current_keywords()
                     break
 

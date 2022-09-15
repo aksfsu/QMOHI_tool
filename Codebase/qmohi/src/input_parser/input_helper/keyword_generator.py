@@ -22,10 +22,9 @@ class KeywordGenerator:
         doc = re.sub(r"www\S+", "", doc, flags=re.MULTILINE)
         # Remove stop words
         doc = remove_stopwords(doc)
-        # Remove non-alphanumeric characters
-        doc = strip_non_alphanum(doc)
-        # Remove numeric characters
-        doc = strip_numeric(doc)
+        # Remove special characters
+        doc = re.sub(r"[()\"#/@;:<>{}\-`_+=~|\[\]]", "", doc)
+        doc = re.sub(r" \d+", "", doc, flags=re.MULTILINE)
         # Remove redundant white spaces
         doc = strip_multiple_whitespaces(doc)
         return doc
@@ -36,7 +35,8 @@ class KeywordGenerator:
         doc = self.__preprocess_document(doc)
 
         # Extract keywords
-        unigram_keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=0.4, top_n=1000)]
-        bigram_keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(1, 2), stop_words='english', use_mmr=True, diversity=0.4, top_n=1000)]
+        unigram_keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=1.0, top_n=500)]
+        bigram_keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(2, 2), stop_words='english', use_mmr=True, diversity=1.0, top_n=200)]
+        trigram_keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(3, 3), stop_words='english', use_mmr=True, diversity=1.0, top_n=200)]
 
-        return unigram_keywords, bigram_keywords
+        return unigram_keywords, bigram_keywords, trigram_keywords
