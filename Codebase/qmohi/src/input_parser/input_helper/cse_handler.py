@@ -29,10 +29,7 @@ class CSEHandler:
 				json.dump(response, outfile)
 
 			# Items contain all the retrieved results
-			if 'items' not in response:
-				print("   - No web pages found!")
-
-			else:
+			if 'items' in response:
 				for item in response['items']:
 					if item['link'].endswith(".pdf"):
 						content_format = 'pdf'
