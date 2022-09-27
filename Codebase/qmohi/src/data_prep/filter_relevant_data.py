@@ -5,7 +5,7 @@ Output - data relevant to the keywords
 """
 from nltk.text import Text
 from nltk.stem.snowball import SnowballStemmer
-from nltk.tokenize import sent_tokenize
+from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.stem import WordNetLemmatizer
 import nltk.corpus
 import pandas as pd
@@ -146,12 +146,13 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 
 			# Segment the sentences
 			sentences = sent_tokenize(text)
+			# Remove Â and â by tokenizing and then putting the tokens back together
+			sentences = [" ".join(word_tokenize(s)) for s in sentences]
 			sentences = [s + "\n" for sentence in sentences for s in sentence.split("\n") if s]
 
 			# Add space to the end of the sentence for the readability in output file
 			sentences = [re.sub(r' +', ' ', sentence) for sentence in sentences]
 			sentences = [re.sub(r'\n+', '<br>', sentence) for sentence in sentences]
-			#print(sentences)
 
 			# Create a reference list whole elements indicates margin and anchor sentences
 			MARGIN = 1
