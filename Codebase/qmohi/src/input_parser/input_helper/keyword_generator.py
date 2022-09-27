@@ -2,7 +2,8 @@ import os
 import re
 from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric
 from keybert import KeyBERT
-
+from keyphrase_vectorizers import KeyphraseCountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 class KeywordGenerator:
     def __init__(self):
@@ -22,9 +23,13 @@ class KeywordGenerator:
         doc = re.sub(r"www\S+", "", doc, flags=re.MULTILINE)
         # Remove stop words
         doc = remove_stopwords(doc)
+        doc = re.sub(r"\n", ". ", doc)
         # Remove special characters
-        doc = re.sub(r"[()\"#/@;:<>{}\-`_+=~|\[\]]", "", doc)
-        doc = re.sub(r" \d+", "", doc, flags=re.MULTILINE)
+        doc = re.sub(r"[()\",#/@;:<>{}`_+=~|\[\]]", "", doc)
+        # doc = re.sub(r"([a-zA-Z]+)-(\d+)", r"\1\2", doc)
+        doc = re.sub(r" \d+ ", " ", doc, flags=re.MULTILINE)
+        doc = re.sub(r"-", "", doc)
+
         # Remove redundant white spaces
         doc = strip_multiple_whitespaces(doc)
         return doc
@@ -35,8 +40,7 @@ class KeywordGenerator:
         doc = self.__preprocess_document(doc)
 
         # Extract keywords
-        unigram_keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=1.0, top_n=500)]
-        bigram_keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(2, 2), stop_words='english', use_mmr=True, diversity=1.0, top_n=200)]
-        trigram_keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(3, 3), stop_words='english', use_mmr=True, diversity=1.0, top_n=200)]
-
-        return unigram_keywords, bigram_keywords, trigram_keywords
+        keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=0.7, top_n=1000)]
+        keyphrases = [keyword for keyword, _ in self.kb.extract_keywords(doc, vectorizer=KeyphraseCountVectorizer(), use_mmr=True, diversity=0.7, top_n=2000)]
+        
+        return keywords, keyphrases
