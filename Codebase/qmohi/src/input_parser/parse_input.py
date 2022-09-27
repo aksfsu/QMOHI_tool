@@ -75,10 +75,13 @@ def review_input_keywords(input_file_path, file, api_keys, cse_id, ideal_doc_pat
 	new_keywords = [keyword.strip().replace(' +', ' ').lower() for keyword in new_keywords]
 
 	# Update keyword in input file
-	file['Keywords'] = new_keywords[:len(file)]
 	if len(new_keywords) > len(file):
+		file['Keywords'] = new_keywords[:len(file)]
 		for i in range(len(file), len(new_keywords)):
 			file.loc[i] = ["", new_keywords[i], "", "", "", "", "", "", "", ""]
+	else:
+		file['Keywords'] = new_keywords[:len(new_keywords)] + ["" for _ in range(max(0, len(file) - len(new_keywords)))]
+
 	file.to_csv(input_file_path, index=False)
 	return new_keywords
 
