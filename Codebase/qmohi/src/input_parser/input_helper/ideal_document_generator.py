@@ -4,13 +4,13 @@ from os import makedirs
 import re
 
 from qmohi.src.input_parser.input_helper.cse_handler import CSEHandler
-from qmohi.src.input_parser.input_helper.drugbank_db_handler import DrugBankDBHandler
 
 import asyncio
 import pyppeteer
 
 # Config constants
-MEDLINE_URL = "https://medlineplus.gov"
+MEDLINEPLUS_URL = "https://medlineplus.gov"
+MEDLINEPLUS_DRUGS_URL = "https://medlineplus.gov/druginfo/meds/"
 DRUGBANK_URL = "https://go.drugbank.com/drugs/"
 
 
@@ -34,7 +34,7 @@ def get_internal_links(soup, parent_url):
         link = a['href']
         if not link:
             print("No URL assigned")
-        elif MEDLINE_URL in link:
+        elif MEDLINEPLUS_URL in link:
             m = re.search("/", parent_url[::-1])
             if m.start() > 0:
                 internal_links.append(link)
@@ -49,9 +49,9 @@ def get_internal_links(soup, parent_url):
 
 
 # Get text data and export in the output file
-def get_document(output_file, url, depth, visited_urls):
+def get_ideal_document(output_file, url, depth, visited_urls, drug_keywords):
     if depth == 0:
-        return visited_urls
+        return
 
     # Get the HTML based on URL
     html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
@@ -76,7 +76,7 @@ def get_document(output_file, url, depth, visited_urls):
                 # Get all the sections
                 sections = summary.parent.find_all('div', {'class': 'section'})
             else:
-                return visited_urls
+                return
             if sections:
                 for section in sections:
                     section_body = section.find('div', {'id': re.compile(r'section-\d+')})
@@ -86,7 +86,7 @@ def get_document(output_file, url, depth, visited_urls):
                         # Get the text data
                         text += section_body.get_text(separator=" ", strip=True) + " "
             else:
-                return visited_urls 
+                return 
 
         # The term has a dedicated "Lab Tests" page
         elif "lab-tests" in url:
@@ -101,15 +101,24 @@ def get_document(output_file, url, depth, visited_urls):
                     # Get the text data
                     text += section.get_text(separator=" ", strip=True) + " "
             else:
-                return visited_urls
+                return
 
         # The term has a dedicated "Drugs, Herbs and Supplements" page
         elif "druginfo" in url:
+            h1 = soup.find('h1')
+            h1 = h1.get_text(separator=" ", strip=True)
+            h1 = h1.replace("®", "").replace("¶", "")
+            h1 = re.sub(r"-(\d+)", r"\1", h1)
+            h1 = re.sub(r"\(.*\)", "", h1)
+            h1 = h1.strip()
+            drug_keywords.add(h1)
+            text += h1 + " "
+
             # Get all the sections
             sections = soup.find_all('div', {'class': 'section'})
             if sections:
                 for section in sections:
-                    section_body = section.find('div', {'id': re.compile('section-1')})
+                    section_body = section.find('div', {'id': re.compile(r'section-\d+')})
                     if section_body:
                         # Collect internal links
                         urls.extend(get_internal_links(section_body, url))
@@ -121,16 +130,34 @@ def get_document(output_file, url, depth, visited_urls):
                         # Collect internal links
                         urls.extend(get_internal_links(section_brandname, url))
                         # Get the text data
-                        text += section_brandname.get_text(separator=" ", strip=True) + " "
+                        list_items = section_brandname.find_all('li')
+                        for item in list_items:
+                            item_text = item.get_text(separator=" ", strip=True)
+                            item_text = item_text.replace("®", "").replace("¶", "")
+                            item_text = re.sub(r"-(\d+)", r"\1", item_text)
+                            item_text = re.sub(r"(\d+)-", r"\1", item_text)
+                            item_text = re.sub(r"\(.*\)", "", item_text)
+                            item_text = item_text.strip()
+                            drug_keywords.add(item_text)
+                            text += item_text + " "
 
                     section_other_name = section.find('div', {'id': re.compile('section-other-name')})
                     if section_other_name:
                         # Collect internal links
                         urls.extend(get_internal_links(section_other_name, url))
                         # Get the text data
-                        text += section_other_name.get_text(separator=" ", strip=True) + " "
+                        list_items = section_other_name.find_all('li')
+                        for item in list_items:
+                            item_text = item.get_text(separator=" ", strip=True)
+                            item_text = item_text.replace("®", "").replace("¶", "")
+                            item_text = re.sub(r"-(\d+)", r"\1", item_text)
+                            item_text = re.sub(r"(\d+)-", r"\1", item_text)
+                            item_text = re.sub(r"\(.*\)", "", item_text)
+                            item_text = item_text.strip()
+                            drug_keywords.add(item_text)
+                            text += item_text + " "
             else:
-                return visited_urls
+                return
 
         # The term has a dedicated "Health Topics" page
         else:
@@ -139,7 +166,7 @@ def get_document(output_file, url, depth, visited_urls):
                 urls.extend(get_internal_links(summary, url))
                 text += summary.get_text(separator=" ", strip=True)
             else:
-                return visited_urls
+                return
 
         side = soup.find('div', {'class': "side"})
         if side:
@@ -152,8 +179,8 @@ def get_document(output_file, url, depth, visited_urls):
 
     # Crawl internal links
     for url in urls:
-        get_document(output_file, url, depth-1, visited_urls)
-    return visited_urls
+        get_ideal_document(output_file, url, depth-1, visited_urls, drug_keywords)
+    return
 
 
 def get_drugbank_information(output_file, url, keywords):
@@ -266,21 +293,36 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth=2, num_of_
     output_file = open(output_file_path, 'w')
 
     visited_urls = set()
+    drug_keywords = set()
 
     for keyword in keywords:
-        links = search_obj.get_links_by_query(MEDLINE_URL, keyword)
+        links = search_obj.get_links_by_query(MEDLINEPLUS_URL, keyword)
         links = [link["url"] for link in links]
         # print(links)
 
         # Try next term if no website was found
         if not len(links):
-            print("Not Found")
-            return
+            continue
 
         # Extract documents
-        visited_urls.update(get_document(output_file, links[0], depth, visited_urls=visited_urls))
+        get_ideal_document(output_file, links[0], depth, visited_urls, drug_keywords)
+
+        if keyword.count(" ") > 0:
+            keyword = '"' + keyword + '"'
+        links = search_obj.get_links_by_query(MEDLINEPLUS_DRUGS_URL, keyword)
+        links = [link["url"] for link in links]
+        # print(links)
+
+        # Try next term if no website was found
+        if not len(links):
+            continue
+
+        # Extract documents
+        for link in links:
+            get_ideal_document(output_file, link, 1, visited_urls, drug_keywords) 
 
     # DrugBank Information with Google API
+    '''
     drug_keywords = []
     for keyword in keywords:
         therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, '"' + keyword + '"')
@@ -295,6 +337,7 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth=2, num_of_
                     idx = re.search(r" \d+$", drug)
                     if idx:
                         drug_keywords.append(drug[:idx.span()[0]])
+    '''
 
     # Close the output file
     output_file.close()

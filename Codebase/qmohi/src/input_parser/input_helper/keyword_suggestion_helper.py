@@ -29,6 +29,30 @@ class KeywordSuggestionHelper:
             else:
                 print(f"{keyword}, ", end="")
 
+    def diversify_keywords_with_hyphen(self, keyword):
+        keyword = re.sub(r" +", " ", keyword.lower())
+        keyword_variations = [keyword]
+        keyword_without_num = re.sub(r"\d+", "", keyword)
+        if len(keyword_without_num) > 0 and keyword != keyword_without_num:
+            keyword_variations.append(keyword_without_num)
+        digit_indices = [(m.start(), m.end()) for m in re.finditer("\d+", keyword)]
+        if digit_indices:
+            keyword_variation1 = keyword
+            keyword_variation2 = keyword
+            padding = 0
+            for start, end in digit_indices:
+                if start != 0 and keyword_variation1[start - 1 + padding] != " ":
+                    keyword_variation1 = keyword_variation1[:start + padding] + "-" + keyword_variation1[start + padding:]
+                    keyword_variation2 = keyword_variation2[:start + padding] + " " + keyword_variation2[start + padding:]
+                    padding += 1
+                if end != len(keyword) and keyword_variation1[end + padding] != " ":
+                    keyword_variation1 = keyword_variation1[:end + padding] + "-" + keyword_variation1[end + padding:]
+                    keyword_variation2 = keyword_variation2[:end + padding] + " " + keyword_variation2[end + padding:]
+                    padding += 1
+            if padding > 0:
+                keyword_variations.append(keyword_variation1)
+                keyword_variations.append(keyword_variation2)
+        return keyword_variations
 
     def suggest_keywords(self):
         iteration = 1
@@ -57,10 +81,13 @@ class KeywordSuggestionHelper:
                 extracted_drugs = generate_ideal_document(output_file_path, self.api_keys, self.cse_id, depth=depth, keywords=self.keywords)
 
                 keyword_suggestions = []
-                for drug in extracted_drugs:
-                    if drug not in suggested_keywords:
-                        keyword_suggestions.append(drug)
-                suggested_keywords.update(keyword_suggestions)
+                if extracted_drugs:
+                    for drug in extracted_drugs:
+                        if drug in suggested_keywords:
+                            continue
+                        drug_variations = self.diversify_keywords_with_hyphen(drug)  
+                        keyword_suggestions.extend([drug for drug in drug_variations if drug not in suggested_keywords])
+                        suggested_keywords.update(drug_variations)
 
                 # Extract keywords
                 print("\nGenerating keywords...")
@@ -84,27 +111,9 @@ class KeywordSuggestionHelper:
                         continue
                     if keyword in suggested_keywords:
                         continue
-                    digit_indices = [(m.start(), m.end()) for m in re.finditer("\d+", keyword)]
-                    if digit_indices:
-                        keyword_variation1 = keyword
-                        keyword_variation2 = keyword
-                        padding = 0
-                        for start, end in digit_indices:
-                            if start != 0 and keyword_variation1[start - 1 + padding] != " ":
-                                keyword_variation1 = keyword_variation1[:start + padding] + "-" + keyword_variation1[start + padding:]
-                                keyword_variation2 = keyword_variation2[:start + padding] + " " + keyword_variation2[start + padding:]
-                                padding += 1
-                            if end != len(keyword) and keyword_variation1[end + padding] != " ":
-                                keyword_variation1 = keyword_variation1[:end + padding] + "-" + keyword_variation1[end + padding:]
-                                keyword_variation2 = keyword_variation2[:end + padding] + " " + keyword_variation2[end + padding:]
-                                padding += 1
-                        if padding > 0:
-                            keyword_suggestions.append(keyword_variation1)
-                            keyword_suggestions.append(keyword_variation2) 
-                            suggested_keywords.add(keyword_variation1)
-                            suggested_keywords.add(keyword_variation2)   
-                    keyword_suggestions.append(keyword)
-                    suggested_keywords.add(keyword)
+                    keyword_variations = self.diversify_keywords_with_hyphen(keyword)  
+                    keyword_suggestions.extend(keyword_variations)
+                    suggested_keywords.update(keyword_variations)
 
                     if i == 0 and len(keyword_suggestions) >= drug_idx + keyword_idx + NUM_UNIGRAM_SUGGESTIONS or\
                        i == 1 and len(keyword_suggestions) >= drug_idx + keyword_idx + (NUM_UNIGRAM_SUGGESTIONS + NUM_MULTIGRAM_SUGGESTIONS):
