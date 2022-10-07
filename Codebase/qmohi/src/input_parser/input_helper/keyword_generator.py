@@ -25,10 +25,10 @@ class KeywordGenerator:
         doc = remove_stopwords(doc)
         doc = re.sub(r"\n", ". ", doc)
         # Remove special characters
-        doc = re.sub(r"[()\",#/@;:<>{}`_+=~|\[\]]", "", doc)
-        # doc = re.sub(r"([a-zA-Z]+)-(\d+)", r"\1\2", doc)
-        doc = re.sub(r" \d+ ", " ", doc, flags=re.MULTILINE)
-        doc = re.sub(r"-", "", doc)
+        doc = re.sub(r"[()\",#/@;:<>{}`_+=~|\[\]]", " ", doc)
+        doc = re.sub(r"([a-zA-Z]+)-(\d+)", r"\1\2", doc)
+        doc = re.sub(r"(\d+)-([a-zA-Z]+)", r"\1\2", doc)
+        doc = re.sub(r"-", " ", doc)
 
         # Remove redundant white spaces
         doc = strip_multiple_whitespaces(doc)

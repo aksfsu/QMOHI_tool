@@ -3,8 +3,8 @@ from os.path import join, dirname
 from qmohi.src.input_parser.input_helper.ideal_document_generator import generate_ideal_document
 from qmohi.src.input_parser.input_helper.keyword_generator import KeywordGenerator
 
-NUM_UNIGRAM_SUGGESTIONS = 50
-NUM_MULTIGRAM_SUGGESTIONS = 50
+NUM_UNIGRAM_SUGGESTIONS = 20
+NUM_MULTIGRAM_SUGGESTIONS = 20
 COMPARISON_DOCUMENT_PATH = "./"
 
 
@@ -30,13 +30,11 @@ class KeywordSuggestionHelper:
                 print(f"{keyword}, ", end="")
 
     def diversify_keywords_with_hyphen(self, keyword):
-        keyword = re.sub(r" +", " ", keyword.lower())
-        keyword_variations = [keyword]
-        keyword_without_num = re.sub(r"\d+", "", keyword)
-        if len(keyword_without_num) > 0 and keyword != keyword_without_num:
-            keyword_variations.append(keyword_without_num)
+        if re.search(r"\d+\.\d+", keyword):
+            return keyword
         digit_indices = [(m.start(), m.end()) for m in re.finditer("\d+", keyword)]
         if digit_indices:
+            keyword_variations = [keyword]
             keyword_variation1 = keyword
             keyword_variation2 = keyword
             padding = 0
@@ -52,12 +50,13 @@ class KeywordSuggestionHelper:
             if padding > 0:
                 keyword_variations.append(keyword_variation1)
                 keyword_variations.append(keyword_variation2)
-        return keyword_variations
+            return keyword_variations
+        return keyword
 
     def suggest_keywords(self):
         iteration = 1
         kg = KeywordGenerator()
-        suggested_keywords = set(self.keywords)
+        suggested_keywords = self.keywords[:] # Deepcopy
         prev_keywords = []
 
         while iteration:
@@ -83,11 +82,21 @@ class KeywordSuggestionHelper:
                 keyword_suggestions = []
                 if extracted_drugs:
                     for drug in extracted_drugs:
-                        if drug in suggested_keywords:
-                            continue
-                        drug_variations = self.diversify_keywords_with_hyphen(drug)  
-                        keyword_suggestions.extend([drug for drug in drug_variations if drug not in suggested_keywords])
-                        suggested_keywords.update(drug_variations)
+                        if drug not in suggested_keywords:
+                            # Generate different versions of a keyword
+                            drug_variations = self.diversify_keywords_with_hyphen(drug)
+                            keyword_suggestions.append(drug_variations)
+                            if isinstance(drug_variations, list):
+                                suggested_keywords.extend(drug_variations)
+                            else:
+                                suggested_keywords.append(drug_variations)
+                            # Extract first word of a keyphrase
+                            if re.search(r"\d+", drug):
+                                drug_first_word = re.sub(r" .*", "", drug_variations[-1])
+                                print(drug_first_word)
+                                if len(drug_first_word) > 3 and drug != drug_first_word and drug_first_word not in suggested_keywords:
+                                    keyword_suggestions.append(drug_first_word)
+                                    suggested_keywords.append(drug_first_word)
 
                 # Extract keywords
                 print("\nGenerating keywords...")
@@ -99,7 +108,15 @@ class KeywordSuggestionHelper:
                 print(f"\nHere Are Suggested Drugs:")
                 if keyword_suggestions:
                     for i in range(len(keyword_suggestions)):
-                        print(f"{i + 1}: {keyword_suggestions[i]} ")
+                        if isinstance(keyword_suggestions[i], list):
+                            print(f"{i + 1}: ",end="")
+                            for j, keyword in enumerate(keyword_suggestions[i]):
+                                if j == len(keyword_suggestions[i]) - 1:
+                                    print(keyword)
+                                else:
+                                    print(f"{keyword}, ", end="")
+                        else:
+                            print(f"{i + 1}: {keyword_suggestions[i]}")
                     drug_idx = len(keyword_suggestions)
                 else:
                     print("No drug to suggest.")
@@ -107,13 +124,17 @@ class KeywordSuggestionHelper:
             # Collect new keywords
             for i, keywords in enumerate([extracted_keywords, extracted_keyphrases]):
                 for keyword in keywords:
+                    if len(keyword) < 3:
+                        continue
                     if keyword.count(" ") >= 3:
                         continue
-                    if keyword in suggested_keywords:
-                        continue
-                    keyword_variations = self.diversify_keywords_with_hyphen(keyword)  
-                    keyword_suggestions.extend(keyword_variations)
-                    suggested_keywords.update(keyword_variations)
+                    if keyword not in suggested_keywords:
+                        keyword_variations = self.diversify_keywords_with_hyphen(keyword)
+                        keyword_suggestions.append(keyword_variations)
+                        if isinstance(keyword_variations, list):
+                            suggested_keywords.extend(keyword_variations)
+                        else:
+                            suggested_keywords.append(keyword_variations)
 
                     if i == 0 and len(keyword_suggestions) >= drug_idx + keyword_idx + NUM_UNIGRAM_SUGGESTIONS or\
                        i == 1 and len(keyword_suggestions) >= drug_idx + keyword_idx + (NUM_UNIGRAM_SUGGESTIONS + NUM_MULTIGRAM_SUGGESTIONS):
@@ -122,7 +143,16 @@ class KeywordSuggestionHelper:
             # Let users select keywords to add
             print(f"\nHere Are Suggested Keywords:")
             for i in range(drug_idx + keyword_idx, len(keyword_suggestions)):
-                print(f"{i + 1}: {keyword_suggestions[i]} ")
+                if isinstance(keyword_suggestions[i], list):
+                    print(f"{i + 1}: ",end="")
+                    for j, keyword in enumerate(keyword_suggestions[i]):
+                        if j == len(keyword_suggestions[i]) - 1:
+                            print(keyword)
+                        else:
+                            print(f"{keyword}, ", end="")
+                else:
+                    print(f"{i + 1}: {keyword_suggestions[i]}")
+
             keyword_idx = len(keyword_suggestions)
 
             print("\nPlease enter the indices of the above suggested keywords you would like to add.")
@@ -133,7 +163,11 @@ class KeywordSuggestionHelper:
                 indices = indices.split(",")
                 indices = [index.strip() for index in indices]
                 indices = [int(index) - 1 for index in indices if index.isnumeric() and int(index) > 0 and int(index) <= len(keyword_suggestions)]
-                self.keywords.extend([keyword_suggestions[index] for index in indices])
+                for index in indices:
+                    if isinstance(keyword_suggestions[index], list):
+                        self.keywords.extend(keyword_suggestions[index])
+                    else:
+                        self.keywords.append(keyword_suggestions[index])
 
             while True:
                 cont = input(f"Would you like QMOHI to suggest more keywords? (Y/n) : ")
