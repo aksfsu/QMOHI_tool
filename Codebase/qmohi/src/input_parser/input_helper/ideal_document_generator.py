@@ -52,9 +52,12 @@ def clean_drug_name(drug):
     drug = drug.replace("®", "").replace("¶", "")
     drug = re.sub(r"\(.*\)", "", drug)
     drug = drug.strip().lower()
-    drug = re.sub(r"[()\",#/@;:<>{}`_+=~|\[\]]", "", drug)
-    drug = re.sub(r"([a-zA-Z]+)-(\d+)", r"\1\2", drug)
-    drug = re.sub(r"(\d+)-([a-zA-Z]+)", r"\1\2", drug)
+    drug = re.sub(r"[\",#/@;:<>{}`_+=~|\[\]]", " ", drug)
+    if not re.search(r".*\..*", drug):
+        drug = re.sub(r"([a-zA-Z]+)-(\d+)", r"\1\2", drug)
+        drug = re.sub(r"(\d+)-([a-zA-Z]+)", r"\1\2", drug)
+        drug = re.sub(r"([a-zA-Z]+) (\d+)$", r"\1\2", drug)
+        drug = re.sub(r"^(\d+) ([a-zA-Z]+)", r"\1\2", drug)
     drug = re.sub(r"-", " ", drug)
     drug = re.sub(r" +", " ", drug)
     return drug
@@ -270,7 +273,8 @@ def get_drugbank_information(output_file, url, keywords):
                 is_relevant = True
             text += background + " "
 
-    # Get the brand names
+    '''
+    # Get the indication
     indication = soup.find('dt', {'id': 'indication'})
     if indication:
         indication = indication.find_next_sibling()
@@ -282,6 +286,7 @@ def get_drugbank_information(output_file, url, keywords):
                 if any(keyword.lower() in p.lower() for keyword in keywords):
                     is_relevant = True
                 text += p + " "
+    '''
 
     if is_relevant:
         # output_file.write("\n\n")

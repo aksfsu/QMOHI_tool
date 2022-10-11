@@ -1,9 +1,8 @@
 import os
 import re
-from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric
+from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
 from keybert import KeyBERT
 from keyphrase_vectorizers import KeyphraseCountVectorizer
-from sklearn.feature_extraction.text import TfidfVectorizer
 
 class KeywordGenerator:
     def __init__(self):
@@ -23,13 +22,12 @@ class KeywordGenerator:
         doc = re.sub(r"www\S+", "", doc, flags=re.MULTILINE)
         # Remove stop words
         doc = remove_stopwords(doc)
-        doc = re.sub(r"\n", ". ", doc)
-        # Remove special characters
-        doc = re.sub(r"[()\",#/@;:<>{}`_+=~|\[\]]", " ", doc)
-        doc = re.sub(r"([a-zA-Z]+)-(\d+)", r"\1\2", doc)
-        doc = re.sub(r"(\d+)-([a-zA-Z]+)", r"\1\2", doc)
-        doc = re.sub(r"-", " ", doc)
-
+        # Remove punctuation
+        doc = strip_punctuation(doc)
+        # Remove non-alphanumeric characters
+        doc = strip_non_alphanum(doc)
+        # Remove numeric characters
+        doc = strip_numeric(doc)
         # Remove redundant white spaces
         doc = strip_multiple_whitespaces(doc)
         return doc
@@ -41,6 +39,6 @@ class KeywordGenerator:
 
         # Extract keywords
         keywords = [keyword for keyword, _ in self.kb.extract_keywords(doc, keyphrase_ngram_range=(1, 1), stop_words='english', use_mmr=True, diversity=0.7, top_n=1000)]
-        keyphrases = [keyword for keyword, _ in self.kb.extract_keywords(doc, vectorizer=KeyphraseCountVectorizer(), use_mmr=True, diversity=0.7, top_n=2000)]
+        keyphrases = [keyword for keyword, _ in self.kb.extract_keywords(doc, vectorizer=KeyphraseCountVectorizer(), use_mmr=True, diversity=0.7, top_n=1000)]
         
         return keywords, keyphrases

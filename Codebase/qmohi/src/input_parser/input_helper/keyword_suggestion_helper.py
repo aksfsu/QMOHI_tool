@@ -29,8 +29,15 @@ class KeywordSuggestionHelper:
             else:
                 print(f"{keyword}, ", end="")
 
+    def remove_duplicates_from_phrase(self, keyphrase):
+        keyphrase_wo_duplicates = []
+        for word in keyphrase.split(" "):
+            if word not in keyphrase_wo_duplicates:
+                keyphrase_wo_duplicates.append(word)
+        return " ".join(keyphrase_wo_duplicates)
+
     def diversify_keywords_with_hyphen(self, keyword):
-        if re.search(r"\d+\.\d+", keyword):
+        if re.search(r".*\..*", keyword):
             return keyword
         digit_indices = [(m.start(), m.end()) for m in re.finditer("\d+", keyword)]
         if digit_indices:
@@ -88,19 +95,23 @@ class KeywordSuggestionHelper:
                             keyword_suggestions.append(drug_variations)
                             if isinstance(drug_variations, list):
                                 suggested_keywords.extend(drug_variations)
+                                # Extract first word of a keyphrase
+                                drug_first_word = re.sub(r" .*", "", drug_variations[-1])
+                                if len(drug_first_word) >= 3 and drug != drug_first_word and drug_first_word not in suggested_keywords:
+                                    keyword_suggestions.append(drug_first_word)
+                                    suggested_keywords.append(drug_first_word)
                             else:
                                 suggested_keywords.append(drug_variations)
-                            # Extract first word of a keyphrase
-                            if re.search(r"\d+", drug):
-                                drug_first_word = re.sub(r" .*", "", drug_variations[-1])
-                                print(drug_first_word)
-                                if len(drug_first_word) > 3 and drug != drug_first_word and drug_first_word not in suggested_keywords:
+                                # Extract first word of a keyphrase
+                                drug_first_word = re.sub(r" .*", "", drug_variations)
+                                if len(drug_first_word) >= 3 and drug != drug_first_word and drug_first_word not in suggested_keywords:
                                     keyword_suggestions.append(drug_first_word)
                                     suggested_keywords.append(drug_first_word)
 
                 # Extract keywords
                 print("\nGenerating keywords...")
                 extracted_keywords, extracted_keyphrases = kg.generate_keywords_with_keybert(output_file_path)
+                extracted_keyphrases = [self.remove_duplicates_from_phrase(keyphrase) for keyphrase in extracted_keyphrases]
 
                 # Initialize index offsets
                 keyword_idx = 0
