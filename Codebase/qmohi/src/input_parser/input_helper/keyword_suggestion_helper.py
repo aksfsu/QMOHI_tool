@@ -80,11 +80,8 @@ class KeywordSuggestionHelper:
 
                 print("\nCollecting information...")
                 output_file_path = join(dirname(self.ideal_doc_path), self.get_topic(self.keywords[0]) + ".txt")
-                if len(self.keywords) <= 3:
-                    depth = 2
-                else:
-                    depth = 1
-                extracted_drugs = generate_ideal_document(output_file_path, self.api_keys, self.cse_id, depth=depth, keywords=self.keywords)
+                depth = 2 if len(self.keywords) <= 3 else 1
+                extracted_drugs = generate_ideal_document(output_file_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=False)
 
                 keyword_suggestions = []
                 if extracted_drugs:
@@ -188,6 +185,9 @@ class KeywordSuggestionHelper:
                 elif cont.lower() in ["n", "no"]:
                     iteration = 0
                     self.display_current_keywords()
+                    print("Generating the final comparison document...")
+                    depth = 2 if len(self.keywords) <= 3 else 1
+                    generate_ideal_document(output_file_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=True)
                     break
 
         return self.keywords
