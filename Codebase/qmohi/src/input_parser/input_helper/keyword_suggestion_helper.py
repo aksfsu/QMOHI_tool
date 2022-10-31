@@ -44,7 +44,6 @@ class KeywordSuggestionHelper:
 
         digit_indices = [(m.start(), m.end()) for m in re.finditer("\d+", keyword)]
         if digit_indices:
-            keyword_variations = [keyword]
             keyword_variation1 = keyword
             keyword_variation2 = keyword
             padding = 0
@@ -65,8 +64,9 @@ class KeywordSuggestionHelper:
     def suggest_keywords(self):
         iteration = 1
         kg = KeywordGenerator()
-        suggested_keywords = self.keywords[:] # Deepcopy
+        keyword_suggestions = []
         prev_keywords = []
+        offset_idx = 0
 
         while iteration:
             # Show current keywords
@@ -85,19 +85,16 @@ class KeywordSuggestionHelper:
                 depth = 2 if len(self.keywords) <= 3 else 1
                 extracted_drugs = generate_ideal_document(output_file_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=False)
 
-                keyword_suggestions = []
                 if extracted_drugs:
                     for drug in extracted_drugs:
-                        if drug not in suggested_keywords:
+                        if drug not in self.keywords and drug not in keyword_suggestions:
                             # Generate different versions of a keyword
                             drug_variations = self.diversify_keywords_with_hyphen(drug)
-                            keyword_suggestions.extend(drug_variations)
-                            suggested_keywords.extend(drug_variations)
+                            keyword_suggestions.append(drug_variations)
                             # Extract first word of a keyphrase
                             drug_first_word = re.sub(r" .*", "", drug_variations[-1])
-                            if len(drug_first_word) >= 3 and drug != drug_first_word and drug_first_word not in suggested_keywords:
-                                keyword_suggestions.append(drug_first_word)
-                                suggested_keywords.append(drug_first_word)
+                            if len(drug_first_word) >= 3 and drug != drug_first_word and drug_first_word not in self.keywords and drug_first_word not in keyword_suggestions:
+                                keyword_suggestions.append([drug_first_word])
 
                 # Extract keywords
                 print("\nGenerating keywords...")
@@ -108,9 +105,14 @@ class KeywordSuggestionHelper:
                 keyword_idx = 0
 
                 print(f"\nHere Are Suggested Drugs:")
-                if keyword_suggestions:
-                    for i in range(len(keyword_suggestions)):
-                        print(f"{i + 1}: {keyword_suggestions[i]}")
+                if extracted_drugs:
+                    for i in range(offset_idx, len(keyword_suggestions)):
+                        print(f"{i + 1}: ",end="")
+                        for j, keyword in enumerate(keyword_suggestions[i]):
+                            if j == len(keyword_suggestions[i]) - 1:
+                                print(keyword)
+                            else:
+                                print(f"{keyword}, ", end="")
                     drug_idx = len(keyword_suggestions)
                 else:
                     print("No drug to suggest.")
@@ -122,32 +124,78 @@ class KeywordSuggestionHelper:
                         continue
                     if keyword.count(" ") >= 3:
                         continue
-                    if keyword not in suggested_keywords:
+                    if keyword not in self.keywords and keyword not in keyword_suggestions:
                         keyword_variations = self.diversify_keywords_with_hyphen(keyword)
-                        keyword_suggestions.extend(keyword_variations)
-                        suggested_keywords.extend(keyword_variations)
-                    if i == 0 and len(keyword_suggestions) >= drug_idx + keyword_idx + NUM_UNIGRAM_SUGGESTIONS or\
-                       i == 1 and len(keyword_suggestions) >= drug_idx + keyword_idx + (NUM_UNIGRAM_SUGGESTIONS + NUM_MULTIGRAM_SUGGESTIONS):
+                        keyword_suggestions.append(keyword_variations)
+                    if i == 0 and len(keyword_suggestions) >= offset_idx + drug_idx + keyword_idx + NUM_UNIGRAM_SUGGESTIONS or\
+                       i == 1 and len(keyword_suggestions) >= offset_idx + drug_idx + keyword_idx + (NUM_UNIGRAM_SUGGESTIONS + NUM_MULTIGRAM_SUGGESTIONS):
                         break
 
             # Let users select keywords to add
             print(f"\nHere Are Suggested Keywords:")
-            for i in range(drug_idx + keyword_idx, len(keyword_suggestions)):
-                print(f"{i + 1}: {keyword_suggestions[i]}")
+            for i in range(offset_idx + drug_idx + keyword_idx, len(keyword_suggestions)):
+                print(f"{i + 1}: ",end="")
+                for j, keyword in enumerate(keyword_suggestions[i]):
+                    if j == len(keyword_suggestions[i]) - 1:
+                        print(keyword)
+                    else:
+                        print(f"{keyword}, ", end="")
 
-            keyword_idx = len(keyword_suggestions)
+            offset_idx = keyword_idx = len(keyword_suggestions)
 
             print("\nPlease enter the indices of the above suggested keywords you would like to add.")
             print('Please separate each number with ",". You can also combine two or more words with "+".')
             print('For example, given keywords 1: one, 2: two, then you can combine them as a single keyphrase "one two" by inputting "1 + 2".')
             print("You can skip this step by pressing enter.")
-            indices = input(f"Keyword Indices to Add: ")
-            if indices:
-                indices = indices.split(",")
-                indices = [[i.strip() for i in index.split("+")] for index in indices]
-                indices = [[int(i) - 1 for i in index if i.isnumeric() and int(i) > 0 and int(i) <= len(keyword_suggestions)] for index in indices]
-                for index in indices:
-                    self.keywords.append(" ".join([keyword_suggestions[i] for i in index]))
+            has_error = True
+            while has_error:
+                has_error = False
+                str_indices = input(f"Keyword Indices to Add: ")
+                if str_indices:
+                    str_indices = [str_index.strip() for str_index in str_indices.split(",")]
+                    keywords_to_add = []
+                    for i, index in enumerate(str_indices):
+                        if "+" in index:
+                            if "-" in index:
+                                has_error = True
+                                break
+                            parsed_indices = index.split("+")
+                            for p_i in range(len(parsed_indices)):
+                                parsed_indices[p_i] = parsed_indices[p_i].strip()
+                                if not parsed_indices[p_i].isnumeric() or int(parsed_indices[p_i]) <= 0 or int(parsed_indices[p_i]) > len(keyword_suggestions):
+                                    has_error = True
+                                    break
+                            parsed_indices = [int(p_i) - 1 for p_i in parsed_indices]
+                            for variation_i in range(3):
+                                keywords_to_add.append(" ".join([keyword_suggestions[index][min(len(keyword_suggestions[index]) - 1, variation_i)] for index in parsed_indices]))
+                        elif "-" in index:
+                            parsed_indices = index.split("-")
+                            if len(parsed_indices) > 2:
+                                has_error = True
+                                break
+                            for p_i in range(len(parsed_indices)):
+                                parsed_indices[p_i] = parsed_indices[p_i].strip()
+                                if not parsed_indices[p_i].isnumeric() or int(parsed_indices[p_i]) <= 0 or int(parsed_indices[p_i]) > len(keyword_suggestions):
+                                    has_error = True
+                                    break
+                            parsed_indices = [p_i - 1 for p_i in range(int(parsed_indices[0]), int(parsed_indices[1]) + 1)]
+                            for index in parsed_indices:
+                                keywords_to_add.extend(keyword_suggestions[index])
+                        else:
+                            if not str_indices[i].isnumeric() or int(str_indices[i]) <= 0 or int(str_indices[i]) > len(keyword_suggestions):
+                                has_error = True
+                                break
+                            keywords_to_add.extend(keyword_suggestions[int(str_indices[i]) - 1])
+
+                    if has_error:
+                        print('"+" and "-" operators cannot be used at the same time.')
+                        print('"-" can only be used once for each item.')
+                        print('e.g. 1+2-3 or 1-5-10 are invalid.')
+                        continue
+
+                    for keyword in keywords_to_add:
+                        if keyword not in self.keywords:
+                            self.keywords.append(keyword)
 
             while True:
                 cont = input(f"Would you like QMOHI to suggest more keywords? (Y/n) : ")

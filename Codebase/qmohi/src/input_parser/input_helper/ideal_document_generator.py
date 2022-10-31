@@ -342,9 +342,7 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth, num_of_th
         else:
             get_ideal_document(output_file, links[0], depth[1], visited_urls, drug_keywords, drug_details)
 
-        if keyword.count(" ") > 0:
-            keyword = '"' + keyword + '"'
-        links = search_obj.get_links_by_query(MEDLINEPLUS_DRUGS_URL, keyword)
+        links = search_obj.get_links_by_query(MEDLINEPLUS_DRUGS_URL, '"' + keyword + '"')
         links = [link["url"] for link in links]
         # print(links)
 
