@@ -162,7 +162,7 @@ class KeywordSuggestionHelper:
                 has_error = False
                 str_indices = input(f"Keyword Indices to Add: ")
                 if str_indices:
-                    str_indices = [str_index.strip() for str_index in str_indices.split(",")]
+                    str_indices = [str_index.strip() for str_index in str_indices.split(",") if str_index.strip()]
                     keywords_to_add = []
                     for i, index in enumerate(str_indices):
                         if "+" in index:
