@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from os.path import join, dirname
+from os.path import dirname
 from os import makedirs
 import re
 
@@ -63,8 +63,13 @@ def clean_drug_name(drug):
     return drug
 
 
+def include_keyword(keywords, text):
+    text = text.lower()
+    return any(keyword in text for keyword in keywords)
+
+
 # Get text data and export in the output file
-def get_ideal_document(output_file, url, depth, visited_urls, drug_keywords, drug_details):
+def get_ideal_document(output_file, url, keywords, depth, visited_urls, drug_keywords, drug_details):
     if depth == 0:
         return
 
@@ -72,13 +77,15 @@ def get_ideal_document(output_file, url, depth, visited_urls, drug_keywords, dru
     html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
     # Parse the HTML
     soup = BeautifulSoup(html, 'html.parser')
+    cleaned_keywords = [clean_drug_name(keyword) for keyword in keywords]
 
     # Retrieve information only once from the same websites
     urls = []
     if url not in visited_urls:
         visited_urls.add(url)
-
         text = ""
+        drugs = []
+
         # The term has a dedicated "Medical Encyclopedia" page
         if "ency" in url:
             # Get the page title element
@@ -132,27 +139,30 @@ def get_ideal_document(output_file, url, depth, visited_urls, drug_keywords, dru
 
         # The term has a dedicated "Drugs, Herbs and Supplements" page
         elif "druginfo" in url and re.search(r"\d+\.html$", url):
+            is_relevant = False
+            drug_text = ""
+
             h1 = soup.find('h1')
             if h1:
                 h1 = h1.get_text(separator=" ", strip=True)
                 h1 = clean_drug_name(h1)
-                if h1 not in drug_keywords:
-                    drug_keywords.append(h1)
-                if drug_details:
-                    text += h1 + " "
+                is_relevant |= include_keyword(cleaned_keywords, h1)
+                drugs.append(h1)
+                drug_text += h1 + " "
 
             # Get all the sections
             sections = soup.find_all('div', {'class': 'section'})
             if sections:
                 for section in sections:
-                    if drug_details:
-                        # Extract descriptions of the drug
-                        section_body = section.find('div', {'id': re.compile(r'section-\d+')})
-                        if section_body:
-                            # Collect internal links
-                            urls.extend(get_internal_links(section_body, url))
-                            # Get the text data
-                            text += section_body.get_text(separator=" ", strip=True) + " "
+                    # Extract descriptions of the drug
+                    section_body = section.find('div', {'id': re.compile(r'section-app\d+')})
+                    if section_body:
+                        section_text = section_body.get_text(separator=" ", strip=True)
+                        is_relevant |= include_keyword(cleaned_keywords, section_text)
+                        # Collect internal links
+                        urls.extend(get_internal_links(section_body, url))
+                        # Get the text data
+                        drug_text += section_text + " "
 
                     # Extract drug names
                     section_brandname = section.find('div', {'id': re.compile(r'section-brandname-\d+')})
@@ -164,10 +174,9 @@ def get_ideal_document(output_file, url, depth, visited_urls, drug_keywords, dru
                         for item in list_items:
                             item_text = item.get_text(separator=" ", strip=True)
                             item_text = clean_drug_name(item_text)
-                            if item_text not in drug_keywords:
-                                drug_keywords.append(item_text)
-                            if drug_details:
-                                text += item_text + " "
+                            is_relevant |= include_keyword(cleaned_keywords, item_text)
+                            drugs.append(item_text)
+                            drug_text += item_text + " "
 
                     section_other_name = section.find('div', {'id': re.compile('section-other-name')})
                     if section_other_name:
@@ -178,10 +187,16 @@ def get_ideal_document(output_file, url, depth, visited_urls, drug_keywords, dru
                         for item in list_items:
                             item_text = item.get_text(separator=" ", strip=True)
                             item_text = clean_drug_name(item_text)
-                            if item_text not in drug_keywords:
-                                drug_keywords.append(item_text)
-                            if drug_details:
-                                text += item_text + " "
+                            is_relevant |= include_keyword(cleaned_keywords, item_text)
+                            drugs.append(item_text)
+                            drug_text += item_text + " "
+                
+                if not is_relevant:
+                    drug_text = ""
+                    drugs = []
+
+                if drug_details:
+                    text += drug_text + " "
             else:
                 return
 
@@ -209,13 +224,17 @@ def get_ideal_document(output_file, url, depth, visited_urls, drug_keywords, dru
         output_file.write(text)
         output_file.write("\n\n")
 
+        for drug in drugs:
+            if not drug in drug_keywords:
+                drug_keywords.append(drug)
+
     # Crawl internal links
     for url in urls:
-        get_ideal_document(output_file, url, depth-1, visited_urls, drug_keywords, drug_details)
+        get_ideal_document(output_file, url, keywords, depth-1, visited_urls, drug_keywords, drug_details)
     return
 
 
-def get_drugbank_information(output_file, url, drug_keywords, drug_details):
+def get_drugbank_information(output_file, url, keywords, drug_keywords, drug_details):
     # Get the HTML based on URL
     try:
         html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
@@ -226,6 +245,7 @@ def get_drugbank_information(output_file, url, drug_keywords, drug_details):
     soup = BeautifulSoup(html, 'html.parser')
 
     text = ""
+    drugs = []
 
     # Get the summary
     summary = soup.find('dt', {'id': 'summary'})
@@ -245,8 +265,7 @@ def get_drugbank_information(output_file, url, drug_keywords, drug_details):
             brand_names = brand_names.split(", ")
             for brand_name in brand_names:
                 brand_name = clean_drug_name(brand_name)
-                if brand_name not in drug_keywords:
-                    drug_keywords.append(brand_name)
+                drugs.append(brand_name)
                 text += brand_name + " "
 
     # Get the generic name
@@ -259,8 +278,7 @@ def get_drugbank_information(output_file, url, drug_keywords, drug_details):
             generic_names = generic_names.split(", ")
             for generic_name in generic_names:
                 generic_name = clean_drug_name(generic_name)
-                if generic_name not in drug_keywords:
-                    drug_keywords.append(generic_name)
+                drugs.append(generic_name)
                 text += generic_name + " "
             
     # Get the external IDs
@@ -273,8 +291,7 @@ def get_drugbank_information(output_file, url, drug_keywords, drug_details):
                 # Get the text data
                 extids_name = extids_name.get_text(separator=" ", strip=True).replace("(", "").replace(")", "")
                 extids_name = clean_drug_name(extids_name)
-                if extids_name not in drug_keywords:
-                    drug_keywords.append(extids_name)
+                drugs.append(extids_name)
                 text += extids_name + " "
 
     # Get the background
@@ -300,6 +317,10 @@ def get_drugbank_information(output_file, url, drug_keywords, drug_details):
         output_file.writelines(["[", url, "]\n"])
         output_file.write(text)
 
+    for drug in drugs:
+        if not drug in drug_keywords:
+            drug_keywords.append(drug)
+
 
 def sort_drugs(drugs, keywords):
     relevant_drugs = [[] for i in range(len(keywords))]
@@ -324,6 +345,7 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth, num_of_th
     drug_keywords = []
 
     for i, keyword in enumerate(keywords):
+        print(f"   [{keyword}]")
         links = search_obj.get_links_by_query(MEDLINEPLUS_URL, keyword)
         links = [link["url"] for link in links]
         # print(links)
@@ -333,32 +355,32 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth, num_of_th
             continue
 
         # Extract documents
+        print("   Collecting gerenal description...")
         if i == 0:
-            get_ideal_document(output_file, links[0], depth[0], visited_urls, drug_keywords, drug_details)
+            get_ideal_document(output_file, links[0], keywords, depth[0], visited_urls, drug_keywords, drug_details)
         else:
-            get_ideal_document(output_file, links[0], depth[1], visited_urls, drug_keywords, drug_details)
+            get_ideal_document(output_file, links[0], keywords, depth[1], visited_urls, drug_keywords, drug_details)
 
-        links = search_obj.get_links_by_query(MEDLINEPLUS_DRUGS_URL, '"' + keyword + '"')
+        print("   Collecting therapy information...")
+        if keyword.count(" ") > 0:
+            keyword = '"' + keyword + '"'
+
+        # DrugBank Information on MedlinePlus Drug DB
+        links = search_obj.get_links_by_query(MEDLINEPLUS_DRUGS_URL, keyword)
         links = [link["url"] for link in links]
         # print(links)
-
-        # Try next term if no website was found
-        if not len(links):
-            continue
-
-        # Extract documents
         for link in links:
-            get_ideal_document(output_file, link, 1, visited_urls, drug_keywords, drug_details)
+            if link not in visited_urls:
+                get_ideal_document(output_file, link, keywords, 1, visited_urls, drug_keywords, drug_details)
 
-    # DrugBank Information with Google API
-    for keyword in keywords:
-        therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, '"' + keyword + '"')
+        # DrugBank Information on DrugBank
+        therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, keyword)
         therapy_links = [link["url"] for link in therapy_links]
         for link in therapy_links[:min(len(therapy_links), num_of_therapy)]:
             link = re.sub(r"(DB\d+)/.*", r"\1", link)
             if link not in visited_urls:
                 visited_urls.add(link)
-                get_drugbank_information(output_file, link, drug_keywords, drug_details)
+                get_drugbank_information(output_file, link, keywords, drug_keywords, drug_details)
 
     # Close the output file
     output_file.close()
