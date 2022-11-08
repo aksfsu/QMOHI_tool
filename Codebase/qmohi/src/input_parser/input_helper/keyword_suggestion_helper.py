@@ -62,7 +62,7 @@ class KeywordSuggestionHelper:
                 keyword_variations.append(keyword_variation2)
         return keyword_variations
 
-    def has_overlap(self, word):
+    def has_duplicate(self, word):
         if word in self.keywords:
             return True
         for keyword_suggestion in self.keyword_suggestions:
@@ -95,15 +95,14 @@ class KeywordSuggestionHelper:
 
                 if extracted_drugs:
                     for drug in extracted_drugs:
-                        if not self.has_overlap(drug):
-                            print(drug)
+                        if not self.has_duplicate(drug):
                             # Generate different versions of a keyword
                             drug_variations = self.diversify_keywords_with_hyphen(drug)
                             self.keyword_suggestions.append(drug_variations)
                             # Extract first word of a keyphrase
                             if drug_variations[-1].count(" ") > 0:
                                 drug_first_word = re.sub(r"\.* .*", "", drug_variations[-1])
-                                if len(drug_first_word) >= 3 and not self.has_overlap(drug_first_word):
+                                if len(drug_first_word) >= 3 and not self.has_duplicate(drug_first_word):
                                     self.keyword_suggestions.append([drug_first_word])
 
                 # Extract keywords
@@ -134,7 +133,7 @@ class KeywordSuggestionHelper:
                         continue
                     if keyword.count(" ") >= 3:
                         continue
-                    if not self.has_overlap(keyword):
+                    if not self.has_duplicate(keyword):
                         keyword_variations = self.diversify_keywords_with_hyphen(keyword)
                         self.keyword_suggestions.append(keyword_variations)
                     if i == 0 and len(self.keyword_suggestions) >= offset_idx + drug_idx + keyword_idx + NUM_UNIGRAM_SUGGESTIONS or\
