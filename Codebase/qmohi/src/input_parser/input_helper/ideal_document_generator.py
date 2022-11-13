@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 from os.path import dirname
 from os import makedirs
 import re
+from nltk.stem import WordNetLemmatizer
 
 from qmohi.src.input_parser.input_helper.cse_handler import CSEHandler
 
@@ -63,13 +64,13 @@ def clean_drug_name(drug):
     return drug
 
 
-def include_keyword(keywords, text):
-    text = text.lower()
-    return any(keyword in text for keyword in keywords)
+def lemmatize_word(word):
+    lemmatizer = WordNetLemmatizer()
+    return " ".join([lemmatizer.lemmatize(w) for w in word])
 
 
 # Get text data and export in the output file
-def get_ideal_document(output_file, url, keywords, depth, visited_urls, drug_keywords, drug_details):
+def get_ideal_document(output_file, url, depth, visited_urls, drug_keywords, drug_details):
     if depth == 0:
         return
 
@@ -77,7 +78,6 @@ def get_ideal_document(output_file, url, keywords, depth, visited_urls, drug_key
     html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
     # Parse the HTML
     soup = BeautifulSoup(html, 'html.parser')
-    cleaned_keywords = [clean_drug_name(keyword) for keyword in keywords]
 
     # Retrieve information only once from the same websites
     urls = []
@@ -146,7 +146,6 @@ def get_ideal_document(output_file, url, keywords, depth, visited_urls, drug_key
             if h1:
                 h1 = h1.get_text(separator=" ", strip=True)
                 h1 = clean_drug_name(h1)
-                is_relevant |= include_keyword(cleaned_keywords, h1)
                 drugs.append(h1)
                 drug_text += h1 + " "
 
@@ -157,12 +156,10 @@ def get_ideal_document(output_file, url, keywords, depth, visited_urls, drug_key
                     # Extract descriptions of the drug
                     section_body = section.find('div', {'id': re.compile(r'section-app\d+')})
                     if section_body:
-                        section_text = section_body.get_text(separator=" ", strip=True)
-                        is_relevant |= include_keyword(cleaned_keywords, section_text)
                         # Collect internal links
                         urls.extend(get_internal_links(section_body, url))
                         # Get the text data
-                        drug_text += section_text + " "
+                        drug_text += section_body.get_text(separator=" ", strip=True) + " "
 
                     # Extract drug names
                     section_brandname = section.find('div', {'id': re.compile(r'section-brandname-\d+')})
@@ -174,7 +171,6 @@ def get_ideal_document(output_file, url, keywords, depth, visited_urls, drug_key
                         for item in list_items:
                             item_text = item.get_text(separator=" ", strip=True)
                             item_text = clean_drug_name(item_text)
-                            is_relevant |= include_keyword(cleaned_keywords, item_text)
                             drugs.append(item_text)
                             drug_text += item_text + " "
 
@@ -187,13 +183,8 @@ def get_ideal_document(output_file, url, keywords, depth, visited_urls, drug_key
                         for item in list_items:
                             item_text = item.get_text(separator=" ", strip=True)
                             item_text = clean_drug_name(item_text)
-                            is_relevant |= include_keyword(cleaned_keywords, item_text)
                             drugs.append(item_text)
                             drug_text += item_text + " "
-                
-                if not is_relevant:
-                    drug_text = ""
-                    drugs = []
 
                 if drug_details:
                     text += drug_text + " "
@@ -220,9 +211,10 @@ def get_ideal_document(output_file, url, keywords, depth, visited_urls, drug_key
             urls.extend(get_internal_links(side, url))
 
         # Export into a text file
-        output_file.writelines(["[", url, "]\n"])
-        output_file.write(text)
-        output_file.write("\n\n")
+        if text:
+            output_file.writelines(["[", url, "]\n"])
+            output_file.write(text)
+            output_file.write("\n\n")
 
         for drug in drugs:
             if not drug in drug_keywords:
@@ -230,11 +222,11 @@ def get_ideal_document(output_file, url, keywords, depth, visited_urls, drug_key
 
     # Crawl internal links
     for url in urls:
-        get_ideal_document(output_file, url, keywords, depth-1, visited_urls, drug_keywords, drug_details)
+        get_ideal_document(output_file, url, depth-1, visited_urls, drug_keywords, drug_details)
     return
 
 
-def get_drugbank_information(output_file, url, keywords, drug_keywords, drug_details):
+def get_drugbank_information(output_file, url, drug_keywords, drug_details):
     # Get the HTML based on URL
     try:
         html = asyncio.get_event_loop().run_until_complete(get_html_from_url(url))
@@ -312,7 +304,7 @@ def get_drugbank_information(output_file, url, keywords, drug_keywords, drug_det
                 # Get the text data
                 text += p.get_text(separator=" ", strip=True) + " "
 
-    if drug_details:
+    if drug_details and text:
         output_file.write("\n\n")
         output_file.writelines(["[", url, "]\n"])
         output_file.write(text)
@@ -333,6 +325,7 @@ def sort_drugs(drugs, keywords):
             other_drugs.append(drug)
     return [drug for relevant_drug in relevant_drugs for drug in relevant_drug] + other_drugs
 
+
 def generate_ideal_document(output_file_path, api_keys, cse_id, depth, num_of_therapy=5, keywords=[], drug_details=True):
     # Instanciate the CSE handler
     search_obj = CSEHandler(api_keys[0], cse_id)
@@ -345,7 +338,7 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth, num_of_th
     drug_keywords = []
 
     for i, keyword in enumerate(keywords):
-        print(f"   [{keyword}]")
+        print(f"   Search Term: {keyword}")
         links = search_obj.get_links_by_query(MEDLINEPLUS_URL, keyword)
         links = [link["url"] for link in links]
         # print(links)
@@ -357,30 +350,32 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth, num_of_th
         # Extract documents
         print("   Collecting gerenal description...")
         if i == 0:
-            get_ideal_document(output_file, links[0], keywords, depth[0], visited_urls, drug_keywords, drug_details)
+            get_ideal_document(output_file, links[0], depth[0], visited_urls, drug_keywords, drug_details)
         else:
-            get_ideal_document(output_file, links[0], keywords, depth[1], visited_urls, drug_keywords, drug_details)
+            get_ideal_document(output_file, links[0], depth[1], visited_urls, drug_keywords, drug_details)
 
         print("   Collecting therapy information...")
-        if keyword.count(" ") > 0:
-            keyword = '"' + keyword + '"'
 
         # DrugBank Information on MedlinePlus Drug DB
-        links = search_obj.get_links_by_query(MEDLINEPLUS_DRUGS_URL, keyword)
+        query = '"' + keyword + '"'
+        lemmatized_keyword = lemmatize_word(keyword)
+        if lemmatized_keyword != keyword:
+            query += ' OR "' + lemmatized_keyword + '"'
+        links = search_obj.get_links_by_query(MEDLINEPLUS_DRUGS_URL, query)
         links = [link["url"] for link in links]
         # print(links)
         for link in links:
             if link not in visited_urls:
-                get_ideal_document(output_file, link, keywords, 1, visited_urls, drug_keywords, drug_details)
+                get_ideal_document(output_file, link, 1, visited_urls, drug_keywords, drug_details)
 
         # DrugBank Information on DrugBank
-        therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, keyword)
+        therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, query)
         therapy_links = [link["url"] for link in therapy_links]
         for link in therapy_links[:min(len(therapy_links), num_of_therapy)]:
             link = re.sub(r"(DB\d+)/.*", r"\1", link)
             if link not in visited_urls:
                 visited_urls.add(link)
-                get_drugbank_information(output_file, link, keywords, drug_keywords, drug_details)
+                get_drugbank_information(output_file, link, drug_keywords, drug_details)
 
     # Close the output file
     output_file.close()
