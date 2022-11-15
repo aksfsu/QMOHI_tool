@@ -15,6 +15,7 @@ class KeywordSuggestionHelper:
         self.ideal_doc_path = ideal_doc_path
         self.keywords = keywords
         self.keyword_suggestions = []
+        self.topic_token = keywords[0].split(" ")
 
     def get_topic(self, query):
         idx = query.find(" OR ")
@@ -63,11 +64,13 @@ class KeywordSuggestionHelper:
         return keyword_variations
 
     def has_duplicate(self, word):
-        if word in self.keywords:
-            return True
         for keyword_suggestion in self.keyword_suggestions:
             if word in keyword_suggestion:
                 return True
+
+        if word in self.keywords:
+            return True
+
         return False
 
     def suggest_keywords(self):
@@ -75,6 +78,7 @@ class KeywordSuggestionHelper:
         kg = KeywordGenerator()
         prev_keywords = []
         offset_idx = 0
+        keyword_offset_idx = 0
 
         while iteration:
             # Show current keywords
@@ -82,7 +86,7 @@ class KeywordSuggestionHelper:
             self.display_current_keywords()
 
             # Initialize drug index offset
-            drug_idx = 0
+            drug_offset_idx = 0
             
             # Generate comparison document
             if prev_keywords != self.keywords:
@@ -111,7 +115,7 @@ class KeywordSuggestionHelper:
                 extracted_keyphrases = [self.remove_duplicates_from_phrase(keyphrase) for keyphrase in extracted_keyphrases]
 
                 # Initialize index offsets
-                keyword_idx = 0
+                keyword_offset_idx = 0
 
                 print(f"\nHere Are Suggested Drugs:")
                 if extracted_drugs:
@@ -122,12 +126,18 @@ class KeywordSuggestionHelper:
                                 print(keyword)
                             else:
                                 print(f"{keyword}, ", end="")
-                    drug_idx = len(self.keyword_suggestions)
+                    drug_offset_idx = len(self.keyword_suggestions)
                 else:
                     print("No drug to suggest.")
 
+            offset_topic_token = len(self.topic_token)
+            if self.topic_token:
+                for token in self.topic_token:
+                    self.keyword_suggestions.append([token])
+                self.topic_token.clear()
+
             # Collect new keywords
-            for i, keywords in enumerate([extracted_keywords, extracted_keyphrases]):
+            for i, keywords in enumerate([extracted_keywords[keyword_offset_idx:], extracted_keyphrases[keyword_offset_idx:]]):
                 for keyword in keywords:
                     if len(keyword) < 3:
                         continue
@@ -136,13 +146,14 @@ class KeywordSuggestionHelper:
                     if not self.has_duplicate(keyword):
                         keyword_variations = self.diversify_keywords_with_hyphen(keyword)
                         self.keyword_suggestions.append(keyword_variations)
-                    if i == 0 and len(self.keyword_suggestions) >= offset_idx + drug_idx + keyword_idx + NUM_UNIGRAM_SUGGESTIONS or\
-                       i == 1 and len(self.keyword_suggestions) >= offset_idx + drug_idx + keyword_idx + (NUM_UNIGRAM_SUGGESTIONS + NUM_MULTIGRAM_SUGGESTIONS):
+                    if i == 0 and len(self.keyword_suggestions) >= offset_idx + drug_offset_idx + offset_topic_token + NUM_UNIGRAM_SUGGESTIONS or\
+                       i == 1 and len(self.keyword_suggestions) >= offset_idx + drug_offset_idx + offset_topic_token + (NUM_UNIGRAM_SUGGESTIONS + NUM_MULTIGRAM_SUGGESTIONS):
+                        keyword_offset_idx = i
                         break
 
             # Let users select keywords to add
             print(f"\nHere Are Suggested Keywords:")
-            for i in range(offset_idx + drug_idx + keyword_idx, len(self.keyword_suggestions)):
+            for i in range(offset_idx + drug_offset_idx, len(self.keyword_suggestions)):
                 print(f"{i + 1}: ",end="")
                 for j, keyword in enumerate(self.keyword_suggestions[i]):
                     if j == len(self.keyword_suggestions[i]) - 1:
@@ -150,7 +161,7 @@ class KeywordSuggestionHelper:
                     else:
                         print(f"{keyword}, ", end="")
 
-            offset_idx = keyword_idx = len(self.keyword_suggestions)
+            offset_idx = len(self.keyword_suggestions)
 
             print("\nPlease enter the indices of the above suggested keywords you would like to add.")
             print('Please separate each number with ",". You can also combine two or more words with "+".')
