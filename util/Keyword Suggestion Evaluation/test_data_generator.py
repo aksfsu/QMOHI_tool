@@ -1,12 +1,13 @@
 import sys
 
 from bs4 import BeautifulSoup
-from os.path import join, dirname
 from os import makedirs
 import re
 import requests
 from collections import Counter
 import pandas as pd
+from os import listdir
+from os.path import isfile, join, dirname
 
 from nltk.stem import WordNetLemmatizer
 
@@ -141,27 +142,29 @@ def test_coverage(keywords, gs_keywords):
     return sum(gs_keyword in keywords for gs_keyword in gs_keywords) / len(gs_keywords)
 
 
-def evaluate_result(inpput_path):
-    input_data = get_input_keywords(inpput_path)
-    topic = input_data[0]
-    print(topic)
+def evaluate_result(inpput_dir):
+    result_file_paths = [join(inpput_dir, f) for f in listdir(inpput_dir) if f.endswith(".csv") and isfile(join(inpput_dir, f))]
+    for file_path in result_file_paths:
+        print(file_path)
+        input_data = get_input_keywords(file_path)
+        topic = input_data[0]
 
-    test_data = load_test_data()
-    print(test_data)
-    if topic not in test_data:
-        print("No test data.")
-        return
+        test_data = load_test_data()
+        if topic not in test_data:
+            print(f"No test data for {topic}.")
+            continue
 
-	# Coverage Test
-    coverage = test_coverage(input_data, test_data[topic])
-    print(f"Coverage Test: {coverage}")
-    df = pd.DataFrame({
-        'Time': [pd.Timestamp.today()],
-        'Test Keywords': [test_data[topic]],
-        'Input Keywords': [input_data],
-        'Coverage': [round(coverage, 3)]
-    })
-    df.to_csv('test_result.csv', mode='a', index=False, header=False)
+        # Coverage Test
+        coverage = test_coverage(input_data, test_data[topic])
+        print(f"[{topic}] Coverage Test: {coverage}")
+        df = pd.DataFrame({
+            'Topic': [topic],
+            'Time': [pd.Timestamp.today()],
+            'Test Keywords': [test_data[topic]],
+            'Input Keywords': [input_data],
+            'Coverage': [round(coverage, 3)]
+        })
+        df.to_csv('test_result.csv', mode='a', index=False, header=False)
 
 
 def batch_generate_test_data():    
