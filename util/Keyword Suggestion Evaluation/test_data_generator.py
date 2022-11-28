@@ -10,6 +10,7 @@ from os import listdir
 from os.path import isfile, join, dirname
 
 from nltk.stem import WordNetLemmatizer
+from gensim.parsing.preprocessing import STOPWORDS
 
 import asyncio
 import pyppeteer
@@ -135,32 +136,51 @@ def get_input_keywords(intput_path):
     return keywords['Keywords'].tolist()
 
 
-def test_coverage(keywords, gs_keywords):
+def standardize_keywords(keywords):
     lemmatizer = WordNetLemmatizer()
-    keywords = set([lemmatizer.lemmatize(keyword) for keyword in keywords])
-    gs_keywords = set([lemmatizer.lemmatize(gs_keyword) for gs_keyword in gs_keywords])
+    standardized_keywords = []
+    for keyword in keywords:
+        lemmatized_keyword = []
+        isValid = True
+        for word in keyword.split(" "):
+            word = word.lower()
+            if word in STOPWORDS:
+                isValid = False
+                break
+            lemmatized_keyword.append(lemmatizer.lemmatize(word))
+        if isValid:
+            standardized_keywords.append(" ".join(lemmatized_keyword))
+    return set(standardized_keywords)
+
+
+def test_coverage(keywords, gs_keywords):
+    if len(gs_keywords) == 0:
+        return 0
     return sum(gs_keyword in keywords for gs_keyword in gs_keywords) / len(gs_keywords)
 
 
 def evaluate_result(inpput_dir):
+    test_data_dict = load_test_data()
     result_file_paths = [join(inpput_dir, f) for f in listdir(inpput_dir) if f.endswith(".csv") and isfile(join(inpput_dir, f))]
+    
     for file_path in result_file_paths:
         print(file_path)
         input_data = get_input_keywords(file_path)
         topic = input_data[0]
 
-        test_data = load_test_data()
-        if topic not in test_data:
+        if topic not in test_data_dict:
             print(f"No test data for {topic}.")
             continue
 
         # Coverage Test
-        coverage = test_coverage(input_data, test_data[topic])
+        input_data = standardize_keywords(input_data[1:])
+        test_data = standardize_keywords(test_data_dict[topic])
+        coverage = test_coverage(input_data, test_data)
         print(f"[{topic}] Coverage Test: {coverage}")
         df = pd.DataFrame({
             'Topic': [topic],
             'Time': [pd.Timestamp.today()],
-            'Test Keywords': [test_data[topic]],
+            'Test Keywords': [test_data],
             'Input Keywords': [input_data],
             'Coverage': [round(coverage, 3)]
         })
