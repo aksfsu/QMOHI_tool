@@ -85,9 +85,6 @@ class KeywordSuggestionHelper:
             print(f'\n__Iteration {iteration}__')
             self.display_current_keywords()
 
-            # Initialize drug index offset
-            drug_offset_idx = 0
-            
             # Generate comparison document
             if prev_keywords != self.keywords:
                 prev_keywords = self.keywords[:] # Deepcopy
@@ -126,7 +123,7 @@ class KeywordSuggestionHelper:
                                 print(keyword)
                             else:
                                 print(f"{keyword}, ", end="")
-                    drug_offset_idx = len(self.keyword_suggestions)
+                    offset_idx = len(self.keyword_suggestions)
                 else:
                     print("No drug to suggest.")
 
@@ -146,14 +143,14 @@ class KeywordSuggestionHelper:
                     if not self.has_duplicate(keyword):
                         keyword_variations = self.diversify_keywords_with_hyphen(keyword)
                         self.keyword_suggestions.append(keyword_variations)
-                    if i == 0 and len(self.keyword_suggestions) >= offset_idx + drug_offset_idx + offset_topic_token + NUM_UNIGRAM_SUGGESTIONS or\
-                       i == 1 and len(self.keyword_suggestions) >= offset_idx + drug_offset_idx + offset_topic_token + (NUM_UNIGRAM_SUGGESTIONS + NUM_MULTIGRAM_SUGGESTIONS):
+                    if i == 0 and len(self.keyword_suggestions) >= offset_idx + offset_topic_token + NUM_UNIGRAM_SUGGESTIONS or\
+                       i == 1 and len(self.keyword_suggestions) >= offset_idx + offset_topic_token + (NUM_UNIGRAM_SUGGESTIONS + NUM_MULTIGRAM_SUGGESTIONS):
                         keyword_offset_idx = i
                         break
 
             # Let users select keywords to add
             print(f"\nHere Are Suggested Keywords:")
-            for i in range(offset_idx + drug_offset_idx, len(self.keyword_suggestions)):
+            for i in range(offset_idx, len(self.keyword_suggestions)):
                 print(f"{i + 1}: ",end="")
                 for j, keyword in enumerate(self.keyword_suggestions[i]):
                     if j == len(self.keyword_suggestions[i]) - 1:
