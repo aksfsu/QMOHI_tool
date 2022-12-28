@@ -4,7 +4,7 @@ from os.path import isfile, join
 import pandas as pd
 import numpy as np
 from gensim.corpora import Dictionary
-from gensim.parsing.preprocessing import remove_stopwords, strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
+from gensim.parsing.preprocessing import strip_multiple_whitespaces, strip_non_alphanum, strip_numeric, strip_punctuation
 from gensim.utils import tokenize
 
 class CustomizableTfidfVectorizer:
@@ -48,7 +48,7 @@ class CustomizableTfidfVectorizer:
     def __get_token_list(self, doc):
         # Data cleaning
         doc = self.__preprocess_document(doc)
-        return list(tokenize(doc, to_lower=True, deacc = True))
+        return list(tokenize(doc, to_lower=True, deacc=True))
 
     # Get tokens in Gensim Dictionary instance
     def __get_token_dict(self, docs):
@@ -163,6 +163,7 @@ class CustomizableTfidfVectorizer:
                 features.add(k[1])
         return features
 
+'''
 def test():
     # Toy corpora
     tf_docs = [
@@ -180,19 +181,21 @@ def test():
         "we cannot divide by 0, we smoothen the value by adding 1 to the denominator."
     ]
 
-    # Test script
+    # Test case1
     ctfidf = CustomizableTfidfVectorizer(tf_docs, idf_docs)
     tfidf_vec = ctfidf.get_tfidf_vec()
     print(tfidf_vec)
     print(ctfidf.id2doc(0))
     print(ctfidf.id2token(2))
     ctfidf.rank_tfidf(5, print_=True)
-    '''
+
+    # Test case2
     ctfidf = CustomizableTfidfVectorizer([], idf_dir="./health_topics_summary")
     ctfidf.update(tf_docs)
     print(ctfidf.idf_doc_num)
     print(ctfidf.most_common_idf(50))
     print(ctfidf.rank_tfidf(10))
-    '''
+
 # Run the test
 # test()
+'''
