@@ -1,19 +1,18 @@
 import urllib.request
 import urllib.error
 import urllib.parse
-import os
+from os import makedirs
 from os.path import join
 
 
 def save_webpage_content(input_dataframe, output_dir):
 	# Create new directory inside output_directory for saving web pages
 	save_output_path = join(output_dir, "saved_webpages")
-	os.makedirs(save_output_path)
+	makedirs(save_output_path)
 	print(f"Path to the saved web pages: {save_output_path}")
 
 	# For every university
-	for index, row in input_dataframe.iterrows():
-
+	for _, row in input_dataframe.iterrows():
 		university = row['University name']
 		link_data = row['Keywords matched webpages on SHC']
 
@@ -21,7 +20,7 @@ def save_webpage_content(input_dataframe, output_dir):
 		save_output = join(save_output_path, university)
 
 		# Creating new directory for storing web pages of every university
-		os.makedirs(save_output)
+		makedirs(save_output, exist_ok=True)
 
 		for i in range(len(link_data)):
 			try:
