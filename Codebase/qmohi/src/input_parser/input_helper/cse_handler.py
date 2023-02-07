@@ -31,17 +31,12 @@ class CSEHandler:
 			# Items contain all the retrieved results
 			if 'items' in response:
 				for item in response['items']:
-					if item['link'].endswith(".pdf"):
+					if item['link'].endswith(".pdf") or\
+					   'mime' in item and 'pdf' in item['mime'].lower() or\
+					   'fileFormat' in item and 'pdf' in item['fileFormat'].lower():
 						content_format = 'pdf'
-						# Mask this feature for now
-						continue
-					elif 'mime' in item and 'pdf' in item['mime'].lower():
-						content_format = 'pdf'
-						# Mask this feature for now
-						continue
-					elif 'fileFormat' in item and 'pdf' in item['fileFormat'].lower():
-						content_format = 'pdf'
-						# Mask this feature for now
+					elif item['link'].endswith(".doc") or item['link'].endswith(".docx"):
+						# MS Word format is not supported
 						continue
 					else:
 						content_format = 'html'

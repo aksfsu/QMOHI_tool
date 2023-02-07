@@ -89,7 +89,7 @@ def execute(input_file_path):
 	result_dataframe4 = get_shc_webpages_with_keywords.get_links(result_dataframe3, query_keywords, keys_list_for_site_specific_search, cse_id, output_dir)
 
 	# Store web pages in html format
-	print("\nSaving web pages locally in HTML format...")
+	print("\nSaving web pages on local computer...")
 	store_webpages.save_webpage_content(result_dataframe4, output_dir)
 
 	# Find relevant content from retrieved website data
