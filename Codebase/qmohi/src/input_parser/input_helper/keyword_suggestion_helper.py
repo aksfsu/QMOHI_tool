@@ -90,9 +90,8 @@ class KeywordSuggestionHelper:
                 prev_keywords = self.keywords[:] # Deepcopy
 
                 print("\nCollecting information...")
-                output_file_path = join(dirname(self.ideal_doc_path), self.get_topic(self.keywords[0]) + ".txt")
                 depth = 2 if len(self.keywords) <= 3 else 1
-                extracted_drugs = generate_ideal_document(output_file_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=False)
+                extracted_drugs = generate_ideal_document(self.ideal_doc_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=False)
 
                 if extracted_drugs:
                     for drug in extracted_drugs:
@@ -108,7 +107,7 @@ class KeywordSuggestionHelper:
 
                 # Extract keywords
                 print("\nGenerating keywords...")
-                extracted_keywords, extracted_keyphrases = kg.generate_keywords_with_keybert(output_file_path)
+                extracted_keywords, extracted_keyphrases = kg.generate_keywords_with_keybert(self.ideal_doc_path)
                 extracted_keyphrases = [self.remove_duplicates_from_phrase(keyphrase) for keyphrase in extracted_keyphrases]
 
                 # Initialize index offsets
@@ -224,7 +223,7 @@ class KeywordSuggestionHelper:
                     self.display_current_keywords()
                     print("\nGenerating the final comparison document...")
                     depth = 2 if len(self.keywords) <= 3 else 1
-                    generate_ideal_document(output_file_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=True)
+                    generate_ideal_document(self.ideal_doc_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=True)
                     break
 
         return self.keywords
