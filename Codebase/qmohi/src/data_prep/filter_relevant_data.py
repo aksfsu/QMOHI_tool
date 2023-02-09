@@ -24,7 +24,7 @@ nltk.download('gutenberg')  # Can be run only once in the beginning
 
 def get_text_from_image(image_path):
     # Extract text
-    reader = easyocr.Reader(['en'])
+    reader = easyocr.Reader(['en'], verbose=False)
     return " ".join(reader.readtext(image_path, detail=0))
 
 
