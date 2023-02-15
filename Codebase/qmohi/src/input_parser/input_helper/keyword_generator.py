@@ -33,7 +33,7 @@ class KeywordGenerator:
         return doc
 
     def generate_keywords_with_keybert(self, file_path):
-        # Read the ideal document for the given term
+        # Read the comparison document for the given term
         doc = self.__get_text_from_file(file_path)
         doc = self.__preprocess_document(doc)
 

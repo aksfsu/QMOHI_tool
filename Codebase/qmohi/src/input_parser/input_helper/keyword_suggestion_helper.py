@@ -1,6 +1,5 @@
 import re
-from os.path import join, dirname
-from qmohi.src.input_parser.input_helper.ideal_document_generator import generate_ideal_document
+from qmohi.src.input_parser.input_helper.comparison_document_generator import generate_comparison_document
 from qmohi.src.input_parser.input_helper.keyword_generator import KeywordGenerator
 
 NUM_UNIGRAM_SUGGESTIONS = 20
@@ -9,11 +8,12 @@ COMPARISON_DOCUMENT_PATH = "./"
 
 
 class KeywordSuggestionHelper:
-    def __init__(self, api_keys, cse_id, ideal_doc_path, keywords):
+    def __init__(self, api_keys, cse_id, comparison_doc_path, keywords, generate_comparison_document):
         self.api_keys = api_keys
         self.cse_id = cse_id
-        self.ideal_doc_path = ideal_doc_path
+        self.comparison_doc_path = comparison_doc_path
         self.keywords = keywords
+        self.generate_comparison_document = generate_comparison_document
         self.keyword_suggestions = []
         self.topic_token = keywords[0].split(" ")
 
@@ -91,7 +91,7 @@ class KeywordSuggestionHelper:
 
                 print("\nCollecting information...")
                 depth = 2 if len(self.keywords) <= 3 else 1
-                extracted_drugs = generate_ideal_document(self.ideal_doc_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=False)
+                extracted_drugs = generate_comparison_document(self.comparison_doc_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=False)
 
                 if extracted_drugs:
                     for drug in extracted_drugs:
@@ -107,7 +107,7 @@ class KeywordSuggestionHelper:
 
                 # Extract keywords
                 print("\nGenerating keywords...")
-                extracted_keywords, extracted_keyphrases = kg.generate_keywords_with_keybert(self.ideal_doc_path)
+                extracted_keywords, extracted_keyphrases = kg.generate_keywords_with_keybert(self.comparison_doc_path)
                 extracted_keyphrases = [self.remove_duplicates_from_phrase(keyphrase) for keyphrase in extracted_keyphrases]
 
                 # Initialize index offsets
@@ -221,9 +221,10 @@ class KeywordSuggestionHelper:
                 elif cont.lower() in ["n", "no"]:
                     iteration = 0
                     self.display_current_keywords()
-                    print("\nGenerating the final comparison document...")
-                    depth = 2 if len(self.keywords) <= 3 else 1
-                    generate_ideal_document(self.ideal_doc_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=True)
+                    if self.generate_comparison_document:
+                        print("\nGenerating the final comparison document...")
+                        depth = 2 if len(self.keywords) <= 3 else 1
+                        generate_comparison_document(self.comparison_doc_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=True)
                     break
 
         return self.keywords

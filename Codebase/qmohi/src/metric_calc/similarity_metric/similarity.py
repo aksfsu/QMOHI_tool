@@ -51,13 +51,13 @@ class Similarity:
         # Return token list
         return list(tokenize(doc, to_lower=True, deacc = True))
 
-    def calculate_tfidf(self, ideal_document, shc_content):
+    def calculate_tfidf(self, comparison_document, shc_content):
         # Precompute IDF corpus
         with open(HEALTH_TOPICS_CORPUS_PATH, "r") as f:
             idf_corpus = f.readlines()
 
         # Build TF corpus
-        tf_corpus = [ideal_document, shc_content]
+        tf_corpus = [comparison_document, shc_content]
 
         ctfidf = CustomizableTfidfVectorizer(tf_corpus, idf_corpus)
 
@@ -77,13 +77,13 @@ class Similarity:
         return "Low"
 
     # Calculate the similarity based on the given word vector
-    def calculate_similarity(self, ideal_document, shc_content):
+    def calculate_similarity(self, comparison_document, shc_content):
         # Calculate TF-IDF
-        self.calculate_tfidf(ideal_document, shc_content)
+        self.calculate_tfidf(comparison_document, shc_content)
 
         # sum1 will hold the sum of all of its word's vectors
         sum1 = [0] * len(self.word_vector['word'])
-        for token in self.get_token_list(ideal_document):
+        for token in self.get_token_list(comparison_document):
             if token in self.word_vector:
                 sum1 = np.sum([sum1, self.word_vector[token]], axis=0)
 

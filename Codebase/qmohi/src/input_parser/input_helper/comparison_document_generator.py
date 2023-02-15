@@ -70,7 +70,7 @@ def lemmatize_word(word):
 
 
 # Get text data and export in the output file
-def get_ideal_document(output_file, url, depth, visited_urls, drug_keywords, drug_details):
+def get_comparison_document(output_file, url, depth, visited_urls, drug_keywords, drug_details):
     if depth == 0:
         return
 
@@ -222,7 +222,7 @@ def get_ideal_document(output_file, url, depth, visited_urls, drug_keywords, dru
 
     # Crawl internal links
     for url in urls:
-        get_ideal_document(output_file, url, depth-1, visited_urls, drug_keywords, drug_details)
+        get_comparison_document(output_file, url, depth-1, visited_urls, drug_keywords, drug_details)
     return
 
 
@@ -326,7 +326,7 @@ def sort_drugs(drugs, keywords):
     return [drug for relevant_drug in relevant_drugs for drug in relevant_drug] + other_drugs
 
 
-def generate_ideal_document(output_file_path, api_keys, cse_id, depth, num_of_therapy=5, keywords=[], drug_details=True):
+def generate_comparison_document(output_file_path, api_keys, cse_id, depth, num_of_therapy=5, keywords=[], drug_details=True):
     # Instanciate the CSE handler
     search_obj = CSEHandler(api_keys[0], cse_id)
 
@@ -350,9 +350,9 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth, num_of_th
         # Extract documents
         print("   Collecting gerenal description...")
         if i == 0:
-            get_ideal_document(output_file, links[0], depth[0], visited_urls, drug_keywords, drug_details)
+            get_comparison_document(output_file, links[0], depth[0], visited_urls, drug_keywords, drug_details)
         else:
-            get_ideal_document(output_file, links[0], depth[1], visited_urls, drug_keywords, drug_details)
+            get_comparison_document(output_file, links[0], depth[1], visited_urls, drug_keywords, drug_details)
 
         print("   Collecting therapy information...")
 
@@ -366,7 +366,7 @@ def generate_ideal_document(output_file_path, api_keys, cse_id, depth, num_of_th
         # print(links)
         for link in links:
             if link not in visited_urls:
-                get_ideal_document(output_file, link, 1, visited_urls, drug_keywords, drug_details)
+                get_comparison_document(output_file, link, 1, visited_urls, drug_keywords, drug_details)
 
         # DrugBank Information on DrugBank
         therapy_links = search_obj.get_links_by_query(DRUGBANK_URL, query)

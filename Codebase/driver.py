@@ -9,7 +9,7 @@ Argument - Input file in form of csv sheet along with absolute path with below c
 4. Custom search engine unique id
 5. Selenium web driver for chrome
 6. Output directory for storing results
-7. Ideal document name with absolute path
+7. Comparison document name with absolute path
 """
 import sys
 # sys.path.append(r'./qmomi')
@@ -49,13 +49,10 @@ def execute(input_file_path):
 	# print("- Collecting input CSE id", end="")
 	cse_id = parse_input.get_input_cse(file)
 
-	# Get ideal document path for ideal information on given keyword's topic
-	# print("- Collecting ideal document name", end="")
-	ideal_doc_path = parse_input.get_ideal_document_with_path(file)
-
-	# Get keywords from user input
+	# Get keywords and the comparison document path from user input
 	# print("- Collecting input keywords")
-	keyword_list = parse_input.review_input_keywords(input_file_path, file, keys_list, cse_id, ideal_doc_path)
+	keyword_list, comparison_doc_path = parse_input.review_input_keywords(input_file_path, file, keys_list, cse_id, output_dir)
+	print(f'{keyword_list}, {comparison_doc_path}')
 
 	# Divide the keywords in sets to make query
 	num_of_words, query_keywords = parse_input.divide_query_keywords(keyword_list)
@@ -107,7 +104,7 @@ def execute(input_file_path):
 
 	# Calculate Similarity metric, Objectivity metric, Polarity metric, Timeliness metric, Navigation metric
 	print("\nCalculating Similarity metric, Objectivity metric, Polarity metric, Timeliness metric, Navigation metric...")
-	result_dataframe9 = metric_calculation2.calculate_metrics(result_dataframe6, output_dir, ideal_doc_path, driver_path, model_path)
+	result_dataframe9 = metric_calculation2.calculate_metrics(result_dataframe6, output_dir, comparison_doc_path, driver_path, model_path)
 
 	# Consolidating final result together
 	print("\nConsolidating all metric values together...")

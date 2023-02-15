@@ -1,4 +1,4 @@
-University_name,Keywords,API_keys,Paid_API_key,CSE_id,Selenium_Chrome_webdriver,Output_directory,Ideal_document,Word_vector_model,Sentence_extraction_margin
+University_name,Keywords,API_keys,Paid_API_key,CSE_id,Selenium_Chrome_webdriver,Output_directory,Comparison_document,Word_vector_model,Sentence_extraction_margin
 Ferris State University,pap smear,AIzaSyCAmAgXrFNzS_En7UpGRnolYBnpQbStRgg,,00dd60268052357eb,/usr/local/bin/chromedriver,/Users/rachitjoshi/QMOMI_tool/Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/output,/Users/rachitjoshi/QMOMI_tool/Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/pap_smear_fake_document.txt,/Users/rachitjoshi/QMOMI_tool/Codebase/QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/GoogleNews-vectors-negative300.bin,2
 Grand Valley State University,pap test,AIzaSyAeW9aSUNYM5WPnkXRZh4-K9f20iwroHfY,,,,,,,
 University of Michigan Ann Arbor,papsmear,,,,,,,,

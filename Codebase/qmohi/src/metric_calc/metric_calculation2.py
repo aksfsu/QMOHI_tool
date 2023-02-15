@@ -2,11 +2,8 @@ import pandas as pd
 from textblob import TextBlob
 import requests
 import re
-from os import listdir
-from os.path import isfile, join
 from urllib.parse import urlparse
 from qmohi.src.metric_calc.navigation_metric.counter import get_min_click_count
-from bs4 import BeautifulSoup
 from gensim.models import KeyedVectors
 from gensim.test.utils import datapath
 
@@ -62,15 +59,15 @@ class University:
 
 		return timeliness
 
-	def calculate_similarity(self, word_vector, ideal_doc_path, output_dir):
-		# Load the ideal document
-		file = open(ideal_doc_path)
-		ideal_content = file.read()
+	def calculate_similarity(self, word_vector, comparison_doc_path):
+		# Load the comparison document
+		file = open(comparison_doc_path)
+		comparison_content = file.read()
 		file.close()
 
 		# Calculate similarity
 		similarity_obj = Similarity(word_vector)
-		similarity, similarity_label = similarity_obj.calculate_similarity(ideal_content, self.content)
+		similarity, similarity_label = similarity_obj.calculate_similarity(comparison_content, self.content)
 		return round(similarity, 3), similarity_label
 
 	def calculate_navigation(self, driver_path):
@@ -81,7 +78,7 @@ class University:
 		return min_clicks, trace
 
 
-def calculate_metrics(input_dataframe, output_dir, ideal_doc_path, driver_path, model_path):
+def calculate_metrics(input_dataframe, output_dir, comparison_doc_path, driver_path, model_path):
 
 	header = ['University name', 'Count of SHC webpages matching keywords', 'Keywords matched webpages on SHC',
 			  'Content on all pages', 'Similarity Score', 'Similarity Label', 'Sentiment objectivity', 'Sentiment polarity', 'Timeliness',
@@ -107,7 +104,7 @@ def calculate_metrics(input_dataframe, output_dir, ideal_doc_path, driver_path, 
 		obj = University(uni_name, shc_url, content, links, no_of_links)
 
 		print("   - Similarity")
-		similarity, similarity_label = obj.calculate_similarity(wv, ideal_doc_path, output_dir)
+		similarity, similarity_label = obj.calculate_similarity(wv, comparison_doc_path)
 
 		print("   - Objectivity")
 		sentiment_objectivity = obj.calculate_sentiment_objectivity()

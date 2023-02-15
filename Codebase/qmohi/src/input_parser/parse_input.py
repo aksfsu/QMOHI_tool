@@ -9,11 +9,11 @@ def read_input_file(path):
 	try:
 		file = pd.read_csv(path,
 							 usecols=['University_name', 'Keywords', 'API_keys', 'Paid_API_key', 'CSE_id', 'Selenium_Chrome_webdriver',
-									  'Output_directory', 'Ideal_document', 'Word_vector_model', 'Sentence_extraction_margin'])
+									  'Output_directory', 'Comparison_document', 'Word_vector_model', 'Sentence_extraction_margin'])
 	except Exception as e:
 		print(e)
 		print("Problem with input file! Make sure the location of the file is correct and columns are "
-			  "'University_name', 'Keywords', 'API_keys', 'Paid_API_key', 'CSE_id', 'Selenium_Chrome_webdriver', 'Output_directory', 'Ideal_document', 'Word_vector_model'. ")
+			  "'University_name', 'Keywords', 'API_keys', 'Paid_API_key', 'CSE_id', 'Selenium_Chrome_webdriver', 'Output_directory', 'Comparison_document', 'Word_vector_model'. ")
 		sys.exit()
 
 	return file
@@ -63,12 +63,18 @@ def get_input_university_names(file):
 	return universities_list, no_of_universities
 
 
-def review_input_keywords(input_file_path, file, api_keys, cse_id, ideal_doc_path):
+def review_input_keywords(input_file_path, file, api_keys, cse_id, output_dir):
 	# Get input keyword
 	keywords = get_input_keywords(file)
-	
+
+	# Get comparison document path
+	comparison_doc_path = file['Comparison_document'].values[0]
+	generate_comparison_document = not os.path.isfile(comparison_doc_path)
+	if generate_comparison_document:
+		comparison_doc_path = os.path.join(os.path.join(output_dir, "comparison_document"), keywords[0] + ".txt")
+
 	# Iteration of keywords review
-	helper = KeywordSuggestionHelper(api_keys, cse_id, ideal_doc_path, keywords)
+	helper = KeywordSuggestionHelper(api_keys, cse_id, comparison_doc_path, keywords, generate_comparison_document)
 	new_keywords = helper.suggest_keywords()
 
 	# Stripping extra leading and trailing spaces in the keywords
@@ -83,7 +89,7 @@ def review_input_keywords(input_file_path, file, api_keys, cse_id, ideal_doc_pat
 		file['Keywords'] = new_keywords[:len(new_keywords)] + ["" for _ in range(max(0, len(file) - len(new_keywords)))]
 
 	file.to_csv(input_file_path, index=False)
-	return new_keywords
+	return new_keywords, comparison_doc_path
 
 
 def get_input_keywords(file):
@@ -215,20 +221,6 @@ def get_input_cse(file):
 	return cse_id
 
 
-def get_ideal_document_with_path(file):
-	# Reading ideal document path provided by user
-	cse = file[['Ideal_document']].copy()
-	# Dropping rows with NaN values
-	cse = cse.dropna(axis=0, how='any')
-
-	if cse.empty:
-		print("Please provide ideal document to calculate similarity!")
-		sys.exit()
-
-	ideal_doc = cse['Ideal_document'].values[0]
-	# print(": ", ideal_doc)
-	return ideal_doc
-
 def get_model(file):
 	# Reading the word vector model provided by user
 	model_dir = file[['Word_vector_model']].copy()
@@ -242,6 +234,7 @@ def get_model(file):
 	model_dir = model_dir['Word_vector_model'].values[0]
 
 	return model_dir
+
 
 def get_sentence_extraction_margin(file):
 	# Reading the margin for sentence extraction provided by user
