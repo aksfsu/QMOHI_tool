@@ -57,7 +57,7 @@ QMOHI uses [Google's Programmable Search Engine](https://developers.google.com/c
 
 ### Google Programmable Search Engine 
 
-Obtain [Search engine ID](https://developers.google.com/custom-search/v1/overview). This ID is referred to as Custom Search Engine (CSE) ID in QMOHI.
+Obtain [Search Engine ID](https://developers.google.com/custom-search/v1/overview). This ID is referred to as Custom Search Engine (CSE) ID in QMOHI.
 
 Please see [the documentation](https://docs.google.com/document/d/1b1FpSLW9pDVb8dCTFXAdIr5tbsb-uodFfO3wz24rV54/edit#) for information on how you can opt for Programmable Search Element Paid API.
 
@@ -75,7 +75,10 @@ QMOHI comprises a modular pipeline of three components: SHC website identificati
 
 ## Dataset
 
-Example outputs are stored in the `Dataset/` folder. The outputs are the results where we ran QMOHI for 549 U.S. colleges and universities on July 14, Augist 14, and September 14, 2020, for 4 health topics (*condom*, *contraception*, *LARC*, and *pap smear*) and their superset.
+Example input and output are stored in the `Dataset/Input` and `Dataset/Output` folder, respectively. 
+- An example input file is in `Dataset/Input/Input File`.
+- An example comparison document for the topic *pap smear* is in `Dataset/Input/Comparison Documents`. 
+- The files in `Dataset/Output` are the results where we ran QMOHI for 549 U.S. colleges and universities on July 14, Augist 14, and September 14, 2020, for 4 health topics (*condom*, *contraception*, *LARC*, and *pap smear*) and their superset.
 
 If you want to use these datasets, please contact [us](ak@sfsu.edu) (ak@sfsu.edu).
 
