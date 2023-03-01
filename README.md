@@ -33,7 +33,7 @@ python driver.py [path to input file]
 
 ### QMOHI Input File
 
-QMOHI performs a guided search of university student health centers (SHC) websites using parameters specified in the input file which uses comma-separated values (CSV) format, to find and analyze information quality metrics for a given topic. 
+QMOHI performs a guided search and analysis of university student health centers (SHC) websites for a given health topic using parameters specified in the input file which uses comma-separated values (CSV) format. The input parameters are explained below. The input file template `Codebase/QMOHI_input_template.csv` may be utilized.  
 
 | Column Index | Column Name | Description |
 | ----------- | ----------- | ----------- |
