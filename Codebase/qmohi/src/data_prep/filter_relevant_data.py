@@ -158,10 +158,81 @@ def clean_text(text):
 	return text.strip()
 
 
+def sentence_highlight(se_output_file_path, text, keywords, margin):
+	topical_content = ""
+
+	# Open the output file
+	fo_output = open(se_output_file_path, 'a')
+
+	# Segment the sentences
+	sentences = sent_tokenize(text)
+	# Remove Â and â by tokenizing and then putting the tokens back together
+	sentences = [" ".join(word_tokenize(s)) for s in sentences]
+	sentences = [s + "\n" for sentence in sentences for s in sentence.split("\n") if s]
+
+	# Add space to the end of the sentence for the readability in output file
+	sentences = [re.sub(r' +', ' ', sentence) for sentence in sentences]
+	sentences = [re.sub(r'\n+', '<br>', sentence) for sentence in sentences]
+
+	# Create a reference list whole elements indicates margin and anchor sentences
+	MARGIN = 1
+	ANCHOR = 2
+	anchor_sentence_ref = [0] * len(sentences)
+	for i, sentence in enumerate(sentences):
+		if any(keyword.lower() in sentence.lower() for keyword in keywords):
+			for j in range(i-margin, i+margin+1):
+				# Ignore if the index is out of bounds
+				if j < 0 or j >= len(sentences):
+					continue
+				# Mark as anchor sentence if keyword matches
+				if j == i:
+					anchor_sentence_ref[j] = ANCHOR
+				# Mark as margin sentence if the sentence is in the range of margin and not an anchor sentence
+				elif anchor_sentence_ref[j] != ANCHOR:
+					anchor_sentence_ref[j] = MARGIN
+
+	# Convert the keyword list into regex format
+	re_keywords = "|".join(sorted(keywords, key=len, reverse=True))
+	# Highlight margin and anchor sentences and keywords
+	for i, sentence in enumerate(sentences):
+		# Highlight anchor sentences
+		if anchor_sentence_ref[i] == ANCHOR:
+			cleaned_text = clean_text(sentence.replace("<br>", ""))
+			if cleaned_text:
+				topical_content += cleaned_text + ".\n"
+			# Find the start and end indices of keywords
+			anchor_word_indices = [(m.start(), m.end()) for m in re.finditer(re_keywords, sentence, re.IGNORECASE)]
+			if anchor_word_indices:
+				anchor_sentence_html = '<span style="background-color:#fff352;">'
+				# Highlight keywords
+				anchor_sentence_cursor = 0
+				for start, end in anchor_word_indices:
+					anchor_sentence_html += sentence[anchor_sentence_cursor:start] + '<b style="color:red;">' + sentence[start:end] + '</b>'
+					anchor_sentence_cursor = end
+				anchor_sentence_html += sentence[end:] + '</span>'
+		# Highlight margin sentences
+		elif anchor_sentence_ref[i] == MARGIN:
+			cleaned_text = clean_text(sentence.replace("<br>", ""))
+			if cleaned_text:
+				topical_content += cleaned_text + ".\n"
+			anchor_sentence_html = '<span style="background-color:#CEECF5;">' + sentence + '</span>'
+		# Leave other sentences without highlighting
+		else:
+			anchor_sentence_html = sentence
+		# Export into output file
+		fo_output.write(anchor_sentence_html)
+
+	# End the result paragraph and close the file
+	fo_output.write('<br>')
+	fo_output.close()
+
+	return topical_content
+
+
 # Collect topical information and highlight it in copies of cached HTML files
 def get_topical_contents(output_dir, university, keywords, margin=5):
 	# Raw topical sentence data to return
-	content = ""
+	topical_content = ""
 
 	# Specify the path to cache data
 	cache_dir_path = join(output_dir, "saved_webpages")
@@ -169,7 +240,7 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 	if isdir(cache_university_path):
 		cache_files = [f for f in listdir(cache_university_path) if isfile(join(cache_university_path, f))]
 		if not cache_files:
-			return content
+			return topical_content
 
 		# Specify the sentence extraction output file path
 		se_output_dir_path = join(output_dir, 'sentence_extraction_output')
@@ -179,9 +250,37 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 		for cache_file in cache_files:
 			# Specify the path to each cache file
 			cache_file_path = join(cache_university_path, cache_file)
+			# Support only file size <= 1M
+			file_size = os.path.getsize(cache_file_path)
+			if file_size > 1000000:
+				print(f'Skipping too big file: {cache_file_path}')
+				continue
 			# Read the cache file
 			if cache_file.endswith("pdf"):
-				text = get_text_from_pdf(cache_file_path)
+				# text = get_text_from_pdf(cache_file_path)
+
+				with TemporaryDirectory() as tempdir:
+					# Converting PDF to images
+					pdf_pages = convert_from_path(cache_file_path, 500)
+					image_file_list = []
+					for i, page in enumerate(pdf_pages, start=1):
+						# filename = join(tempdir, f"page_{i}.jpg")
+						filename = f"page_{i}.jpg"
+						file_path = join(tempdir, filename)
+						page.save(file_path, "JPEG")
+						image_file_list.append(filename)
+
+					# Recognizing text from the images using OCR
+					# print(f'Extracting text from PDF: {pdf_path} ...')
+					for image_file in image_file_list:
+						file_path = join(tempdir, image_file)
+						text = get_text_from_image(file_path)
+
+						# Run sentence highlight
+						se_output_file_path = join(se_output_dir_path, os.path.splitext(cache_file)[0] + ".html")
+						makedirs(dirname(se_output_file_path), exist_ok=True)
+						topical_content = sentence_highlight(se_output_file_path, text, keywords, margin)
+
 			else:
 				try:
 					fo_input = open(cache_file_path, 'r')
@@ -198,76 +297,12 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 				text = re.sub(r' +', ' ', text)
 				text = re.sub(r'\n+', '\n', text)
 
-			# Create the output file for each cache file
-			se_output_file_path = join(se_output_dir_path, os.path.splitext(cache_file)[0] + ".html")
-			makedirs(dirname(se_output_file_path), exist_ok=True)
-			fo_output = open(se_output_file_path, 'w')
-			# Write the result page title and start the result paragraoh
-			fo_output.write('<h1 style="margin:2rem 5%">QMOHI Keyword Search Result</h1><p style="margin:2rem 5%">')
+				# Run sentence highlight
+				se_output_file_path = join(se_output_dir_path, os.path.splitext(cache_file)[0] + ".html")
+				makedirs(dirname(se_output_file_path), exist_ok=True)
+				topical_content = sentence_highlight(se_output_file_path, text, keywords, margin)
 
-			# Segment the sentences
-			sentences = sent_tokenize(text)
-			# Remove Â and â by tokenizing and then putting the tokens back together
-			sentences = [" ".join(word_tokenize(s)) for s in sentences]
-			sentences = [s + "\n" for sentence in sentences for s in sentence.split("\n") if s]
-
-			# Add space to the end of the sentence for the readability in output file
-			sentences = [re.sub(r' +', ' ', sentence) for sentence in sentences]
-			sentences = [re.sub(r'\n+', '<br>', sentence) for sentence in sentences]
-
-			# Create a reference list whole elements indicates margin and anchor sentences
-			MARGIN = 1
-			ANCHOR = 2
-			anchor_sentence_ref = [0] * len(sentences)
-			for i, sentence in enumerate(sentences):
-				if any(keyword.lower() in sentence.lower() for keyword in keywords):
-					for j in range(i-margin, i+margin+1):
-						# Ignore if the index is out of bounds
-						if j < 0 or j >= len(sentences):
-							continue
-						# Mark as anchor sentence if keyword matches
-						if j == i:
-							anchor_sentence_ref[j] = ANCHOR
-						# Mark as margin sentence if the sentence is in the range of margin and not an anchor sentence
-						elif anchor_sentence_ref[j] != ANCHOR:
-							anchor_sentence_ref[j] = MARGIN
-
-			# Convert the keyword list into regex format
-			re_keywords = "|".join(sorted(keywords, key=len, reverse=True))
-			# Highlight margin and anchor sentences and keywords
-			for i, sentence in enumerate(sentences):
-				# Highlight anchor sentences
-				if anchor_sentence_ref[i] == ANCHOR:
-					cleaned_text = clean_text(sentence.replace("<br>", ""))
-					if cleaned_text:
-						content += cleaned_text + ".\n"
-					# Find the start and end indices of keywords
-					anchor_word_indices = [(m.start(), m.end()) for m in re.finditer(re_keywords, sentence, re.IGNORECASE)]
-					if anchor_word_indices:
-						anchor_sentence_html = '<span style="background-color:#fff352;">'
-						# Highlight keywords
-						anchor_sentence_cursor = 0
-						for start, end in anchor_word_indices:
-							anchor_sentence_html += sentence[anchor_sentence_cursor:start] + '<b style="color:red;">' + sentence[start:end] + '</b>'
-							anchor_sentence_cursor = end
-						anchor_sentence_html += sentence[end:] + '</span>'
-				# Highlight margin sentences
-				elif anchor_sentence_ref[i] == MARGIN:
-					cleaned_text = clean_text(sentence.replace("<br>", ""))
-					if cleaned_text:
-						content += cleaned_text + ".\n"
-					anchor_sentence_html = '<span style="background-color:#CEECF5;">' + sentence + '</span>'
-				# Leave other sentences without highlighting
-				else:
-					anchor_sentence_html = sentence
-				# Export into output file
-				fo_output.write(anchor_sentence_html)
-
-			# End the result paragraph and close the file
-			fo_output.write('</p>')
-			fo_output.close()
-
-	return content
+	return topical_content
 
 
 def add_space_in_keywords(keywords):
@@ -299,6 +334,8 @@ def find_relevant_content(input_dataframe, keywords, margin, output_dir):
 		no_of_links = row['Count of SHC webpages matching keywords']
 		link_data = row['Keywords matched webpages on SHC']
 
+		print("- ", university)
+
 		# Collect topical information
 		content = get_topical_contents(output_dir, university, keywords, margin)
 
@@ -322,7 +359,6 @@ def find_relevant_content(input_dataframe, keywords, margin, output_dir):
 			except Exception as e:
 				print(e)
 
-			print("- ", university)
 			list_of_found_per_stem_dictionary.append(found_per_stem_dictionary)
 			list_of_stem_found_phrase_dictionary.append(stem_found_phrase_dictionary)
 			output_dataframe = output_dataframe.append({'University name': university,
