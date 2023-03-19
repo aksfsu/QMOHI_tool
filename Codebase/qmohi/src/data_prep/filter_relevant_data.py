@@ -257,8 +257,6 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 				continue
 			# Read the cache file
 			if cache_file.endswith("pdf"):
-				# text = get_text_from_pdf(cache_file_path)
-
 				with TemporaryDirectory() as tempdir:
 					# Converting PDF to images
 					pdf_pages = convert_from_path(cache_file_path, 500)
@@ -279,7 +277,7 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 						# Run sentence highlight
 						se_output_file_path = join(se_output_dir_path, os.path.splitext(cache_file)[0] + ".html")
 						makedirs(dirname(se_output_file_path), exist_ok=True)
-						topical_content = sentence_highlight(se_output_file_path, text, keywords, margin)
+						topical_content += sentence_highlight(se_output_file_path, text, keywords, margin)
 
 			else:
 				try:
@@ -300,7 +298,7 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 				# Run sentence highlight
 				se_output_file_path = join(se_output_dir_path, os.path.splitext(cache_file)[0] + ".html")
 				makedirs(dirname(se_output_file_path), exist_ok=True)
-				topical_content = sentence_highlight(se_output_file_path, text, keywords, margin)
+				topical_content += sentence_highlight(se_output_file_path, text, keywords, margin)
 
 	return topical_content
 
