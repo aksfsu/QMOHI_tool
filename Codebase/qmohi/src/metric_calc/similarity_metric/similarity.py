@@ -70,7 +70,7 @@ class Similarity:
         return features
 
     def get_label(self, similarity):
-        if similarity >= 0.7:
+        if similarity >= 0.8:
             return "High"
         if similarity >= 0.6:
             return "Moderate"
