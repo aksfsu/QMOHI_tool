@@ -13,12 +13,11 @@ import torch.nn.functional as F
 from torch.optim import AdamW
 from torch.utils.data import Dataset, DataLoader
 
-from transformers import RobertaTokenizer, RobertaModel, RobertaConfig
-# from transformers import AutoTokenizer, AutoModel, AutoConfig
+from transformers import AutoTokenizer, AutoModel, AutoConfig
 from transformers import get_cosine_schedule_with_warmup
 
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import KFold #StratifiedKFold
+from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.metrics import mean_squared_error
 
 gc.enable()
@@ -58,15 +57,7 @@ class MyDataset(Dataset):
         self.df = df        
         self.inference_only = inference_only
         self.text = df.sentences
-        self.tokenizer = RobertaTokenizer.from_pretrained(TOKENIZER_PATH)
-        self.encoded = self.tokenizer.batch_encode_plus(
-            self.text,
-            padding = 'max_length',            
-            max_length = MAX_LEN,
-            truncation = True,
-            return_attention_mask=True,
-            return_token_type_ids=True
-        )
+        self.tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_PATH, use_fast=False)
         if not self.inference_only:
             self.grade_level = torch.tensor(df.grade_level.values, dtype=torch.float)
         else:
@@ -76,10 +67,19 @@ class MyDataset(Dataset):
     def __len__(self):
         return len(self.df)
    
-    def __getitem__(self, index):        
-        input_ids = torch.tensor(self.encoded['input_ids'][index])
-        attention_mask = torch.tensor(self.encoded['attention_mask'][index])
-        token_type_ids = torch.tensor(self.encoded['token_type_ids'][index])
+    def __getitem__(self, index):
+        encoded = self.tokenizer.encode_plus(
+            self.text.iloc[index],
+            padding = 'max_length',            
+            max_length = MAX_LEN,
+            truncation = True,
+            return_attention_mask=True,
+            return_token_type_ids=True
+        )
+      
+        input_ids = torch.tensor(encoded['input_ids'])
+        attention_mask = torch.tensor(encoded['attention_mask'])
+        token_type_ids = torch.tensor(encoded['token_type_ids'])
         
         if self.inference_only:
             return {
@@ -100,12 +100,12 @@ class MyModel(nn.Module):
     def __init__(self):
         super().__init__()
 
-        config = RobertaConfig.from_pretrained(MODEL_PATH)
+        config = AutoConfig.from_pretrained(MODEL_PATH)
         config.update({"output_hidden_states":True, 
                        "hidden_dropout_prob": 0.0,
                        "layer_norm_eps": 1e-7})                       
         
-        self.model = RobertaModel.from_pretrained(MODEL_PATH, config=config)  
+        self.model = AutoModel.from_pretrained(MODEL_PATH, config=config)  
             
         self.attention = nn.Sequential(            
             nn.Linear(768, 512),            
@@ -276,7 +276,10 @@ def test():
     predictions = predict(model, state_list, test_loader)
     mean_predictions = pd.DataFrame(predictions).T.mean(axis=1).tolist()
 
+    mse = mean_squared_error(test_df['grade_level'].tolist(), mean_predictions)
+
     test_df['prediction'] = mean_predictions
+    test_df['mse'] = mse
     print(test_df)
     test_df.to_csv("prediction.csv", index=False)
 
