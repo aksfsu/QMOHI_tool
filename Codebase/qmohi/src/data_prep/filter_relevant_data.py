@@ -5,7 +5,7 @@ Output - data relevant to the keywords
 """
 from nltk.text import Text
 from nltk.stem.snowball import SnowballStemmer
-from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.tokenize import sent_tokenize
 from nltk.stem import WordNetLemmatizer
 import nltk.corpus
 import pandas as pd
@@ -25,7 +25,8 @@ nltk.download('gutenberg')  # Can be run only once in the beginning
 def get_text_from_image(image_path):
     # Extract text
     reader = easyocr.Reader(['en'], verbose=False)
-    return " ".join(reader.readtext(image_path, detail=0))
+    # Consider each segment as a sentence by adding ". "
+    return ". ".join(reader.readtext(image_path, detail=0))
 
 
 def get_text_in_images_from_html(html):
@@ -78,10 +79,9 @@ def get_text_from_pdf(pdf_path):
 
 def relevant_content_words(keywords, file):
 	content = Text(nltk.corpus.gutenberg.words(file))
+	tokens = content.tokens
 
 	# Concordance referred from https://simplypython.wordpress.com/2014/03/14/saving-output-of-nltk-text-concordance/
-	tokens = [remove_circumflex_a(token) for token in content.tokens if remove_circumflex_a(token)]
-
 	# Stemming tokens before finding relevant content. Assumption: keywords have/will be been stemmed
 	stemmer = SnowballStemmer("english")
 	# token_stem_dictionary is structured as such: {'stem': [(index, 'non-stemmed-token'),(index, 'non-stemmed-token'),...],...}
@@ -140,38 +140,29 @@ def relevant_content_words(keywords, file):
 	return found_per_stem_dictionary, phrase_stem_dictionary, stem_found_phrase_dictionary
 
 
-# Removing unwanted characters from data
-def remove_circumflex_a(input_str):
-	input_str = input_str.replace('Â', '')
-	output_str = input_str.replace('â', '')
-	return output_str
-
-
 def clean_text(text):
 	# Remove URLs
 	text = re.sub(r"http\S+", "", text, flags=re.MULTILINE)
 	text = re.sub(r"www\S+", "", text, flags=re.MULTILINE)
-	# Remove special characters
-	text = re.sub(r"[()\"#/@;:<>{}`_+=~|\[\]]", "", text)
+	# Remove redundant dots and new lines
+	text = re.sub(r"[\n ]+\.", "", text)
+	text = re.sub(r"\. +\.", ".", text)
+	text = re.sub(r"\.+", ".", text)
 	# Remove redundant white spaces
 	text = re.sub(r" +", " ", text)
-	return text.strip()
+	return text
 
 
 def sentence_highlight(se_output_file_path, text, keywords, margin):
-	topical_content = ""
+	topical_contents = []
 
 	# Open the output file
 	fo_output = open(se_output_file_path, 'a')
 
-	# Segment the sentences
-	sentences = sent_tokenize(text)
-	# Remove Â and â by tokenizing and then putting the tokens back together
-	sentences = [" ".join(word_tokenize(s)) for s in sentences]
-	sentences = [s + "\n" for sentence in sentences for s in sentence.split("\n") if s]
+	# sent_tokenize() separates sentences by ". "
+	sentences = [sentence for sentence in sent_tokenize(text) if re.search(r"\w", sentence)]
 
 	# Add space to the end of the sentence for the readability in output file
-	sentences = [re.sub(r' +', ' ', sentence) for sentence in sentences]
 	sentences = [re.sub(r'\n+', '<br>', sentence) for sentence in sentences]
 
 	# Create a reference list whole elements indicates margin and anchor sentences
@@ -195,11 +186,12 @@ def sentence_highlight(se_output_file_path, text, keywords, margin):
 	re_keywords = "|".join(sorted(keywords, key=len, reverse=True))
 	# Highlight margin and anchor sentences and keywords
 	for i, sentence in enumerate(sentences):
+		sentence += " "
 		# Highlight anchor sentences
 		if anchor_sentence_ref[i] == ANCHOR:
-			cleaned_text = clean_text(sentence.replace("<br>", ""))
+			cleaned_text = sentence.replace("<br>", "")
 			if cleaned_text:
-				topical_content += cleaned_text + ".\n"
+				topical_contents.append(cleaned_text)
 			# Find the start and end indices of keywords
 			anchor_word_indices = [(m.start(), m.end()) for m in re.finditer(re_keywords, sentence, re.IGNORECASE)]
 			if anchor_word_indices:
@@ -212,9 +204,9 @@ def sentence_highlight(se_output_file_path, text, keywords, margin):
 				anchor_sentence_html += sentence[end:] + '</span>'
 		# Highlight margin sentences
 		elif anchor_sentence_ref[i] == MARGIN:
-			cleaned_text = clean_text(sentence.replace("<br>", ""))
+			cleaned_text = sentence.replace("<br>", "")
 			if cleaned_text:
-				topical_content += cleaned_text + ".\n"
+				topical_contents.append(cleaned_text)
 			anchor_sentence_html = '<span style="background-color:#CEECF5;">' + sentence + '</span>'
 		# Leave other sentences without highlighting
 		else:
@@ -226,13 +218,13 @@ def sentence_highlight(se_output_file_path, text, keywords, margin):
 	fo_output.write('<br>')
 	fo_output.close()
 
-	return topical_content
+	return topical_contents
 
 
 # Collect topical information and highlight it in copies of cached HTML files
 def get_topical_contents(output_dir, university, keywords, margin=5):
 	# Raw topical sentence data to return
-	topical_content = ""
+	topical_contents = []
 
 	# Specify the path to cache data
 	cache_dir_path = join(output_dir, "saved_webpages")
@@ -240,7 +232,7 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 	if isdir(cache_university_path):
 		cache_files = [f for f in listdir(cache_university_path) if isfile(join(cache_university_path, f))]
 		if not cache_files:
-			return topical_content
+			return topical_contents
 
 		# Specify the sentence extraction output file path
 		se_output_dir_path = join(output_dir, 'sentence_extraction_output')
@@ -272,12 +264,12 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 					# print(f'Extracting text from PDF: {pdf_path} ...')
 					for image_file in image_file_list:
 						file_path = join(tempdir, image_file)
-						text = get_text_from_image(file_path)
+						text = clean_text(get_text_from_image(file_path))
 
 						# Run sentence highlight
 						se_output_file_path = join(se_output_dir_path, os.path.splitext(cache_file)[0] + ".html")
 						makedirs(dirname(se_output_file_path), exist_ok=True)
-						topical_content += sentence_highlight(se_output_file_path, text, keywords, margin)
+						topical_contents.extend(sentence_highlight(se_output_file_path, text, keywords, margin))
 
 			else:
 				try:
@@ -290,17 +282,16 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 
 				# Parse and clean the text data
 				bs_obj = BeautifulSoup(html, 'html.parser')
-				text = bs_obj.get_text()
+				text = bs_obj.get_text(". ").encode("ascii", "ignore").decode()
 				text += get_text_in_images_from_html(html)
-				text = re.sub(r' +', ' ', text)
-				text = re.sub(r'\n+', '\n', text)
-
+				text = clean_text(text)
+				
 				# Run sentence highlight
 				se_output_file_path = join(se_output_dir_path, os.path.splitext(cache_file)[0] + ".html")
 				makedirs(dirname(se_output_file_path), exist_ok=True)
-				topical_content += sentence_highlight(se_output_file_path, text, keywords, margin)
+				topical_contents.extend(sentence_highlight(se_output_file_path, text, keywords, margin))
 
-	return topical_content
+	return topical_contents
 
 
 def add_space_in_keywords(keywords):
@@ -335,17 +326,17 @@ def find_relevant_content(input_dataframe, keywords, margin, output_dir):
 		print("- ", university)
 
 		# Collect topical information
-		content = get_topical_contents(output_dir, university, keywords, margin)
+		contents = get_topical_contents(output_dir, university, keywords, margin)
 
-		if content:
+		if contents:
 			# Calculating total number of words on all web pages
-			total_words = len(content.split())
+			total_words = sum(len(content.split()) for content in contents)
 	
 			# Try writing content in the text file
 			try:
 				relevant_content_file = output_dir + "/relevant_content.txt"
 				out_file = open(relevant_content_file, 'w')
-				out_file.write(content)
+				out_file.write(" ".join(contents))
 				out_file.close()
 
 				# Words_content here is list of lists
@@ -363,7 +354,7 @@ def find_relevant_content(input_dataframe, keywords, margin, output_dir):
 														'University SHC URL': shc,
 														'Count of SHC webpages matching keywords': no_of_links,
 														'Keywords matched webpages on SHC': link_data,
-														'Relevant content on all pages': content,
+														'Relevant content on all pages': contents,
 														'Total word count on all pages': total_words
 														}, ignore_index=True)
 

@@ -5,40 +5,60 @@ Output - reading ease score and grade level score of the data
 """
 from spacy.lang.en import English
 import pandas as pd
-
+import re
+from gensim.parsing.preprocessing import strip_numeric
 
 class Readability:
 
-	def __init__(self, content):
-		self.content = content
+	def __init__(self, sentences):
+		self.sentences = [re.sub(r"[^A-Za-z0-9 ]+", "", sentence) for sentence in sentences]
+		self.n_sentences = len(sentences)
+		self.n_words = self.word_count()
+		self.n_syllables = self.syllable_count()
+		print('	n_words =', self.n_words)
+		print('	n_sentences = ', self.n_sentences)
+		print('	n_syllables = ', self.n_syllables)
 
-	# Calculate syllables in the content
+	def get_num_of_sentences(self):
+		return self.n_sentences
+
+	def get_num_of_words(self):
+		return self.n_words
+
+	def get_num_of_syllables(self):
+		return self.n_syllables
+
+	# Calculate total number of syllables in all the sentences
 	def syllable_count(self):
-
 		n_syllables = 0
+		vowels = "aeiouy"
+
 		# For every word in the content
-		for word in self.content.split():
+		for sentence in self.sentences:
+			# Remove numeric tokens
+			sentence = strip_numeric(sentence)
 
-			word = word.lower()
-			count = 0
-			vowels = "aeiouy"
+			for word in sentence.split():
+				word = word.lower()
+				syllable_count = 0
 
-			if word[0] in vowels:
-				count += 1
+				if word[0] in vowels:
+					syllable_count += 1
 
-			for index in range(1, len(word)):
-				if word[index] in vowels and word[index - 1] not in vowels:
-					count += 1
+				for index in range(1, len(word)):
+					if word[index] in vowels and word[index - 1] not in vowels:
+						syllable_count += 1
 
-			# Not considering "e" if its at the end of the word
-			if word.endswith("e"):
-				count -= 1
+				if word.endswith("e"):
+					syllable_count -= 1
+				
+				if word.endswith('le') and len(word) > 2 and word[-3] not in vowels:
+					syllable_count += 1
 
-			# Considering minimum 1 syllable
-			if count == 0:
-				count += 1
-			# Syllables count for complete content
-			n_syllables = n_syllables + count
+				if syllable_count == 0:
+					syllable_count += 1
+
+				n_syllables += syllable_count
 
 		return n_syllables
 
@@ -48,35 +68,28 @@ class Readability:
 		# sentencizer = nlp.create_pipe("sentencizer")
 		nlp.add_pipe("sentencizer")
 
-		doc = nlp(self.content)
-		n_sentences = len(list(doc.sents))
+		n_sentences = 0
+		for sentence in self.sentences:
+			doc = nlp(sentence)
+			n_sentences += len(list(doc.sents))
 
 		return n_sentences
 
 	# Calculating number of words with Spacy
 	def word_count(self):
-		nlp = English()
-		doc = nlp(self.content)
-
-		words = [token.text for token in doc]
-		n_words = len(words)
-
-		return n_words
+		return sum(len(sentence.split()) for sentence in self.sentences)
 
 	# Calculating reading ease score as per formula
-	def get_reading_ease_score(self, n_words, n_sentences, n_syllables):
+	def get_reading_ease_score(self):
 		# Flesch reading ease formula
-		print('n_words =', n_words)
-		print('n_sentences = ', n_sentences)
-		print('n_syllables = ', n_syllables)
-		score = 206.835 - 1.015 * (n_words / n_sentences) - 84.6 * (n_syllables / n_words)
+		score = 206.835 - 1.015 * (self.n_words / self.n_sentences) - 84.6 * (self.n_syllables / self.n_words)
 		score = round(score, 2)
 		return score
 
 	# Calculating grade level score as per formula
-	def get_grade_level_score(self, n_words, n_sentences, n_syllables):
+	def get_grade_level_score(self):
 		# Flesch–Kincaid grade level formula
-		score = 0.39 * (n_words / n_sentences) + 11.8 * (n_syllables / n_words) - 15.59
+		score = 0.39 * (self.n_words / self.n_sentences) + 11.8 * (self.n_syllables / self.n_words) - 15.59
 		score = round(score, 2)
 		return score
 
@@ -96,14 +109,14 @@ def get_reading_level(input_dataframe, output_dir):
 		shc = row['University SHC URL']
 		no_of_links = row['Count of SHC webpages matching keywords']
 		link_data = row['Keywords matched webpages on SHC']
-		content = row["Relevant content on all pages"]
+		contents = row["Relevant content on all pages"]
 		total_words = row["Total word count on all pages"]
 
 		print("- ", university)
 
 		try:
 			# If the content has only spaces
-			if content.isspace():
+			if not contents:
 				print("   - Relevant information contains only whitespace!")
 
 				output_dataframe = output_dataframe.append(
@@ -122,31 +135,26 @@ def get_reading_level(input_dataframe, output_dir):
 
 			# If content is present
 			else:
-				content_obj = Readability(content)
-
-				# Calculate all the numbers required for the formula
-				n_sentences = content_obj.sentence_count()
-				n_words = content_obj.word_count()
-				n_syllables = content_obj.syllable_count()
+				readability = Readability(contents)
 
 				# Calculate reading ease
-				reading_ease = content_obj.get_reading_ease_score(n_words, n_sentences, n_syllables)
+				reading_ease = readability.get_reading_ease_score()
 
 				# Calculate grade level
-				grade_level = content_obj.get_grade_level_score(n_words, n_sentences, n_syllables)
+				grade_level = readability.get_grade_level_score()
 
 				# Append current dataframe to overall result
 				output_dataframe = output_dataframe.append(
 					{
 						'University name': university,
 						'University SHC URL': shc,
-						'Relevant content on all pages': content,
+						'Relevant content on all pages': contents,
 						'Count of SHC webpages matching keywords': no_of_links,
 						'Keywords matched webpages on SHC': link_data,
 						'Total word count on all pages': total_words,
-						'Num of sentences': n_sentences,
-						'Num of syllables': n_syllables,
-						'Num of words': n_words,
+						'Num of sentences': readability.get_num_of_sentences(),
+						'Num of syllables': readability.get_num_of_syllables(),
+						'Num of words': readability.get_num_of_words(),
 						'Reading ease': reading_ease,
 						'Grade level': grade_level
 					}, ignore_index=True)
@@ -157,7 +165,7 @@ def get_reading_level(input_dataframe, output_dir):
 				{
 					'University name': university,
 					'University SHC URL': shc,
-					'Relevant content on all pages': content,
+					'Relevant content on all pages': contents,
 					'Count of SHC webpages matching keywords': no_of_links,
 					'Keywords matched webpages on SHC': link_data,
 					'Total word count on all pages': total_words,

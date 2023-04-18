@@ -78,7 +78,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 	for index, row in input_dataframe.iterrows():
 		
 		university = row["University name"]
-		content = row["Relevant content on all pages"]
+		contents = row["Relevant content on all pages"]
 		shc = row['University SHC URL']
 		no_of_links = row['Count of SHC webpages matching keywords']
 		link_data = row['Keywords matched webpages on SHC']
@@ -92,7 +92,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 		print("- ", university)
 
 		try:
-			if content.isspace():
+			if not contents:
 				print("   - No content found!")
 			# Check if content is available
 			else:

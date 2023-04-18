@@ -97,11 +97,11 @@ def calculate_metrics(input_dataframe, output_dir, comparison_doc_path, driver_p
 		no_of_links = row['Count of SHC webpages matching keywords']
 		link_data = row['Keywords matched webpages on SHC']
 		links = [data["url"] for data in link_data]
-		content = row['Relevant content on all pages']
+		contents = row['Relevant content on all pages']
 		shc_url = row['University SHC URL']
 		print("\n- ", uni_name)
 
-		obj = University(uni_name, shc_url, content, links, no_of_links)
+		obj = University(uni_name, shc_url, " ".join(contents), links, no_of_links)
 
 		print("   - Similarity")
 		similarity, similarity_label = obj.calculate_similarity(wv, comparison_doc_path)
@@ -121,7 +121,7 @@ def calculate_metrics(input_dataframe, output_dir, comparison_doc_path, driver_p
 		output_dataframe = output_dataframe.append({'University name': uni_name,
 													'Count of SHC webpages matching keywords': no_of_links,
 													'Keywords matched webpages on SHC': row['Keywords matched webpages on SHC'],
-													'Content on all pages': content,
+													'Content on all pages': contents,
 													'Similarity Score': similarity,
 													'Similarity Label': similarity_label,
 													'Sentiment objectivity': sentiment_objectivity,
