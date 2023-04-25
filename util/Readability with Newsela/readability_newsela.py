@@ -13,7 +13,7 @@ import torch.nn.functional as F
 from torch.optim import AdamW
 from torch.utils.data import Dataset, DataLoader
 
-from transformers import AutoTokenizer, AutoModel, AutoConfig
+from transformers import AutoTokenizer, AutoModelForMaskedLM, AutoModel, AutoConfig
 from transformers import get_cosine_schedule_with_warmup
 
 from sklearn.model_selection import train_test_split
@@ -25,16 +25,24 @@ gc.enable()
 SEED = 42
 NUM_WORKERS = 7
 NUM_FOLDS = 5
-NUM_EPOCHS = 6
-BATCH_SIZE = 32
-MAX_LEN = 256
+NUM_EPOCHS = 4
+BATCH_SIZE = 8
+MAX_LEN = 512
 LR = 1e-6
-MODEL_PATH = 'roberta-base'
-TOKENIZER_PATH = 'roberta-base'
-SAVED_MODEL_DIR = './saved_models'
+
+ROBERTA = 'roberta-base'
+BIOBERT = 'dmis-lab/biobert-base-cased-v1.2'
+SCIBERT = 'allenai/scibert_scivocab_cased'
+BIOMED_ROBERTA = 'allenai/biomed_roberta_base' # Only model, use RoBERTa for tokenizer
+
+MODEL_PATH = BIOBERT
+TOKENIZER_PATH = BIOBERT
+SAVED_MODEL_DIR = './saved_models_BioBERT'
 DEVICE = "mps" if torch.backends.mps.is_available() and torch.backends.mps.is_built() else "cpu"
 # conda env config vars set PYTORCH_ENABLE_MPS_FALLBACK=1
 # Ref: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#setting-environment-variables
+
+TRAIN_DATA_PATH = './newsela_all.csv'
 
 def set_random_seed(random_seed):
     random.seed(random_seed)
@@ -42,7 +50,7 @@ def set_random_seed(random_seed):
     os.environ["PYTHONHASHSEED"] = str(random_seed)
     torch.manual_seed(random_seed)
 
-dataset_df = pd.read_csv("./newsela_health.csv")
+dataset_df = pd.read_csv(TRAIN_DATA_PATH)
 
 # Remove incomplete entries if any.
 # train_df.drop(train_df[(train_df.target == 0) & (train_df.standard_error == 0)].index, inplace=True)
@@ -54,7 +62,7 @@ class MyDataset(Dataset):
     def __init__(self, df, inference_only=False):
         super().__init__()
 
-        self.df = df        
+        self.df = df
         self.inference_only = inference_only
         self.text = df.sentences
         self.tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_PATH, use_fast=False)
@@ -62,8 +70,7 @@ class MyDataset(Dataset):
             self.grade_level = torch.tensor(df.grade_level.values, dtype=torch.float)
         else:
             self.grade_level = None     
-    
- 
+
     def __len__(self):
         return len(self.df)
    
@@ -76,11 +83,11 @@ class MyDataset(Dataset):
             return_attention_mask=True,
             return_token_type_ids=True
         )
-      
+
         input_ids = torch.tensor(encoded['input_ids'])
         attention_mask = torch.tensor(encoded['attention_mask'])
         token_type_ids = torch.tensor(encoded['token_type_ids'])
-        
+
         if self.inference_only:
             return {
                 'ids': input_ids,
@@ -103,9 +110,9 @@ class MyModel(nn.Module):
         config = AutoConfig.from_pretrained(MODEL_PATH)
         config.update({"output_hidden_states":True, 
                        "hidden_dropout_prob": 0.0,
-                       "layer_norm_eps": 1e-7})                       
+                       "layer_norm_eps": 1e-4})                       
         
-        self.model = AutoModel.from_pretrained(MODEL_PATH, config=config)  
+        self.model = AutoModelForMaskedLM.from_pretrained(MODEL_PATH, config=config)  
             
         self.attention = nn.Sequential(            
             nn.Linear(768, 512),            
@@ -235,9 +242,9 @@ def train():
     model = MyModel().to(DEVICE)
     optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=1e-2)                
 
-    kfold = KFold(n_splits=NUM_FOLDS, random_state=SEED, shuffle=True)
+    kfold = StratifiedKFold(n_splits=NUM_FOLDS, random_state=SEED, shuffle=True)
 
-    for fold, (train_indices, valid_indices) in enumerate(kfold.split(train_df)):    
+    for fold, (train_indices, valid_indices) in enumerate(kfold.split(train_df['sentences'], train_df['grade_level'])):    
         print(f"\nFold {fold + 1}/{NUM_FOLDS}")
 
         set_random_seed(SEED + fold)
@@ -277,12 +284,30 @@ def test():
     mean_predictions = pd.DataFrame(predictions).T.mean(axis=1).tolist()
 
     mse = mean_squared_error(test_df['grade_level'].tolist(), mean_predictions)
+    print(f"mse={mse}")
 
     test_df['prediction'] = mean_predictions
-    test_df['mse'] = mse
-    print(test_df)
     test_df.to_csv("prediction.csv", index=False)
+
+def QMOHItest():    
+    qmohi_result_df = pd.read_csv('Reading_level_of_content.csv')
+
+    test_dataset = MyDataset(qmohi_result_df, inference_only=True)
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, drop_last=False, shuffle=False, num_workers=NUM_WORKERS)
+
+    model = MyModel().to(DEVICE)
+    state_list = [os.path.join(SAVED_MODEL_DIR, x) for x in os.listdir(SAVED_MODEL_DIR) if x.endswith(".pt")]
+
+    predictions = predict(model, state_list, test_loader)
+    mean_predictions = pd.DataFrame(predictions).T.mean(axis=1).tolist()
+
+    mse = mean_squared_error(qmohi_result_df['grade_level'].tolist(), mean_predictions)
+    print(f"mse={mse}")
+
+    qmohi_result_df['prediction'] = mean_predictions
+    qmohi_result_df.to_csv("QMOHI_prediction.csv", index=False)
 
 if __name__ ==  '__main__':
     train()
     test()
+    # QMOHItest()
