@@ -138,7 +138,6 @@ myargument.csv
 # generated json file
 data.json
 
-#input files
-QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/GoogleNews-vectors-negative300.bin
-QMOHI_input/experiments/2021/QMOHI_input_11thOct2021/output/*
-QMOHI_input/test_input_template.csv
+# QMOHI directoris/files
+qmohi/src/metric_calc/similarity_metric/stopwords/stopwords_tfidf.txt
+input/
