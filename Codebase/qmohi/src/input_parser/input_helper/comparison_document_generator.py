@@ -349,10 +349,7 @@ def generate_comparison_document(output_file_path, api_keys, cse_id, depth, num_
 
         # Extract documents
         print("   Collecting gerenal description...")
-        if i == 0:
-            get_comparison_document(output_file, links[0], depth[0], visited_urls, drug_keywords, drug_details)
-        else:
-            get_comparison_document(output_file, links[0], depth[1], visited_urls, drug_keywords, drug_details)
+        get_comparison_document(output_file, links[0], 2 if i == 0 else depth, visited_urls, drug_keywords, drug_details)
 
         print("   Collecting therapy information...")
 

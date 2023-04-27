@@ -69,12 +69,12 @@ def review_input_keywords(input_file_path, file, api_keys, cse_id, output_dir):
 
 	# Get comparison document path
 	comparison_doc_path = file['Comparison_document'].values[0]
-	generate_comparison_document = not os.path.isfile(comparison_doc_path)
-	if generate_comparison_document:
+	source_doc_only = os.path.isfile(comparison_doc_path)
+	if not source_doc_only:
 		comparison_doc_path = os.path.join(os.path.join(output_dir, "comparison_document"), keywords[0] + ".txt")
 
 	# Iteration of keywords review
-	helper = KeywordSuggestionHelper(api_keys, cse_id, comparison_doc_path, keywords, generate_comparison_document)
+	helper = KeywordSuggestionHelper(api_keys, cse_id, comparison_doc_path, keywords, source_doc_only)
 	new_keywords = helper.suggest_keywords()
 
 	# Stripping extra leading and trailing spaces in the keywords

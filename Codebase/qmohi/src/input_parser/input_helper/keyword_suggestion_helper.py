@@ -8,12 +8,12 @@ COMPARISON_DOCUMENT_PATH = "./"
 
 
 class KeywordSuggestionHelper:
-    def __init__(self, api_keys, cse_id, comparison_doc_path, keywords, generate_comparison_document):
+    def __init__(self, api_keys, cse_id, comparison_doc_path, keywords, source_doc_only):
         self.api_keys = api_keys
         self.cse_id = cse_id
         self.comparison_doc_path = comparison_doc_path
         self.keywords = keywords
-        self.generate_comparison_document = generate_comparison_document
+        self.source_doc_only = source_doc_only
         self.keyword_suggestions = []
         self.topic_token = keywords[0].split(" ")
 
@@ -84,14 +84,14 @@ class KeywordSuggestionHelper:
             # Show current keywords
             print(f'\n__Iteration {iteration}__')
             self.display_current_keywords()
+            depth = 2 if len(self.keywords) <= 3 else 1
 
             # Generate comparison document
             if prev_keywords != self.keywords:
                 prev_keywords = self.keywords[:] # Deepcopy
 
                 print("\nCollecting information...")
-                depth = 2 if len(self.keywords) <= 3 else 1
-                extracted_drugs = generate_comparison_document(self.comparison_doc_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=False)
+                extracted_drugs = generate_comparison_document(self.comparison_doc_path, self.api_keys, self.cse_id, depth, keywords=self.keywords, drug_details=False)
 
                 if extracted_drugs:
                     for drug in extracted_drugs:
@@ -221,10 +221,9 @@ class KeywordSuggestionHelper:
                 elif cont.lower() in ["n", "no"]:
                     iteration = 0
                     self.display_current_keywords()
-                    if self.generate_comparison_document:
-                        print("\nGenerating the final comparison document...")
-                        depth = 2 if len(self.keywords) <= 3 else 1
-                        generate_comparison_document(self.comparison_doc_path, self.api_keys, self.cse_id, depth=(2, depth), keywords=self.keywords, drug_details=True)
+                    if not self.source_doc_only:
+                        print("\nGenerating the comparison document...")
+                        generate_comparison_document(self.comparison_doc_path, self.api_keys, self.cse_id, depth, keywords=self.keywords, drug_details=True)
                     break
 
         return self.keywords
