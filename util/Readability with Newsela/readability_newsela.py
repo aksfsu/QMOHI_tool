@@ -13,11 +13,11 @@ import torch.nn.functional as F
 from torch.optim import AdamW
 from torch.utils.data import Dataset, DataLoader
 
-from transformers import AutoTokenizer, AutoModelForMaskedLM, AutoModel, AutoConfig
+from transformers import AutoTokenizer, AutoModel, AutoConfig
 from transformers import get_cosine_schedule_with_warmup
 
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import mean_squared_error
 
 gc.enable()
@@ -28,12 +28,13 @@ NUM_FOLDS = 5
 NUM_EPOCHS = 4
 BATCH_SIZE = 8
 MAX_LEN = 512
-LR = 1e-6
+LR = 1e-4
+DROP_OUT_RATE = 0.1
 
 ROBERTA = 'roberta-base'
 BIOBERT = 'dmis-lab/biobert-base-cased-v1.2'
 SCIBERT = 'allenai/scibert_scivocab_cased'
-BIOMED_ROBERTA = 'allenai/biomed_roberta_base' # Only model, use RoBERTa for tokenizer
+BIOMED_ROBERTA = 'allenai/biomed_roberta_base'
 
 MODEL_PATH = BIOBERT
 TOKENIZER_PATH = BIOBERT
@@ -73,7 +74,7 @@ class MyDataset(Dataset):
 
     def __len__(self):
         return len(self.df)
-   
+
     def __getitem__(self, index):
         encoded = self.tokenizer.encode_plus(
             self.text.iloc[index],
@@ -108,45 +109,47 @@ class MyModel(nn.Module):
         super().__init__()
 
         config = AutoConfig.from_pretrained(MODEL_PATH)
-        config.update({"output_hidden_states":True, 
-                       "hidden_dropout_prob": 0.0,
-                       "layer_norm_eps": 1e-4})                       
+        config.update({"output_hidden_states": True, 
+                       "hidden_dropout_prob": 0.0})
+                    #    "layer_norm_eps": 1e-7})
         
-        self.model = AutoModelForMaskedLM.from_pretrained(MODEL_PATH, config=config)  
-            
+        self.model = AutoModel.from_pretrained(MODEL_PATH, config=config)
+
         self.attention = nn.Sequential(            
-            nn.Linear(768, 512),            
+            nn.Linear(768, 512),
             nn.Tanh(),                       
             nn.Linear(512, 1),
             nn.Softmax(dim=1)
-        )        
+        )
 
-        self.regressor = nn.Sequential(                        
+        self.regressor = nn.Sequential(
             nn.Linear(768, 1)                        
         )
 
+    # https://www.kaggle.com/code/andretugan/pre-trained-roberta-solution-in-pytorch
     def forward(self, input_ids, attention_mask, token_type_ids):
-        model_output = self.model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)        
+        outputs = self.model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
 
+        '''# Pooling Layer (https://www.kaggle.com/code/rhtsingh/utilizing-transformer-representations-efficiently)'''
         # There are a total of 13 layers of hidden states.
         # 1 for the embedding layer, and 12 for the 12 Roberta layers.
         # We take the hidden states from the last Roberta layer.
-        last_layer_hidden_states = model_output.hidden_states[-1]
+        # last_layer_hidden_states = model_output.hidden_states[-1] #torch.Size([8, 512, 768])
 
         # The number of cells is MAX_LEN.
         # The size of the hidden state of each cell is 768 (for roberta-base).
         # In order to condense hidden states of all cells to a context vector,
         # we compute a weighted average of the hidden states of all cells.
         # We compute the weight of each cell, using the attention neural network.
-        weights = self.attention(last_layer_hidden_states)
+        weights = self.attention(outputs.last_hidden_state) # last hidden state torch.Size([8, 512, 768])
                 
         # weights.shape is BATCH_SIZE x MAX_LEN x 1
         # last_layer_hidden_states.shape is BATCH_SIZE x MAX_LEN x 768        
         # Now we compute context_vector as the weighted average.
         # context_vector.shape is BATCH_SIZE x 768
-        context_vector = torch.sum(weights * last_layer_hidden_states, dim=1)        
-        
-        # Now we reduce the context vector to the prediction score.
+        context_vector = torch.sum(weights * outputs.last_hidden_state, dim=1)
+
+        # Reduce the context vector to the prediction score
         return self.regressor(context_vector)
 
 class Trainer:
