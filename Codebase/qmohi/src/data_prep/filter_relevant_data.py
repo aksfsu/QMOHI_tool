@@ -254,7 +254,6 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 					pdf_pages = convert_from_path(cache_file_path, 500)
 					image_file_list = []
 					for i, page in enumerate(pdf_pages, start=1):
-						# filename = join(tempdir, f"page_{i}.jpg")
 						filename = f"page_{i}.jpg"
 						file_path = join(tempdir, filename)
 						page.save(file_path, "JPEG")

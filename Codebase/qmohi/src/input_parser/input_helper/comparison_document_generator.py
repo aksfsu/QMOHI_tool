@@ -139,7 +139,6 @@ def get_comparison_document(output_file, url, depth, visited_urls, drug_keywords
 
         # The term has a dedicated "Drugs, Herbs and Supplements" page
         elif "druginfo" in url and re.search(r"\d+\.html$", url):
-            is_relevant = False
             drug_text = ""
 
             h1 = soup.find('h1')
