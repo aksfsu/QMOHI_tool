@@ -18,7 +18,7 @@ from transformers import get_cosine_schedule_with_warmup
 
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 
 gc.enable()
 
@@ -35,10 +35,11 @@ ROBERTA = 'roberta-base'
 BIOBERT = 'dmis-lab/biobert-base-cased-v1.2'
 SCIBERT = 'allenai/scibert_scivocab_cased'
 BIOMED_ROBERTA = 'allenai/biomed_roberta_base'
+CLINICAL_BERT = 'emilyalsentzer/Bio_ClinicalBERT'
 
-MODEL_PATH = BIOBERT
-TOKENIZER_PATH = BIOBERT
-SAVED_MODEL_DIR = './saved_models_BioBERT'
+MODEL_PATH = BIOMED_ROBERTA
+TOKENIZER_PATH = BIOMED_ROBERTA
+SAVED_MODEL_DIR = './saved_models'
 DEVICE = "mps" if torch.backends.mps.is_available() and torch.backends.mps.is_built() else "cpu"
 # conda env config vars set PYTORCH_ENABLE_MPS_FALLBACK=1
 # Ref: https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#setting-environment-variables
@@ -123,14 +124,16 @@ class MyModel(nn.Module):
         )
 
         self.regressor = nn.Sequential(
+            nn.Dropout(DROP_OUT_RATE),
             nn.Linear(768, 1)                        
         )
 
     # https://www.kaggle.com/code/andretugan/pre-trained-roberta-solution-in-pytorch
     def forward(self, input_ids, attention_mask, token_type_ids):
         outputs = self.model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
+        return self.regressor(outputs[1]) # Pooled output [8,768]
 
-        '''# Pooling Layer (https://www.kaggle.com/code/rhtsingh/utilizing-transformer-representations-efficiently)'''
+        '''# Pooling Layer (https://www.kaggle.com/code/rhtsingh/utilizing-transformer-representations-efficiently)
         # There are a total of 13 layers of hidden states.
         # 1 for the embedding layer, and 12 for the 12 Roberta layers.
         # We take the hidden states from the last Roberta layer.
@@ -151,6 +154,7 @@ class MyModel(nn.Module):
 
         # Reduce the context vector to the prediction score
         return self.regressor(context_vector)
+        '''
 
 class Trainer:
     def __init__(self, model, optimizer, scheduler, train_dataloader, valid_dataloader):
@@ -270,11 +274,21 @@ def train():
 
             if current_loss < best_loss:
                 print(f"Saving best model in this fold: {current_loss:.4f}")
-                torch.save(trainer.get_model().state_dict(), os.path.join(SAVED_MODEL_DIR, f"Roberta_fold_{fold + 1}.pt"))
+                torch.save(trainer.get_model().state_dict(), os.path.join(SAVED_MODEL_DIR, f"fold_{fold + 1}.pt"))
                 best_loss = current_loss
         
         print(f"Best RMSE in fold: {fold} was: {best_loss:.4f}")
         print(f"Final RMSE in fold: {fold} was: {current_loss:.4f}")
+
+def score(test_list, predict_list):
+    mse = mean_squared_error(test_list, predict_list)
+    print(f"MSE={mse}")
+    rmse = mean_squared_error(test_list, predict_list, squared=False)
+    print(f"RMSE={rmse}")
+    mae = mean_absolute_error(test_list, predict_list)
+    print(f"MAE={mae}")
+    r2 = r2_score(test_list, predict_list, force_finite=False)
+    print(f"R2={r2}")
 
 def test():
     test_dataset = MyDataset(test_df, inference_only=True)
@@ -286,8 +300,8 @@ def test():
     predictions = predict(model, state_list, test_loader)
     mean_predictions = pd.DataFrame(predictions).T.mean(axis=1).tolist()
 
-    mse = mean_squared_error(test_df['grade_level'].tolist(), mean_predictions)
-    print(f"mse={mse}")
+    # Scoring
+    score(test_df['grade_level'].tolist(), mean_predictions)
 
     test_df['prediction'] = mean_predictions
     test_df.to_csv("prediction.csv", index=False)
@@ -304,8 +318,8 @@ def QMOHItest():
     predictions = predict(model, state_list, test_loader)
     mean_predictions = pd.DataFrame(predictions).T.mean(axis=1).tolist()
 
-    mse = mean_squared_error(qmohi_result_df['grade_level'].tolist(), mean_predictions)
-    print(f"mse={mse}")
+    # Scoring
+    score(qmohi_result_df, mean_predictions)
 
     qmohi_result_df['prediction'] = mean_predictions
     qmohi_result_df.to_csv("QMOHI_prediction.csv", index=False)
