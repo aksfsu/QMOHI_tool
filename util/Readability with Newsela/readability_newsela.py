@@ -244,7 +244,6 @@ def predict(model, states_list, test_dataloader):
         
     return all_preds
 
-
 def train():
     model = MyModel().to(DEVICE)
     optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=1e-2)                
@@ -276,9 +275,28 @@ def train():
                 print(f"Saving best model in this fold: {current_loss:.4f}")
                 torch.save(trainer.get_model().state_dict(), os.path.join(SAVED_MODEL_DIR, f"fold_{fold + 1}.pt"))
                 best_loss = current_loss
-        
+
         print(f"Best RMSE in fold: {fold} was: {best_loss:.4f}")
         print(f"Final RMSE in fold: {fold} was: {current_loss:.4f}")
+
+def train_final():
+    model = MyModel().to(DEVICE)
+    optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=1e-2)                
+
+    set_random_seed(SEED)
+
+    train_dataset = MyDataset(train_df)
+        
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, drop_last=True, shuffle=True, num_workers=NUM_WORKERS)    
+
+    scheduler = get_cosine_schedule_with_warmup(optimizer, num_training_steps=NUM_EPOCHS * len(train_loader), num_warmup_steps=50)    
+    trainer = Trainer(model, optimizer, scheduler, train_loader, None)
+
+    for epoch in range(NUM_EPOCHS):
+        print(f"--- Epoch {epoch} ---")
+        trainer.train_one_epoch()
+
+    torch.save(trainer.get_model().state_dict(), os.path.join(SAVED_MODEL_DIR, f"final.pt"))
 
 def score(test_list, predict_list):
     mse = mean_squared_error(test_list, predict_list)
@@ -325,6 +343,7 @@ def QMOHItest():
     qmohi_result_df.to_csv("QMOHI_prediction.csv", index=False)
 
 if __name__ ==  '__main__':
-    train()
-    test()
+    train_final()
+    # train()
+    # test()
     # QMOHItest()
