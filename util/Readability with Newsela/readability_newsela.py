@@ -285,7 +285,7 @@ def train_final():
 
     set_random_seed(SEED)
 
-    train_dataset = MyDataset(train_df)
+    train_dataset = MyDataset(dataset_df)
         
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, drop_last=True, shuffle=True, num_workers=NUM_WORKERS)    
 
@@ -315,13 +315,13 @@ def test():
     model = MyModel().to(DEVICE)
     state_list = [os.path.join(SAVED_MODEL_DIR, x) for x in os.listdir(SAVED_MODEL_DIR) if x.endswith(".pt")]
 
-    predictions = predict(model, state_list, test_loader)
-    mean_predictions = pd.DataFrame(predictions).T.mean(axis=1).tolist()
+    predictions = np.array(predict(model, state_list, test_loader))
+    predictions = np.transpose(predictions).flatten()
 
     # Scoring
-    score(test_df['grade_level'].tolist(), mean_predictions)
+    score(test_df['grade_level'].tolist(), predictions)
 
-    test_df['prediction'] = mean_predictions
+    test_df['prediction'] = predictions
     test_df.to_csv("prediction.csv", index=False)
 
 def QMOHItest():    
@@ -333,13 +333,13 @@ def QMOHItest():
     model = MyModel().to(DEVICE)
     state_list = [os.path.join(SAVED_MODEL_DIR, x) for x in os.listdir(SAVED_MODEL_DIR) if x.endswith(".pt")]
 
-    predictions = predict(model, state_list, test_loader)
-    mean_predictions = pd.DataFrame(predictions).T.mean(axis=1).tolist()
+    predictions = np.array(predict(model, state_list, test_loader))
+    predictions = np.transpose(predictions).flatten()
 
     # Scoring
-    score(qmohi_result_df, mean_predictions)
+    score(qmohi_result_df['grade_level'].tolist(), predictions)
 
-    qmohi_result_df['prediction'] = mean_predictions
+    qmohi_result_df['prediction'] = predictions
     qmohi_result_df.to_csv("QMOHI_prediction.csv", index=False)
 
 if __name__ ==  '__main__':
