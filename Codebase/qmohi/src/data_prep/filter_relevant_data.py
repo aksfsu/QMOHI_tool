@@ -271,13 +271,11 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 		for cache_file in cache_files:
 			# Specify the path to each cache file
 			cache_file_path = join(cache_university_path, cache_file)
-			print(cache_file_path)
+
 			# Extract text
 			if cache_file.endswith("pdf"):
-				print("PDF processing...")
 				text = get_text_from_pdf(cache_file_path).encode("ascii", "ignore").decode()
 			else:
-				print("html processing...")
 				try:
 					fo_input = open(cache_file_path, 'r')
 					html = fo_input.read()
