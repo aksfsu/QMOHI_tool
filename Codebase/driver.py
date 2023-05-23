@@ -78,37 +78,37 @@ def execute(input_file_path):
 
 	# Get university SHC from university name
 	print("\nFinding university SHC websites...")
-	result_dataframe3 = get_uni_shc.get_shc_urls_from_uni_name(universities_list, keys_list_for_shc, driver_path, cse_id, output_dir)
+	shc_websites_df = get_uni_shc.get_shc_urls_from_uni_name(universities_list, keys_list_for_shc, driver_path, cse_id, output_dir)
 
 	# Get related web pages under SHC website having presence of input keywords
 	print("\n============ PHASE 2 =============\n")
 	print("Searching SHC web pages having presence of keywords...")
-	result_dataframe4 = get_shc_webpages_with_keywords.get_links(result_dataframe3, query_keywords, keys_list_for_site_specific_search, cse_id, output_dir)
+	relevant_shc_webpages_df = get_shc_webpages_with_keywords.get_links(shc_websites_df, query_keywords, keys_list_for_site_specific_search, cse_id, output_dir)
 
 	# Store web pages in html format
 	print("\nSaving web pages on local computer...")
-	store_webpages.save_webpage_content(result_dataframe4, output_dir)
+	store_webpages.save_webpage_content(relevant_shc_webpages_df, output_dir)
 
 	# Find relevant content from retrieved website data
 	print("\nFiltering information relevant to keywords...")
-	result_dataframe6, keyword_list, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary = filter_relevant_data.find_relevant_content(result_dataframe4, keyword_list, margin, output_dir)
+	topical_content_df, keyword_list, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary = filter_relevant_data.find_relevant_content(relevant_shc_webpages_df, keyword_list, margin, output_dir)
 
 	# Calculate overall reading level of relevant content retrieved from the urls
 	print("\n============ PHASE 3 =============\n")
 	print("Calculating Readability metric...")
-	result_dataframe7 = reading_level.get_reading_level(result_dataframe6, output_dir)
+	reading_level_df = reading_level.get_reading_level(topical_content_df, output_dir)
 
 	# Calculate quantity of keywords, Prevalence metric, Coverage metric
 	print("\nCalculating quantity of keywords, Prevalence metric, Coverage metric...")
-	result_dataframe8 = metric_calculation1.metric_calculation(result_dataframe7, keyword_list, output_dir, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary)
+	metrics1_df = metric_calculation1.metric_calculation(reading_level_df, keyword_list, output_dir, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary)
 
 	# Calculate Similarity metric, Objectivity metric, Polarity metric, Timeliness metric, Navigation metric
 	print("\nCalculating Similarity metric, Objectivity metric, Polarity metric, Timeliness metric, Navigation metric...")
-	result_dataframe9 = metric_calculation2.calculate_metrics(result_dataframe6, output_dir, comparison_doc_path, driver_path, model_path)
+	metrics2_df = metric_calculation2.calculate_metrics(topical_content_df, output_dir, comparison_doc_path, driver_path, model_path)
 
 	# Consolidating final result together
 	print("\nConsolidating all metric values together...")
-	combine_results.combine_all_results_together(result_dataframe8, result_dataframe9, result_dataframe3, output_dir)
+	combine_results.combine_all_results_together(metrics1_df, metrics2_df, shc_websites_df, output_dir)
 	timestamp = time.time()
 	date = datetime.datetime.fromtimestamp(timestamp)
 	print("End: ", date.strftime('%H:%M:%S.%f'))
