@@ -153,19 +153,19 @@ def get_comparison_document(output_file, url, depth, visited_urls, drug_keywords
             if sections:
                 for section in sections:
                     # Extract descriptions of the drug
-                    section_body = section.find('div', {'id': re.compile(r'section-app\d+')})
+                    section_body = section.find('div', {'id': re.compile(r'section-\d+')})
                     if section_body:
                         # Collect internal links
                         urls.extend(get_internal_links(section_body, url))
                         # Get the text data
-                        drug_text += section_body.get_text(separator=" ", strip=True) + " "
+                        drug_text += section_body.parent.get_text(separator=" ", strip=True) + " "
 
                     # Extract drug names
-                    section_brandname = section.find('div', {'id': re.compile(r'section-brandname-\d+')})
+                    section_brandname = section.find('div', {'id': re.compile(r'section-brandname')})
                     if section_brandname:
                         # Collect internal links
                         urls.extend(get_internal_links(section_brandname, url))
-                        # Get the text data
+                        # Extract drug names
                         list_items = section_brandname.find_all('li')
                         for item in list_items:
                             item_text = item.get_text(separator=" ", strip=True)
@@ -177,7 +177,7 @@ def get_comparison_document(output_file, url, depth, visited_urls, drug_keywords
                     if section_other_name:
                         # Collect internal links
                         urls.extend(get_internal_links(section_other_name, url))
-                        # Get the text data
+                        # Extract drug names
                         list_items = section_other_name.find_all('li')
                         for item in list_items:
                             item_text = item.get_text(separator=" ", strip=True)
