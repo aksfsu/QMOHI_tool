@@ -88,7 +88,7 @@ def get_text_from_pdf(pdf_path):
 	if not text:
 		with TemporaryDirectory() as tempdir:
 			# Converting PDF to images
-			pdf_pages = convert_from_path(pdf_path, 500)[:5] # up to 5 pages
+			pdf_pages = convert_from_path(pdf_path, 500)
 			image_file_list = []
 			for i, page in enumerate(pdf_pages, start=1):
 				file_path = join(tempdir, f"page_{i}.jpg")
