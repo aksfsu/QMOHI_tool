@@ -52,13 +52,13 @@ def get_internal_links(soup, parent_url):
 def clean_drug_name(drug):
     drug = drug.replace("®", "").replace("¶", "")
     drug = re.sub(r"\(.*\)", "", drug)
-    drug = drug.strip().lower()
     drug = re.sub(r"[\",#/@;:<>{}`_+=~|\[\]]", " ", drug)
+    drug = drug.strip().lower()
     if not re.search(r".*\..*", drug):
-        drug = re.sub(r"([a-zA-Z]+)-(\d+)", r"\1\2", drug)
-        drug = re.sub(r"(\d+)-([a-zA-Z]+)", r"\1\2", drug)
+        drug = re.sub(r"([a-z]+)-(\d+)", r"\1\2", drug)
+        drug = re.sub(r"(\d+)-([a-z]+)", r"\1\2", drug)
         drug = re.sub(r"([a-zA-Z]+) (\d+)$", r"\1\2", drug)
-        drug = re.sub(r"^(\d+) ([a-zA-Z]+)", r"\1\2", drug)
+        drug = re.sub(r"^(\d+) ([a-z]+)", r"\1\2", drug)
     drug = re.sub(r"-", " ", drug)
     drug = re.sub(r" +", " ", drug)
     return drug
