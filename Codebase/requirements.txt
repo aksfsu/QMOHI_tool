@@ -16,3 +16,4 @@ asyncio
 pyppeteer
 keybert
 keyphrase_vectorizers
+PyPDF2

@@ -15,6 +15,7 @@ from os.path import isdir, isfile, join, dirname
 import re
 from bs4 import BeautifulSoup
 
+from PyPDF2 import PdfReader
 from tempfile import TemporaryDirectory
 from pdf2image import convert_from_path
 import easyocr
@@ -23,10 +24,14 @@ nltk.download('gutenberg')  # Can be run only once in the beginning
 
 
 def get_text_from_image(image_path):
-    # Extract text
-    reader = easyocr.Reader(['en'], verbose=False)
-    # Consider each segment as a sentence by adding ". "
-    return ". ".join(reader.readtext(image_path, detail=0))
+	# Extract text
+	reader = easyocr.Reader(['en'], verbose=False)
+	try:
+		# Consider each segment as a sentence by adding ". "
+		texts = reader.readtext(image_path, detail=0)
+	except:
+		return ""
+	return ". ".join(texts)
 
 
 def get_text_in_images_from_html(html):
@@ -59,22 +64,45 @@ def get_text_in_images_from_html(html):
 
 
 def get_text_from_pdf(pdf_path):
-	with TemporaryDirectory() as tempdir:
-		# Converting PDF to images
-		# print(pdf_path)
-		pdf_pages = convert_from_path(pdf_path, 500)
-		image_file_list = []
-		for i, page in enumerate(pdf_pages, start=1):
-			filename = join(tempdir, f"page_{i}.jpg")
-			page.save(filename, "JPEG")
-			image_file_list.append(filename)
+	text = ""
 
-		# Recognizing text from the images using OCR
-		# print(f'Extracting text from PDF: {pdf_path} ...')
-		text = ""
-		for image_file in image_file_list:
-			text += " " + get_text_from_image(image_file)
-		return text
+	reader = PdfReader(pdf_path)
+	for page in reader.pages:
+		raw_text = page.extract_text()
+		try:
+			images = page.images
+		except:
+			images = []
+		for image in images:
+			with TemporaryDirectory() as tempdir:
+				file_path = join(tempdir, image.name)
+				with open(file_path, "wb") as fp:
+					fp.write(image.data)
+				raw_text += " " + get_text_from_image(file_path)
+
+		if raw_text:
+			raw_text = re.sub(r"  +", ". ", raw_text)
+			raw_text = raw_text.replace("\n", " ").replace("\t", " ").replace("\r", " ")
+			text += ". " + raw_text
+
+	if not text:
+		with TemporaryDirectory() as tempdir:
+			# Converting PDF to images
+			pdf_pages = convert_from_path(pdf_path, 500)
+			image_file_list = []
+			for i, page in enumerate(pdf_pages, start=1):
+				file_path = join(tempdir, f"page_{i}.jpg")
+				page.save(file_path, "JPEG")
+				image_file_list.append(file_path)
+
+			# Recognizing text from the images using OCR
+			for image_file in image_file_list:
+				try:
+					text += " " + get_text_from_image(image_file)
+				except:
+					pass
+
+	return text
 
 
 def relevant_content_words(keywords, file):
@@ -155,6 +183,7 @@ def clean_text(text):
 
 def sentence_highlight(se_output_file_path, text, keywords, margin):
 	topical_contents = []
+	text = clean_text(text)
 
 	# Open the output file
 	fo_output = open(se_output_file_path, 'a')
@@ -242,34 +271,10 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 		for cache_file in cache_files:
 			# Specify the path to each cache file
 			cache_file_path = join(cache_university_path, cache_file)
-			# Support only file size <= 1M
-			file_size = os.path.getsize(cache_file_path)
-			if file_size > 1000000:
-				print(f'Skipping too big file: {cache_file_path}')
-				continue
-			# Read the cache file
+
+			# Extract text
 			if cache_file.endswith("pdf"):
-				with TemporaryDirectory() as tempdir:
-					# Converting PDF to images
-					pdf_pages = convert_from_path(cache_file_path, 500)
-					image_file_list = []
-					for i, page in enumerate(pdf_pages, start=1):
-						filename = f"page_{i}.jpg"
-						file_path = join(tempdir, filename)
-						page.save(file_path, "JPEG")
-						image_file_list.append(filename)
-
-					# Recognizing text from the images using OCR
-					# print(f'Extracting text from PDF: {pdf_path} ...')
-					for image_file in image_file_list:
-						file_path = join(tempdir, image_file)
-						text = clean_text(get_text_from_image(file_path))
-
-						# Run sentence highlight
-						se_output_file_path = join(se_output_dir_path, os.path.splitext(cache_file)[0] + ".html")
-						makedirs(dirname(se_output_file_path), exist_ok=True)
-						topical_contents.extend(sentence_highlight(se_output_file_path, text, keywords, margin))
-
+				text = get_text_from_pdf(cache_file_path).encode("ascii", "ignore").decode()
 			else:
 				try:
 					fo_input = open(cache_file_path, 'r')
@@ -279,16 +284,14 @@ def get_topical_contents(output_dir, university, keywords, margin=5):
 				finally:
 					fo_input.close()
 
-				# Parse and clean the text data
 				bs_obj = BeautifulSoup(html, 'html.parser')
 				text = bs_obj.get_text(". ").encode("ascii", "ignore").decode()
 				text += get_text_in_images_from_html(html)
-				text = clean_text(text)
-				
-				# Run sentence highlight
-				se_output_file_path = join(se_output_dir_path, os.path.splitext(cache_file)[0] + ".html")
-				makedirs(dirname(se_output_file_path), exist_ok=True)
-				topical_contents.extend(sentence_highlight(se_output_file_path, text, keywords, margin))
+
+			# Run sentence highlight
+			se_output_file_path = join(se_output_dir_path, os.path.splitext(cache_file)[0] + ".html")
+			makedirs(dirname(se_output_file_path), exist_ok=True)
+			topical_contents.extend(sentence_highlight(se_output_file_path, text, keywords, margin))
 
 	return topical_contents
 
