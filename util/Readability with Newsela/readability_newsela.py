@@ -25,7 +25,7 @@ gc.enable()
 SEED = 42
 NUM_WORKERS = 7
 NUM_FOLDS = 5
-NUM_EPOCHS = 4
+NUM_EPOCHS = 8
 BATCH_SIZE = 8
 MAX_LEN = 512
 LR = 1e-4
@@ -46,19 +46,21 @@ DEVICE = "mps" if torch.backends.mps.is_available() and torch.backends.mps.is_bu
 
 TRAIN_DATA_PATH = './newsela_all.csv'
 
-def set_random_seed(random_seed):
-    random.seed(random_seed)
-    np.random.seed(random_seed)
-    os.environ["PYTHONHASHSEED"] = str(random_seed)
-    torch.manual_seed(random_seed)
+if not os.path.exists(SAVED_MODEL_DIR):
+    os.makedirs(SAVED_MODEL_DIR)
 
 dataset_df = pd.read_csv(TRAIN_DATA_PATH)
+train_df, test_df = train_test_split(dataset_df, test_size=0.2, random_state=42, shuffle=False)
 
 # Remove incomplete entries if any.
 # train_df.drop(train_df[(train_df.target == 0) & (train_df.standard_error == 0)].index, inplace=True)
 # train_df.reset_index(drop=True, inplace=True)
 
-train_df, test_df = train_test_split(dataset_df, test_size=0.2, random_state=42, shuffle=False)
+def set_random_seed(random_seed):
+    random.seed(random_seed)
+    np.random.seed(random_seed)
+    os.environ["PYTHONHASHSEED"] = str(random_seed)
+    torch.manual_seed(random_seed)
 
 class MyDataset(Dataset):
     def __init__(self, df, inference_only=False):
@@ -131,9 +133,9 @@ class MyModel(nn.Module):
     # https://www.kaggle.com/code/andretugan/pre-trained-roberta-solution-in-pytorch
     def forward(self, input_ids, attention_mask, token_type_ids):
         outputs = self.model(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
-        return self.regressor(outputs[1]) # Pooled output [8,768]
+        # return self.regressor(outputs[1]) # Pooled output [8,768]
 
-        '''# Pooling Layer (https://www.kaggle.com/code/rhtsingh/utilizing-transformer-representations-efficiently)
+        # Pooling Layer (https://www.kaggle.com/code/rhtsingh/utilizing-transformer-representations-efficiently)
         # There are a total of 13 layers of hidden states.
         # 1 for the embedding layer, and 12 for the 12 Roberta layers.
         # We take the hidden states from the last Roberta layer.
@@ -154,7 +156,7 @@ class MyModel(nn.Module):
 
         # Reduce the context vector to the prediction score
         return self.regressor(context_vector)
-        '''
+        
 
 class Trainer:
     def __init__(self, model, optimizer, scheduler, train_dataloader, valid_dataloader):
@@ -244,7 +246,7 @@ def predict(model, states_list, test_dataloader):
         
     return all_preds
 
-def train():
+def kfold_cross_validation():
     model = MyModel().to(DEVICE)
     optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=1e-2)                
 
@@ -279,7 +281,7 @@ def train():
         print(f"Best RMSE in fold: {fold} was: {best_loss:.4f}")
         print(f"Final RMSE in fold: {fold} was: {current_loss:.4f}")
 
-def train_final():
+def train_model():
     model = MyModel().to(DEVICE)
     optimizer = AdamW(model.parameters(), lr=2e-5, weight_decay=1e-2)                
 
@@ -298,7 +300,7 @@ def train_final():
 
     torch.save(trainer.get_model().state_dict(), os.path.join(SAVED_MODEL_DIR, f"final.pt"))
 
-def score(test_list, predict_list):
+def score_model(test_list, predict_list):
     mse = mean_squared_error(test_list, predict_list)
     print(f"MSE={mse}")
     rmse = mean_squared_error(test_list, predict_list, squared=False)
@@ -308,7 +310,7 @@ def score(test_list, predict_list):
     r2 = r2_score(test_list, predict_list, force_finite=False)
     print(f"R2={r2}")
 
-def test():
+def test_model():
     test_dataset = MyDataset(test_df, inference_only=True)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, drop_last=False, shuffle=False, num_workers=NUM_WORKERS)
 
@@ -319,13 +321,18 @@ def test():
     predictions = np.transpose(predictions).flatten()
 
     # Scoring
-    score(test_df['grade_level'].tolist(), predictions)
+    score_model(test_df['grade_level'].tolist(), predictions)
 
     test_df['prediction'] = predictions
     test_df.to_csv("prediction.csv", index=False)
 
+def train_test_model():
+    train_model()
+    test_model()
+
 def QMOHItest():    
     qmohi_result_df = pd.read_csv('Reading_level_of_content.csv')
+    qmohi_result_df.rename(columns={'Relevant content on all pages': 'sentences'}, inplace=True)
 
     test_dataset = MyDataset(qmohi_result_df, inference_only=True)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, drop_last=False, shuffle=False, num_workers=NUM_WORKERS)
@@ -337,13 +344,12 @@ def QMOHItest():
     predictions = np.transpose(predictions).flatten()
 
     # Scoring
-    score(qmohi_result_df['grade_level'].tolist(), predictions)
+    # score_model(qmohi_result_df['grade_level'].tolist(), predictions)
 
     qmohi_result_df['prediction'] = predictions
     qmohi_result_df.to_csv("QMOHI_prediction.csv", index=False)
 
 if __name__ ==  '__main__':
-    train_final()
-    # train()
-    # test()
-    # QMOHItest()
+    # kfold_cross_validation()
+    # train_test_model()
+    QMOHItest()
