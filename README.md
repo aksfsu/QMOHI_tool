@@ -73,6 +73,8 @@ For health topics that are often in the news, we recommend [*GoogleNews-vectors-
 
 QMOHI comprises a modular pipeline of three components: SHC website identification, information collection, and evaluation metric calculation. QMOHI requires input information such as university names and keywords of a topic of interest passed by the QMOHI input file. In the process of applying input information, users are allowed to review and update keywords by adding keywords suggested by QMOHI's helper function. In the first component, given university names are used to identify the corresponding SHC websites. SHC website homepages along with the set of input keywords act as entry points to the second component where information related to the keywords is scraped from the SHC websites. Once relevant information is obtained, the third component quantifies its quality through metrics such as readability, objectivity, polarity, coverage, similarity, and prevalence. Accessibility and recency of the information is represented by navigation and timeliness metrics, respectively. 
 
+![QMOHI Flowchart](./Dataset/Asset/QMOHI%20System%20Overview.jpg)
+
 ## Dataset
 
 Example input and output are stored in the `Dataset/Input` and `Dataset/Output` folder, respectively. 
