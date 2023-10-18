@@ -118,18 +118,19 @@ def calculate_metrics(input_dataframe, output_dir, comparison_doc_path, driver_p
 		print("   - Navigation")
 		navigation, trace = obj.calculate_navigation(driver_path)
 		
-		output_dataframe = output_dataframe.append({'University name': uni_name,
-													'Count of SHC webpages matching keywords': no_of_links,
-													'Keywords matched webpages on SHC': row['Keywords matched webpages on SHC'],
-													'Content on all pages': contents,
-													'Similarity Score': similarity,
-													'Similarity Label': similarity_label,
-													'Sentiment objectivity': sentiment_objectivity,
-													'Sentiment polarity': sentiment_polarity,
-													'Timeliness': timeliness,
-													'Navigation': navigation,
-													'Trace': trace
-													}, ignore_index=True)
+		output_dataframe = pd.concat([output_dataframe, pd.DataFrame.from_dict({
+			'University name': uni_name,
+			'Count of SHC webpages matching keywords': no_of_links,
+			'Keywords matched webpages on SHC': row['Keywords matched webpages on SHC'],
+			'Content on all pages': contents,
+			'Similarity Score': similarity,
+			'Similarity Label': similarity_label,
+			'Sentiment objectivity': sentiment_objectivity,
+			'Sentiment polarity': sentiment_polarity,
+			'Timeliness': timeliness,
+			'Navigation': navigation,
+			'Trace': trace
+		}, orient='index').transpose()], ignore_index=True)
 		
 	# Storing output
 	output_dataframe.to_csv(output_dir + '/measures_result.csv')

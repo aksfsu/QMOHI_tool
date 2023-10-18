@@ -137,7 +137,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 
 		except Exception as e:
 			print(e)
-			output_dataframe = output_dataframe.append(
+			output_dataframe = pd.concat([output_dataframe, pd.DataFrame.from_dict(
 				{
 					'University name': university,
 					'University SHC URL': shc,
@@ -150,7 +150,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 					'Reading ease': reading_ease,
 					'Grade level': grade_level
 
-				}, ignore_index=True)
+				}, orient='index').transpose()], ignore_index=True)
 		
 	output_dataframe.to_csv(output_dir + '/Keywords_count_for_universities.csv')
 

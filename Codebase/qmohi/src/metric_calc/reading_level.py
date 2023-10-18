@@ -119,19 +119,18 @@ def get_reading_level(input_dataframe, output_dir):
 			if not contents:
 				print("   - Relevant information contains only whitespace!")
 
-				output_dataframe = output_dataframe.append(
-					{
-						'University name': university,
-						'University SHC URL': shc,
-						'Count of SHC webpages matching keywords': no_of_links,
-						'Keywords matched webpages on SHC': link_data,
-						'Total word count on all pages': total_words,
-						'Num of sentences': 0,
-						'Num of syllables': 0,
-						'Num of words': 0,
-						'Reading ease': 0,
-						'Grade level': 0
-					}, ignore_index=True)
+				output_dataframe = pd.concat([output_dataframe, pd.DataFrame.from_dict({
+					'University name': university,
+					'University SHC URL': shc,
+					'Count of SHC webpages matching keywords': no_of_links,
+					'Keywords matched webpages on SHC': link_data,
+					'Total word count on all pages': total_words,
+					'Num of sentences': 0,
+					'Num of syllables': 0,
+					'Num of words': 0,
+					'Reading ease': 0,
+					'Grade level': 0
+				}, orient='index').transpose()], ignore_index=True)
 
 			# If content is present
 			else:
@@ -144,34 +143,32 @@ def get_reading_level(input_dataframe, output_dir):
 				grade_level = readability.get_grade_level_score()
 
 				# Append current dataframe to overall result
-				output_dataframe = output_dataframe.append(
-					{
-						'University name': university,
-						'University SHC URL': shc,
-						'Relevant content on all pages': contents,
-						'Count of SHC webpages matching keywords': no_of_links,
-						'Keywords matched webpages on SHC': link_data,
-						'Total word count on all pages': total_words,
-						'Num of sentences': readability.get_num_of_sentences(),
-						'Num of syllables': readability.get_num_of_syllables(),
-						'Num of words': readability.get_num_of_words(),
-						'Reading ease': reading_ease,
-						'Grade level': grade_level
-					}, ignore_index=True)
-		# If there is some error in the reading content
-		except Exception as e:
-			print(e)
-			output_dataframe = output_dataframe.append(
-				{
+				output_dataframe = pd.concat([output_dataframe, pd.DataFrame.from_dict({
 					'University name': university,
 					'University SHC URL': shc,
 					'Relevant content on all pages': contents,
 					'Count of SHC webpages matching keywords': no_of_links,
 					'Keywords matched webpages on SHC': link_data,
 					'Total word count on all pages': total_words,
-					'Reading ease': "Error in reading content!",
-					'Grade level': "Error in reading content!"
-				}, ignore_index=True)
+					'Num of sentences': readability.get_num_of_sentences(),
+					'Num of syllables': readability.get_num_of_syllables(),
+					'Num of words': readability.get_num_of_words(),
+					'Reading ease': reading_ease,
+					'Grade level': grade_level
+				}, orient='index').transpose()], ignore_index=True)
+		# If there is some error in the reading content
+		except Exception as e:
+			print(e)
+			output_dataframe = pd.concat([output_dataframe, pd.DataFrame.from_dict({
+				'University name': university,
+				'University SHC URL': shc,
+				'Relevant content on all pages': contents,
+				'Count of SHC webpages matching keywords': no_of_links,
+				'Keywords matched webpages on SHC': link_data,
+				'Total word count on all pages': total_words,
+				'Reading ease': "Error in reading content!",
+				'Grade level': "Error in reading content!"
+			}, orient='index').transpose()], ignore_index=True)
 
 	# Storing results
 	output_dataframe.to_csv(output_dir + '/Reading_level_of_content.csv')

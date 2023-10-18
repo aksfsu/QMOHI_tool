@@ -352,13 +352,14 @@ def find_relevant_content(input_dataframe, keywords, margin, output_dir):
 
 			list_of_found_per_stem_dictionary.append(found_per_stem_dictionary)
 			list_of_stem_found_phrase_dictionary.append(stem_found_phrase_dictionary)
-			output_dataframe = output_dataframe.append({'University name': university,
-														'University SHC URL': shc,
-														'Count of SHC webpages matching keywords': no_of_links,
-														'Keywords matched webpages on SHC': link_data,
-														'Relevant content on all pages': contents,
-														'Total word count on all pages': total_words
-														}, ignore_index=True)
+			output_dataframe = pd.concat([output_dataframe, pd.DataFrame.from_dict({
+				'University name': university,
+				'University SHC URL': shc,
+				'Count of SHC webpages matching keywords': no_of_links,
+				'Keywords matched webpages on SHC': link_data,
+				'Relevant content on all pages': contents,
+				'Total word count on all pages': total_words
+			}, orient='index').transpose()], ignore_index=True)
 
 	# Storing output dataframe
 	output_dataframe.to_csv(output_dir + '/get_relevant_data_from_collected_data.csv')
