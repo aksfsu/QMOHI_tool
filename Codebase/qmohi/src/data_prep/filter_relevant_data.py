@@ -173,6 +173,7 @@ def clean_text(text):
 	text = re.sub(r"http\S+", "", text, flags=re.MULTILINE)
 	text = re.sub(r"www\S+", "", text, flags=re.MULTILINE)
 	# Remove redundant dots and new lines
+	text = re.sub(r"[;|]+", ".", text)
 	text = re.sub(r"[\n ]+\.", "", text)
 	text = re.sub(r"\. +\.", ".", text)
 	text = re.sub(r"\.+", ".", text)
