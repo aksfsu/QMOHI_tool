@@ -9,7 +9,7 @@ def read_input_file(path):
 	try:
 		file = pd.read_csv(path,
 							 usecols=['University_name', 'Keywords', 'API_keys', 'Paid_API_key', 'CSE_id', 'Selenium_Chrome_webdriver',
-									  'Output_directory', 'Comparison_document', 'Word_vector_model', 'Sentence_extraction_margin'])
+									  'Output_directory', 'Comparison_document', 'Word_vector_model', 'Sentence_extraction_margin', 'Readability_model'])
 	except Exception as e:
 		print(e)
 		print("Problem with input file! Make sure the location of the file is correct and columns are "
@@ -249,3 +249,18 @@ def get_sentence_extraction_margin(file):
 	margin = int(margin['Sentence_extraction_margin'].values[0])
 
 	return margin
+
+
+def get_readability_model(file):
+	# Reading the readability model provided by user
+	model_dir = file[['Readability_model']].copy()
+
+	model_dir = model_dir.dropna(axis=0, how='any')
+
+	if model_dir.empty:
+		print("Please provide a model for calculating readability!")
+		sys.exit()
+
+	model_dir = model_dir['Readability_model'].values[0]
+
+	return model_dir

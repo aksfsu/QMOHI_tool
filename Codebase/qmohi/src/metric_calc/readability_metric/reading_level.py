@@ -7,6 +7,7 @@ from spacy.lang.en import English
 import pandas as pd
 import re
 from gensim.parsing.preprocessing import strip_numeric
+from qmohi.src.metric_calc.readability_metric.readability_prediction import predict_reading_level
 
 class Readability:
 
@@ -95,7 +96,7 @@ class Readability:
 
 
 # Calculating reading level of the given content
-def get_reading_level(input_dataframe, output_dir):
+def get_reading_level(input_dataframe, output_dir, model_path):
 	header = ['University name', 'University SHC URL', 'Relevant content on all pages',
 			  'Count of SHC webpages matching keywords', 'Keywords matched webpages on SHC',
 			  'Total word count on all pages', 'Num of sentences', 'Num of syllables', 'Num of words', 'Reading ease',
@@ -169,6 +170,16 @@ def get_reading_level(input_dataframe, output_dir):
 				'Reading ease': "Error in reading content!",
 				'Grade level': "Error in reading content!"
 			}, orient='index').transpose()], ignore_index=True)
+
+	grade_level_prediction_df = input_dataframe[['University name', 'Relevant content on all pages']].dropna()
+	if not grade_level_prediction_df.empty:
+		# ML based reading level
+		grade_level_prediction_df['Grade level prediction'] = predict_reading_level(grade_level_prediction_df, model_path)
+
+	try:
+		output_dataframe = output_dataframe.merge(grade_level_prediction_df.drop(columns=['Relevant content on all pages']), on='University name', how='left')
+	except Exception as e:
+		print(e)
 
 	# Storing results
 	output_dataframe.to_csv(output_dir + '/Reading_level_of_content.csv')

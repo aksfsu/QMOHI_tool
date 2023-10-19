@@ -9,7 +9,7 @@ def combine_all_results_together(reading_quantity_df, metric_df, initial_uni_lis
 	merged_result = pd.merge(reading_quantity_df, metric_df, how='inner',
 							 on=['University name', 'Count of SHC webpages matching keywords'])
 
-	merged_result.to_csv(output_dir + '/merged_results.csv')
+	merged_result.to_csv(output_dir + '/merged_results.csv', float_format=f'%.3f')
 
 	# Add data found column by comparing with initial university list
 	final_output = pd.merge(initial_uni_list_df, merged_result, left_on=['University_name', 'University SHC URL'],
@@ -19,5 +19,5 @@ def combine_all_results_together(reading_quantity_df, metric_df, initial_uni_lis
 	final_output['Data found'] = [1 if x > 0 else 0 for x in final_output['Count of SHC webpages matching keywords']]
 
 	# Store final output
-	final_output.to_csv(output_dir + '/final_output.csv')
+	final_output.to_csv(output_dir + '/final_output.csv', float_format=f'%.3f')
 	print("- All results (intermediate and final) have been stored at location: ", output_dir)

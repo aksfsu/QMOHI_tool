@@ -46,7 +46,7 @@ def get_coverage(metric_dataframe, input_keyword_count):
 def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_stem_dictionary, phrase_stem_dictionary, list_of_stem_found_phrase_dictionary):
 	header = ['University name', 'University SHC URL', 'Count of SHC webpages matching keywords',
 			  'Keywords matched webpages on SHC', 'Total word count on all pages', 'Num of sentences', 'Num of syllables',
-			  'Num of words', 'Reading ease', 'Grade level', 'Prevalence_metric', 'Percent_coverage']
+			  'Num of words', 'Reading ease', 'Grade level', 'Grade level prediction', 'Prevalence_metric', 'Percent_coverage']
 
 	# Headers are created based on the dictionary created during the filtering step
 	list_of_keyword_headers = []
@@ -87,6 +87,7 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 		no_of_words = row['Num of words']
 		reading_ease = row['Reading ease']
 		grade_level = row['Grade level']
+		grade_level_pred = row['Grade level prediction']
 		total_words = row['Total word count on all pages']
 
 		print("- ", university)
@@ -125,7 +126,8 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 					'Num of syllables': no_of_syllables,
 					'Num of words': no_of_words,
 					'Reading ease': reading_ease,
-					'Grade level': grade_level
+					'Grade level': grade_level,
+					'Grade level prediction': grade_level_pred
 				}
 				# Converting dictionary into dataframe
 				uni_dataframe = pd.DataFrame([uni_dict])
@@ -148,8 +150,8 @@ def metric_calculation(input_dataframe, keywords, output_dir, list_of_found_per_
 					'Num of syllables': no_of_syllables,
 					'Num of words': no_of_words,
 					'Reading ease': reading_ease,
-					'Grade level': grade_level
-
+					'Grade level': grade_level,
+					'Grade level prediction': grade_level_pred
 				}, orient='index').transpose()], ignore_index=True)
 		
 	output_dataframe.to_csv(output_dir + '/Keywords_count_for_universities.csv')

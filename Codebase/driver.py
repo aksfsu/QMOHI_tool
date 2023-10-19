@@ -18,7 +18,8 @@ import datetime
 
 from qmohi.src.input_parser import parse_input, get_uni_shc
 from qmohi.src.data_prep import filter_relevant_data, store_webpages, get_shc_webpages_with_keywords
-from qmohi.src.metric_calc import reading_level, combine_results, metric_calculation1, metric_calculation2
+from qmohi.src.metric_calc import combine_results, metric_calculation1, metric_calculation2
+from qmohi.src.metric_calc.readability_metric import reading_level
 
 
 # Execute complete pipeline
@@ -76,6 +77,8 @@ def execute(input_file_path):
 	# print("- Collecting sentence extraction margin", end="")
 	margin = parse_input.get_sentence_extraction_margin(file)
 
+	readability_model_path = parse_input.get_readability_model(file)
+
 	# Get university SHC from university name
 	print("\nFinding university SHC websites...")
 	shc_websites_df = get_uni_shc.get_shc_urls_from_uni_name(universities_list, keys_list_for_shc, driver_path, cse_id, output_dir)
@@ -96,7 +99,7 @@ def execute(input_file_path):
 	# Calculate overall reading level of relevant content retrieved from the urls
 	print("\n============ PHASE 3 =============\n")
 	print("Calculating Readability metric...")
-	reading_level_df = reading_level.get_reading_level(topical_content_df, output_dir)
+	reading_level_df = reading_level.get_reading_level(topical_content_df, output_dir, readability_model_path)
 
 	# Calculate quantity of keywords, Prevalence metric, Coverage metric
 	print("\nCalculating quantity of keywords, Prevalence metric, Coverage metric...")
