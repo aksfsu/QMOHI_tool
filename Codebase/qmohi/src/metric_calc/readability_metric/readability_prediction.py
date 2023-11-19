@@ -14,13 +14,9 @@ from transformers import AutoTokenizer, AutoModel, AutoConfig
 
 gc.enable()
 
-SEED = 42
 NUM_WORKERS = 7
-NUM_FOLDS = 5
-NUM_EPOCHS = 4
 BATCH_SIZE = 8
 MAX_LEN = 512
-LR = 1e-4
 DROP_OUT_RATE = 0.1
 
 MODEL_PATH = 'allenai/biomed_roberta_base'
@@ -124,62 +120,6 @@ class MyModel(nn.Module):
         # Reduce the context vector to the prediction score
         return self.regressor(context_vector)
 
-class Trainer:
-    def __init__(self, model, optimizer, scheduler, train_dataloader, valid_dataloader):
-        self.model = model
-        self.optimizer = optimizer
-        self.scheduler = scheduler
-        self.train_data = train_dataloader
-        self.valid_data = valid_dataloader
-
-    def yield_loss(self, outputs, targets):
-        return torch.sqrt(nn.MSELoss()(outputs, targets))
-
-    def train_one_epoch(self):
-        self.model.train()
-
-        prog_bar = tqdm(self.train_data, total=len(self.train_data))
-        for inputs in prog_bar:
-            ids = inputs['ids'].to(DEVICE, dtype=torch.long)
-            mask = inputs['mask'].to(DEVICE, dtype=torch.long)
-            token_type_ids = inputs['token_type_ids'].to(DEVICE, dtype=torch.long)
-            grade_level = inputs['grade_level'].to(DEVICE, dtype=torch.float)
-
-            self.optimizer.zero_grad()
-            
-            outputs = self.model(input_ids=ids, attention_mask=mask, token_type_ids=token_type_ids).view(-1)
-
-            loss = self.yield_loss(outputs, grade_level)
-            loss.backward()
-            prog_bar.set_description('loss: {:.2f}'.format(loss.item()))
-
-            self.optimizer.step()
-            self.scheduler.step()
-
-    def valid_one_epoch(self):
-        self.model.eval()
-        all_targets = []
-        all_predictions = []
-        with torch.no_grad():
-            prog_bar = tqdm(self.valid_data, total=len(self.valid_data))
-            for inputs in prog_bar:
-                ids = inputs['ids'].to(DEVICE, dtype=torch.long)
-                mask = inputs['mask'].to(DEVICE, dtype=torch.long)
-                token_type_ids = inputs['token_type_ids'].to(DEVICE, dtype=torch.long)
-                targets = inputs['grade_level'].to(DEVICE, dtype=torch.float)
-
-                outputs = self.model(input_ids=ids, attention_mask=mask, token_type_ids=token_type_ids).view(-1)
-                all_targets.extend(targets.cpu().detach().numpy().tolist())
-                all_predictions.extend(outputs.cpu().detach().numpy().tolist())
-
-        rmse_loss = np.sqrt(mean_squared_error(all_targets, all_predictions))
-        print('Validation RMSE: {:.2f}'.format(rmse_loss))
-        
-        return rmse_loss
-    
-    def get_model(self):
-        return self.model
-
 def predict(model, states_list, test_dataloader):
     model.eval()
 
@@ -223,5 +163,4 @@ def predict_reading_level(input_df, model_path):
 
     predictions = np.array(predict(model, state_list, predict_loader))
     predictions = np.transpose(predictions).flatten()
-    print(np.round(predictions, 3))
     return np.round(predictions, 3)
