@@ -31,7 +31,7 @@ class MyDataset(Dataset):
 
         self.df = df
         self.inference_only = inference_only
-        self.text = df.sentences
+        self.text = df.sentences.astype(str)
         self.tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_PATH, use_fast=False)
         if not self.inference_only:
             self.grade_level = torch.tensor(df.grade_level.values, dtype=torch.float)
