@@ -84,7 +84,7 @@ def review_input_keywords(input_file_path, file, api_keys, cse_id, output_dir):
 	if len(new_keywords) > len(file):
 		file['Keywords'] = new_keywords[:len(file)]
 		for i in range(len(file), len(new_keywords)):
-			file.loc[i] = ["", new_keywords[i], "", "", "", "", "", "", "", ""]
+			file.loc[i] = ["", new_keywords[i], "", "", "", "", "", "", "", "", ""]
 	else:
 		file['Keywords'] = new_keywords[:len(new_keywords)] + ["" for _ in range(max(0, len(file) - len(new_keywords)))]
 
