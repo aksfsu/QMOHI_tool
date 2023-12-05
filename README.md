@@ -47,6 +47,7 @@ QMOHI performs a guided search and analysis of university student health centers
 | H | Comparison_document | Absolute path to the file containing the comparison content for the topic of interest, based on which QMOHI calculates the similarity to SHC website contents. If this is left blank, QMOHI will auto-generate a comparison document for a given topic, which is the first keyword provided in Column B.  |
 | I | Word_vector_model | Absolute path to the pre-trained word embedding model. |
 | J | Sentence_extraction_margin | Number of margin sentences before and after sentences that contain keywords (anchor sentences). Anchor sentences and margin sentences are considered as topical information.  |
+| K | Readability_model | Absolute path to the readability estimation ML model.  |
 
 Please read [the documentation](https://docs.google.com/document/d/1cqgTK_7dudHliH3DktOFCkqx72IcVd75rwZJnlqVmYQ/edit?usp=sharing) for more information on the QMOHI input file.
 
